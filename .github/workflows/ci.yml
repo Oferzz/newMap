@@ -1,0 +1,125 @@
+name: CI/CD Pipeline
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
+
+jobs:
+  test-api:
+    name: Test API
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:6
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.21'
+        cache-dependency-path: apps/api/go.sum
+    
+    - name: Install dependencies
+      working-directory: apps/api
+      run: go mod download
+    
+    - name: Run linting
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: latest
+        working-directory: apps/api
+        args: --timeout=10m
+    
+    - name: Run tests
+      working-directory: apps/api
+      env:
+        MONGODB_URI: mongodb://localhost:27017
+        REDIS_URL: redis://localhost:6379
+        JWT_SECRET: test-secret-key
+      run: |
+        go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+    
+    - name: Generate coverage report
+      working-directory: apps/api
+      run: |
+        go tool cover -html=coverage.txt -o coverage.html
+        echo "Coverage report generated at coverage.html"
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./apps/api/coverage.txt
+        flags: api
+        name: api-coverage
+        fail_ci_if_error: false
+    
+    - name: Build API
+      working-directory: apps/api
+      run: |
+        go build -v -o bin/server cmd/server/main.go
+        echo "API built successfully"
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        severity: 'CRITICAL,HIGH'
+    
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  build-check:
+    name: Build Check
+    runs-on: ubuntu-latest
+    needs: [test-api]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Build API Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./apps/api/Dockerfile
+        push: false
+        tags: trip-platform-api:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
