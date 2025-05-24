@@ -12,6 +12,7 @@ import (
 
 	"github.com/Oferzz/newMap/apps/api/internal/config"
 	"github.com/Oferzz/newMap/apps/api/internal/database"
+	"github.com/Oferzz/newMap/apps/api/internal/domain/trips"
 	"github.com/Oferzz/newMap/apps/api/internal/domain/users"
 	"github.com/Oferzz/newMap/apps/api/internal/middleware"
 	"github.com/Oferzz/newMap/apps/api/internal/utils"
@@ -38,18 +39,22 @@ func main() {
 
 	// Initialize repositories
 	userRepo := users.NewRepository(mongodb.Database)
+	tripRepo := trips.NewRepository(mongodb.Database)
 
 	// Initialize services
 	userService := users.NewService(userRepo, jwtManager)
+	tripService := trips.NewService(tripRepo, userRepo)
 
 	// Initialize handlers
 	userHandler := users.NewHandler(userService)
+	tripHandler := trips.NewHandler(tripService)
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtManager)
+	rbacMiddleware := middleware.NewRBACMiddleware(userRepo, tripRepo)
 
 	// Setup router
-	router := setupRouter(cfg, userHandler, authMiddleware)
+	router := setupRouter(cfg, userHandler, tripHandler, authMiddleware, rbacMiddleware)
 
 	// Create server
 	srv := &http.Server{
@@ -85,7 +90,7 @@ func main() {
 	log.Println("Server exited")
 }
 
-func setupRouter(cfg *config.Config, userHandler *users.Handler, authMiddleware *middleware.AuthMiddleware) *gin.Engine {
+func setupRouter(cfg *config.Config, userHandler *users.Handler, tripHandler *trips.Handler, authMiddleware *middleware.AuthMiddleware, rbacMiddleware *middleware.RBACMiddleware) *gin.Engine {
 	if cfg.Server.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -125,12 +130,37 @@ func setupRouter(cfg *config.Config, userHandler *users.Handler, authMiddleware 
 		}
 
 		// User routes
-		users := v1.Group("/users")
+		userRoutes := v1.Group("/users")
 		{
-			users.GET("/me", authMiddleware.RequireAuth(), userHandler.GetProfile)
-			users.PUT("/me", authMiddleware.RequireAuth(), userHandler.UpdateProfile)
-			users.PUT("/me/password", authMiddleware.RequireAuth(), userHandler.ChangePassword)
-			users.DELETE("/me", authMiddleware.RequireAuth(), userHandler.DeleteAccount)
+			userRoutes.GET("/me", authMiddleware.RequireAuth(), userHandler.GetProfile)
+			userRoutes.PUT("/me", authMiddleware.RequireAuth(), userHandler.UpdateProfile)
+			userRoutes.PUT("/me/password", authMiddleware.RequireAuth(), userHandler.ChangePassword)
+			userRoutes.DELETE("/me", authMiddleware.RequireAuth(), userHandler.DeleteAccount)
+		}
+
+		// Trip routes
+		tripRoutes := v1.Group("/trips")
+		{
+			// Public routes (authentication optional)
+			tripRoutes.GET("", authMiddleware.OptionalAuth(), tripHandler.List)
+			tripRoutes.GET("/:id", authMiddleware.OptionalAuth(), tripHandler.GetByID)
+
+			// Protected routes (authentication required)
+			tripRoutes.Use(authMiddleware.RequireAuth())
+			{
+				// Create trip (any authenticated user)
+				tripRoutes.POST("", rbacMiddleware.RequireSystemPermission(users.PermissionTripCreate), tripHandler.Create)
+				
+				// Trip-specific routes (permission based on trip role)
+				tripRoutes.PUT("/:id", rbacMiddleware.RequireTripPermission(users.PermissionTripUpdate), tripHandler.Update)
+				tripRoutes.DELETE("/:id", rbacMiddleware.RequireTripOwnership(), tripHandler.Delete)
+				
+				// Collaborator management
+				tripRoutes.POST("/:id/collaborators", rbacMiddleware.RequireTripPermission(users.PermissionTripUpdate), tripHandler.InviteCollaborator)
+				tripRoutes.DELETE("/:id/collaborators/:userId", rbacMiddleware.RequireTripOwnership(), tripHandler.RemoveCollaborator)
+				tripRoutes.PUT("/:id/collaborators/role", rbacMiddleware.RequireTripOwnership(), tripHandler.UpdateCollaboratorRole)
+				tripRoutes.POST("/:id/leave", tripHandler.LeaveTrip)
+			}
 		}
 	}
 
