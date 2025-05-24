@@ -10,8 +10,10 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Oferzz/newMap/apps/api/internal/cache"
 	"github.com/Oferzz/newMap/apps/api/internal/config"
 	"github.com/Oferzz/newMap/apps/api/internal/database"
+	"github.com/Oferzz/newMap/apps/api/internal/domain/places"
 	"github.com/Oferzz/newMap/apps/api/internal/domain/trips"
 	"github.com/Oferzz/newMap/apps/api/internal/domain/users"
 	"github.com/Oferzz/newMap/apps/api/internal/middleware"
@@ -34,27 +36,53 @@ func main() {
 	}
 	defer mongodb.Close(context.Background())
 
+	// Connect to Redis (optional - don't fail if not available)
+	var redisClient *database.RedisClient
+	var cacheService cache.Cache
+	redisClient, err = database.NewRedisClient(&cfg.Redis)
+	if err != nil {
+		log.Printf("Warning: Failed to connect to Redis, caching disabled: %v", err)
+		// Use a no-op cache implementation if Redis is not available
+		cacheService = cache.NewNoOpCache()
+	} else {
+		defer redisClient.Close()
+		cacheService = cache.NewRedisCache(redisClient)
+		log.Println("Redis connected, caching enabled")
+	}
+
 	// Initialize JWT manager
 	jwtManager := utils.NewJWTManager(&cfg.JWT)
 
 	// Initialize repositories
 	userRepo := users.NewRepository(mongodb.Database)
 	tripRepo := trips.NewRepository(mongodb.Database)
+	placeRepo := places.NewRepository(mongodb.Database)
 
 	// Initialize services
 	userService := users.NewService(userRepo, jwtManager)
-	tripService := trips.NewService(tripRepo, userRepo)
+	
+	// Use cached trip service if Redis is available
+	baseTripService := trips.NewService(tripRepo, userRepo)
+	var tripService trips.Service
+	if cacheService != nil {
+		tripService = trips.NewCachedService(baseTripService, cacheService)
+	} else {
+		tripService = baseTripService
+	}
+	
+	placeService := places.NewService(placeRepo, tripRepo)
 
 	// Initialize handlers
 	userHandler := users.NewHandler(userService)
 	tripHandler := trips.NewHandler(tripService)
+	placeHandler := places.NewHandler(placeService)
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtManager)
 	rbacMiddleware := middleware.NewRBACMiddleware(userRepo, tripRepo)
 
 	// Setup router
-	router := setupRouter(cfg, userHandler, tripHandler, authMiddleware, rbacMiddleware)
+	router := setupRouter(cfg, userHandler, tripHandler, placeHandler, authMiddleware, rbacMiddleware)
 
 	// Create server
 	srv := &http.Server{
@@ -90,7 +118,7 @@ func main() {
 	log.Println("Server exited")
 }
 
-func setupRouter(cfg *config.Config, userHandler *users.Handler, tripHandler *trips.Handler, authMiddleware *middleware.AuthMiddleware, rbacMiddleware *middleware.RBACMiddleware) *gin.Engine {
+func setupRouter(cfg *config.Config, userHandler *users.Handler, tripHandler *trips.Handler, placeHandler *places.Handler, authMiddleware *middleware.AuthMiddleware, rbacMiddleware *middleware.RBACMiddleware) *gin.Engine {
 	if cfg.Server.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -162,6 +190,32 @@ func setupRouter(cfg *config.Config, userHandler *users.Handler, tripHandler *tr
 				tripRoutes.POST("/:id/leave", tripHandler.LeaveTrip)
 			}
 		}
+
+		// Place routes
+		placeRoutes := v1.Group("/places")
+		{
+			// All place routes require authentication
+			placeRoutes.Use(authMiddleware.RequireAuth())
+			{
+				// List places (with filters)
+				placeRoutes.GET("", placeHandler.List)
+				placeRoutes.GET("/:id", placeHandler.GetByID)
+				
+				// Create place (requires permission on trip)
+				placeRoutes.POST("", placeHandler.Create)
+				
+				// Update/Delete place (requires permission on trip)
+				placeRoutes.PUT("/:id", placeHandler.Update)
+				placeRoutes.DELETE("/:id", placeHandler.Delete)
+				
+				// Special operations
+				placeRoutes.PUT("/:id/visited", placeHandler.MarkAsVisited)
+				placeRoutes.GET("/:id/children", placeHandler.GetChildren)
+			}
+		}
+
+		// Trip places routes (convenience endpoints)
+		tripRoutes.GET("/:tripId/places", authMiddleware.RequireAuth(), placeHandler.GetByTripID)
 	}
 
 	return router
