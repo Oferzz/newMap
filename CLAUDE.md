@@ -150,3 +150,6 @@ Redis cache keys follow the pattern: `resource:id:subresource`
 - Deploy to Render.com on main branch
 - Environment-specific configurations
 - Database migrations handled separately
+
+## Additional Guidelines
+- If there is something you dont know, dont assume it, go read it in the render docs

@@ -38,10 +38,18 @@ func NewRedisClient(cfg *config.RedisConfig) (*RedisClient, error) {
 		return nil, fmt.Errorf("failed to connect to Redis: %w", err)
 	}
 
-	return &RedisClient{
+	rc := &RedisClient{
 		client: client,
 		config: cfg,
-	}, nil
+	}
+
+	// Configure for Render Key-Value if using internal URL
+	if err := rc.ConfigureForRender(ctx); err != nil {
+		// Log the error but don't fail - Render might not support CONFIG commands
+		fmt.Printf("Warning: Could not configure Redis for Render: %v\n", err)
+	}
+
+	return rc, nil
 }
 
 func (r *RedisClient) Close() error {
@@ -171,3 +179,24 @@ const (
 	CacheTTLLong   = 2 * time.Hour
 	CacheTTLDay    = 24 * time.Hour
 )
+
+// ConfigureForRender configures Redis for Render Key-Value service
+func (r *RedisClient) ConfigureForRender(ctx context.Context) error {
+	// Set eviction policy to allkeys-lru for caching
+	// This ensures Redis acts as a cache when memory is full
+	if err := r.client.ConfigSet(ctx, "maxmemory-policy", "allkeys-lru").Err(); err != nil {
+		return fmt.Errorf("failed to set maxmemory-policy: %w", err)
+	}
+	return nil
+}
+
+// HealthCheck performs a health check on Redis
+func (r *RedisClient) HealthCheck(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+
+	if err := r.client.Ping(ctx).Err(); err != nil {
+		return fmt.Errorf("redis health check failed: %w", err)
+	}
+	return nil
+}

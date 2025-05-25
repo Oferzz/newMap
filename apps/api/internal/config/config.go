@@ -15,6 +15,7 @@ type Config struct {
 	Redis    RedisConfig
 	JWT      JWTConfig
 	App      AppConfig
+	Media    MediaConfig
 }
 
 type ServerConfig struct {
@@ -25,11 +26,13 @@ type ServerConfig struct {
 }
 
 type DatabaseConfig struct {
-	URI            string
-	Name           string
-	MaxPoolSize    uint64
-	MinPoolSize    uint64
-	MaxConnIdleTime time.Duration
+	URI             string
+	Name            string
+	MaxPoolSize     int
+	MinPoolSize     int
+	MaxIdleTime     int // in minutes
+	MigrationsPath  string
+	SSLMode         string
 }
 
 type RedisConfig struct {
@@ -55,6 +58,14 @@ type AppConfig struct {
 	RateLimitPerMin int
 }
 
+type MediaConfig struct {
+	StoragePath      string
+	CDNURL           string
+	MaxFileSize      int64
+	AllowedMimeTypes []string
+	ThumbnailQuality int
+}
+
 func Load() (*Config, error) {
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
@@ -68,14 +79,16 @@ func Load() (*Config, error) {
 			WriteTimeout: getDurationEnv("SERVER_WRITE_TIMEOUT", 15*time.Second),
 		},
 		Database: DatabaseConfig{
-			URI:             getEnv("MONGODB_URI", "mongodb://localhost:27017"),
-			Name:            getEnv("DB_NAME", "trip_platform"),
-			MaxPoolSize:     getUint64Env("DB_MAX_POOL_SIZE", 100),
-			MinPoolSize:     getUint64Env("DB_MIN_POOL_SIZE", 10),
-			MaxConnIdleTime: getDurationEnv("DB_MAX_CONN_IDLE_TIME", 10*time.Minute),
+			URI:            getEnv("DATABASE_URL", "postgresql://localhost:5432/trip_platform?sslmode=disable"),
+			Name:           getEnv("DB_NAME", "trip_platform"),
+			MaxPoolSize:    getIntEnv("DB_MAX_CONNECTIONS", 100),
+			MinPoolSize:    getIntEnv("DB_MIN_CONNECTIONS", 10),
+			MaxIdleTime:    getIntEnv("DB_MAX_IDLE_TIME", 10),
+			MigrationsPath: getEnv("DB_MIGRATIONS_PATH", "./migrations"),
+			SSLMode:        getEnv("DB_SSL_MODE", "disable"),
 		},
 		Redis: RedisConfig{
-			URL:        getEnv("REDIS_URL", "redis://localhost:6379"),
+			URL:        getEnv("REDIS_URL", getEnv("INTERNAL_REDIS_URL", "redis://localhost:6379")),
 			Password:   getEnv("REDIS_PASSWORD", ""),
 			DB:         getIntEnv("REDIS_DB", 0),
 			MaxRetries: getIntEnv("REDIS_MAX_RETRIES", 3),
@@ -93,6 +106,13 @@ func Load() (*Config, error) {
 			AllowedOrigins:  []string{"http://localhost:3000", "http://localhost:5173"},
 			MaxUploadSize:   getInt64Env("MAX_UPLOAD_SIZE", 10*1024*1024), // 10MB
 			RateLimitPerMin: getIntEnv("RATE_LIMIT_PER_MIN", 60),
+		},
+		Media: MediaConfig{
+			StoragePath:      getEnv("MEDIA_PATH", "/data/media"),
+			CDNURL:           getEnv("CDN_URL", "http://localhost:8080/media"),
+			MaxFileSize:      getInt64Env("MAX_FILE_SIZE", 50*1024*1024), // 50MB
+			AllowedMimeTypes: []string{"image/jpeg", "image/png", "image/webp", "video/mp4"},
+			ThumbnailQuality: getIntEnv("THUMBNAIL_QUALITY", 85),
 		},
 	}
 

@@ -6,7 +6,6 @@ import (
 
 	"github.com/Oferzz/newMap/apps/api/internal/config"
 	"github.com/golang-jwt/jwt/v5"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var (
@@ -30,10 +29,10 @@ func NewJWTManager(cfg *config.JWTConfig) *JWTManager {
 	}
 }
 
-func (j *JWTManager) GenerateTokenPair(userID primitive.ObjectID, email string) (accessToken, refreshToken string, err error) {
+func (j *JWTManager) GenerateTokenPair(userID string, email string) (accessToken, refreshToken string, err error) {
 	// Generate access token
 	accessClaims := TokenClaims{
-		UserID: userID.Hex(),
+		UserID: userID,
 		Email:  email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.config.AccessExpiry)),
@@ -50,7 +49,7 @@ func (j *JWTManager) GenerateTokenPair(userID primitive.ObjectID, email string) 
 	
 	// Generate refresh token
 	refreshClaims := TokenClaims{
-		UserID: userID.Hex(),
+		UserID: userID,
 		Email:  email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(j.config.RefreshExpiry)),
@@ -115,4 +114,14 @@ func (j *JWTManager) RefreshAccessToken(refreshToken string) (string, error) {
 	
 	accessTokenObj := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	return accessTokenObj.SignedString([]byte(j.config.Secret))
+}
+
+// GetAccessTokenExpiry returns the access token expiry duration
+func (j *JWTManager) GetAccessTokenExpiry() time.Duration {
+	return j.config.AccessExpiry
+}
+
+// GetRefreshTokenExpiry returns the refresh token expiry duration
+func (j *JWTManager) GetRefreshTokenExpiry() time.Duration {
+	return j.config.RefreshExpiry
 }

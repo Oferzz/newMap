@@ -16,6 +16,8 @@ import (
 	"github.com/Oferzz/newMap/apps/api/internal/domain/places"
 	"github.com/Oferzz/newMap/apps/api/internal/domain/trips"
 	"github.com/Oferzz/newMap/apps/api/internal/domain/users"
+	"github.com/Oferzz/newMap/apps/api/internal/health"
+	"github.com/Oferzz/newMap/apps/api/internal/media"
 	"github.com/Oferzz/newMap/apps/api/internal/middleware"
 	"github.com/Oferzz/newMap/apps/api/internal/utils"
 	"github.com/gin-contrib/cors"
@@ -29,12 +31,24 @@ func main() {
 		log.Fatal("Failed to load config:", err)
 	}
 
-	// Connect to MongoDB
-	mongodb, err := database.NewMongoDB(&cfg.Database)
+	// Connect to PostgreSQL
+	db, err := database.NewPostgresDB(&cfg.Database)
 	if err != nil {
-		log.Fatal("Failed to connect to MongoDB:", err)
+		log.Fatal("Failed to connect to PostgreSQL:", err)
 	}
-	defer mongodb.Close(context.Background())
+	defer db.Close()
+
+	// Run migrations
+	log.Println("Running database migrations...")
+	if err := db.RunMigrations(cfg.Database.MigrationsPath); err != nil {
+		log.Printf("Warning: Failed to run migrations: %v", err)
+	}
+
+	// Create database extensions
+	ctx := context.Background()
+	if err := db.CreateExtensions(ctx); err != nil {
+		log.Printf("Warning: Failed to create extensions: %v", err)
+	}
 
 	// Connect to Redis (optional - don't fail if not available)
 	var redisClient *database.RedisClient
@@ -53,10 +67,16 @@ func main() {
 	// Initialize JWT manager
 	jwtManager := utils.NewJWTManager(&cfg.JWT)
 
+	// Initialize media storage
+	mediaStorage, err := media.NewDiskStorage(&cfg.Media)
+	if err != nil {
+		log.Fatal("Failed to initialize media storage:", err)
+	}
+
 	// Initialize repositories
-	userRepo := users.NewRepository(mongodb.Database)
-	tripRepo := trips.NewRepository(mongodb.Database)
-	placeRepo := places.NewRepository(mongodb.Database)
+	userRepo := users.NewPostgresRepository(db.DB)
+	tripRepo := trips.NewPostgresRepository(db.DB)
+	placeRepo := places.NewPostgresRepository(db.DB)
 
 	// Initialize services
 	userService := users.NewService(userRepo, jwtManager)
@@ -71,18 +91,21 @@ func main() {
 	}
 	
 	placeService := places.NewService(placeRepo, tripRepo)
+	mediaService := media.NewService(db.DB, mediaStorage)
 
 	// Initialize handlers
 	userHandler := users.NewHandler(userService)
 	tripHandler := trips.NewHandler(tripService)
 	placeHandler := places.NewHandler(placeService)
+	mediaHandler := media.NewHandler(mediaService)
+	healthHandler := health.NewHandler(db.DB, redisClient)
 
 	// Initialize middleware
 	authMiddleware := middleware.NewAuthMiddleware(jwtManager)
 	rbacMiddleware := middleware.NewRBACMiddleware(userRepo, tripRepo)
 
 	// Setup router
-	router := setupRouter(cfg, userHandler, tripHandler, placeHandler, authMiddleware, rbacMiddleware)
+	router := setupRouter(cfg, userHandler, tripHandler, placeHandler, mediaHandler, healthHandler, authMiddleware, rbacMiddleware, mediaStorage)
 
 	// Create server
 	srv := &http.Server{
@@ -118,7 +141,7 @@ func main() {
 	log.Println("Server exited")
 }
 
-func setupRouter(cfg *config.Config, userHandler *users.Handler, tripHandler *trips.Handler, placeHandler *places.Handler, authMiddleware *middleware.AuthMiddleware, rbacMiddleware *middleware.RBACMiddleware) *gin.Engine {
+func setupRouter(cfg *config.Config, userHandler *users.Handler, tripHandler *trips.Handler, placeHandler *places.Handler, mediaHandler *media.Handler, healthHandler *health.Handler, authMiddleware *middleware.AuthMiddleware, rbacMiddleware *middleware.RBACMiddleware, mediaStorage media.Storage) *gin.Engine {
 	if cfg.Server.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -138,13 +161,8 @@ func setupRouter(cfg *config.Config, userHandler *users.Handler, tripHandler *tr
 	}
 	router.Use(cors.New(corsConfig))
 
-	// Health check
-	router.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status": "healthy",
-			"time":   time.Now().UTC(),
-		})
-	})
+	// Health check routes
+	healthHandler.RegisterRoutes(router)
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")
@@ -216,6 +234,19 @@ func setupRouter(cfg *config.Config, userHandler *users.Handler, tripHandler *tr
 
 		// Trip places routes (convenience endpoints)
 		tripRoutes.GET("/:tripId/places", authMiddleware.RequireAuth(), placeHandler.GetByTripID)
+
+		// Media routes
+		mediaRoutes := v1.Group("/media")
+		{
+			mediaRoutes.Use(authMiddleware.RequireAuth())
+			mediaRoutes.Use(media.ValidateFileUpload(cfg.Media.MaxFileSize))
+			mediaHandler.RegisterRoutes(mediaRoutes)
+		}
+	}
+
+	// Serve media files (for development)
+	if cfg.Server.Environment != "production" {
+		router.GET("/media/*filepath", mediaHandler.ServeMedia(mediaStorage))
 	}
 
 	return router

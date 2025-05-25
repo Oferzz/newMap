@@ -1,0 +1,141 @@
+services:
+  # Go API Service
+  - type: web
+    name: trip-planner-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    repo: https://github.com/Oferzz/newMap
+    branch: main
+    buildFilter:
+      paths:
+        - apps/api/**
+        - packages/**
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: DATABASE_URL
+        fromDatabase:
+          name: trip-planner-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: trip-planner-cache
+          type: redis
+          property: connectionString
+      - key: INTERNAL_REDIS_URL
+        fromService:
+          name: trip-planner-cache
+          type: redis
+          property: internalConnectionString
+      - key: MEDIA_PATH
+        value: /data/media
+      - key: CDN_URL
+        fromService:
+          name: trip-planner-web
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_ISSUER
+        value: trip-planner
+      - key: DB_MIGRATIONS_PATH
+        value: ./migrations
+      - key: ENVIRONMENT
+        value: production
+      - key: MAPBOX_API_KEY
+        sync: false # Set manually in Render dashboard
+    disk:
+      name: media-storage
+      mountPath: /data
+      sizeGB: 20 # Start with 20GB, can be increased
+    healthCheckPath: /api/health
+    autoDeploy: true
+    plan: starter # Can upgrade to standard or pro
+    scaling:
+      minInstances: 1
+      maxInstances: 3
+      targetMemoryPercent: 80
+      targetCPUPercent: 70
+
+  # React Frontend
+  - type: web
+    name: trip-planner-web
+    runtime: static
+    buildCommand: |
+      cd apps/web && npm install && npm run build && 
+      echo "/* /index.html 200" > dist/_redirects
+    staticPublishPath: apps/web/dist
+    repo: https://github.com/Oferzz/newMap
+    branch: main
+    buildFilter:
+      paths:
+        - apps/web/**
+        - packages/**
+    pullRequestPreviewsEnabled: true
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: X-XSS-Protection
+        value: 1; mode=block
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+    routes:
+      # Proxy media requests to API service
+      - type: rewrite
+        source: /media/*
+        destination: https://trip-planner-api.onrender.com/media/*
+    envVars:
+      - key: VITE_API_URL
+        value: https://trip-planner-api.onrender.com/api/v1
+      - key: VITE_WS_URL
+        value: wss://trip-planner-api.onrender.com
+      - key: VITE_MAPBOX_TOKEN
+        sync: false # Set manually in Render dashboard
+    autoDeploy: true
+
+  # Redis Cache Service (Render Key-Value)
+  - type: redis
+    name: trip-planner-cache
+    plan: starter # starter ($7/mo), standard ($30/mo), or pro
+    maxmemoryPolicy: allkeys-lru # Eviction policy for caching
+    ipAllowList: [] # Empty array allows connections from Render services only
+
+databases:
+  # PostgreSQL Database
+  - name: trip-planner-db
+    plan: starter # starter ($7/mo), standard, or pro
+    databaseName: trip_planner
+    user: trip_planner_user
+    postgresMajorVersion: 15
+    ipAllowList: [] # Empty array allows connections from Render services only
+
+# Environment Groups (for shared environment variables)
+envVarGroups:
+  - name: trip-planner-shared
+    envVars:
+      - key: APP_NAME
+        value: Trip Planning Platform
+      - key: APP_VERSION
+        value: 1.0.0
+      - key: LOG_LEVEL
+        value: info
+      - key: RATE_LIMIT_PER_MIN
+        value: 60
+      - key: MAX_UPLOAD_SIZE
+        value: 52428800 # 50MB
+      - key: ALLOWED_MIME_TYPES
+        value: image/jpeg,image/png,image/webp,video/mp4
+      - key: THUMBNAIL_QUALITY
+        value: 85
+      - key: SENTRY_DSN
+        sync: false # Set manually if using Sentry
