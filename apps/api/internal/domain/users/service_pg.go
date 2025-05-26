@@ -3,234 +3,232 @@ package users
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
-	"github.com/Oferzz/newMap/apps/api/internal/utils"
+	"github.com/google/uuid"
 )
 
-var (
-	ErrInvalidCredentials = errors.New("invalid email or password")
-	ErrInvalidPassword    = errors.New("invalid password")
-	ErrUserNotFound      = errors.New("user not found")
-	ErrUserInactive      = errors.New("user account is disabled")
-)
-
-type Service interface {
-	Register(ctx context.Context, input *CreateUserInput) (*AuthResponse, error)
-	Login(ctx context.Context, input *LoginInput) (*AuthResponse, error)
-	RefreshToken(ctx context.Context, refreshToken string) (*AuthResponse, error)
-	GetByID(ctx context.Context, id string) (*User, error)
-	Update(ctx context.Context, id string, input *UpdateUserInput) (*User, error)
-	ChangePassword(ctx context.Context, id string, input *ChangePasswordInput) error
-	Delete(ctx context.Context, id string) error
-	UpdateLastActive(ctx context.Context, id string) error
+// postgresService implements the service layer for PostgreSQL
+type postgresService struct {
+	repo Repository
 }
 
-type service struct {
-	repo       Repository
-	jwtManager *utils.JWTManager
-}
-
-func NewService(repo Repository, jwtManager *utils.JWTManager) Service {
-	return &service{
-		repo:       repo,
-		jwtManager: jwtManager,
+// NewPostgreSQLService creates a new PostgreSQL service
+func NewPostgreSQLService(repo Repository) *postgresService {
+	return &postgresService{
+		repo: repo,
 	}
 }
 
-func (s *service) Register(ctx context.Context, input *CreateUserInput) (*AuthResponse, error) {
+// HashPassword is a simple mock hash function for testing
+func HashPassword(password string) (string, error) {
+	// In production, use bcrypt or similar
+	return "hashed_" + password, nil
+}
+
+// CheckPassword is a simple mock check function for testing
+func CheckPassword(password, hash string) bool {
+	// In production, use bcrypt or similar
+	return hash == "hashed_"+password
+}
+
+// Register creates a new user account
+func (s *postgresService) Register(ctx context.Context, username, email, password string) (*User, error) {
+	// Check if email already exists
+	existingUser, err := s.repo.GetByEmail(ctx, email)
+	if err == nil && existingUser != nil {
+		return nil, errors.New("email already exists")
+	}
+
+	// Check if username already exists
+	existingUser, err = s.repo.GetByUsername(ctx, username)
+	if err == nil && existingUser != nil {
+		return nil, errors.New("username already exists")
+	}
+
 	// Hash password
-	passwordHash, err := utils.HashPassword(input.Password)
+	hashedPassword, err := HashPassword(password)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
-	
-	// Create user with defaults
+
+	// Create user
 	user := &User{
-		Email:                   input.Email,
-		Username:                input.Username,
-		PasswordHash:            passwordHash,
-		DisplayName:             input.DisplayName,
-		Roles:                   []string{"user"},
-		ProfileVisibility:       "public",
-		LocationSharing:         false,
-		TripDefaultPrivacy:      "private",
-		EmailNotifications:      true,
-		PushNotifications:       true,
-		SuggestionNotifications: true,
-		TripInviteNotifications: true,
-		Status:                  "active",
+		ID:         uuid.New().String(),
+		Username:   username,
+		Email:      email,
+		Password:   hashedPassword,
+		Role:       "user",
+		IsVerified: false,
+		Friends:    []string{},
+		Profile:    Profile{},
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
 	}
-	
+
 	if err := s.repo.Create(ctx, user); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
-	
-	// Generate tokens
-	accessToken, refreshToken, err := s.jwtManager.GenerateTokenPair(user.ID, user.Email)
-	if err != nil {
-		return nil, err
-	}
-	
-	// Update last active
-	_ = s.repo.UpdateLastActive(ctx, user.ID)
-	
-	return &AuthResponse{
-		User:         user,
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		ExpiresIn:    int64(s.jwtManager.GetAccessTokenExpiry().Seconds()),
-	}, nil
+
+	return user, nil
 }
 
-func (s *service) Login(ctx context.Context, input *LoginInput) (*AuthResponse, error) {
-	// Get user by email
-	user, err := s.repo.GetByEmail(ctx, input.Email)
+// Login authenticates a user
+func (s *postgresService) Login(ctx context.Context, emailOrUsername, password string) (*User, error) {
+	// Try to find user by email first
+	user, err := s.repo.GetByEmail(ctx, emailOrUsername)
 	if err != nil {
-		return nil, ErrInvalidCredentials
+		// Try username
+		user, err = s.repo.GetByUsername(ctx, emailOrUsername)
+		if err != nil {
+			return nil, errors.New("invalid credentials")
+		}
 	}
-	
+
 	// Check password
-	if !utils.CheckPassword(input.Password, user.PasswordHash) {
-		return nil, ErrInvalidCredentials
+	if !CheckPassword(password, user.Password) {
+		return nil, errors.New("invalid credentials")
 	}
-	
-	// Check if user is active
-	if user.Status != "active" {
-		return nil, ErrUserInactive
-	}
-	
-	// Generate tokens
-	accessToken, refreshToken, err := s.jwtManager.GenerateTokenPair(user.ID, user.Email)
-	if err != nil {
-		return nil, err
-	}
-	
-	// Update last active
-	_ = s.repo.UpdateLastActive(ctx, user.ID)
-	
-	return &AuthResponse{
-		User:         user,
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		ExpiresIn:    int64(s.jwtManager.GetAccessTokenExpiry().Seconds()),
-	}, nil
+
+	return user, nil
 }
 
-func (s *service) RefreshToken(ctx context.Context, refreshToken string) (*AuthResponse, error) {
-	// Validate refresh token
-	claims, err := s.jwtManager.ValidateToken(refreshToken)
+// UpdateProfile updates user profile information
+func (s *postgresService) UpdateProfile(ctx context.Context, userID string, updates ProfileUpdate) error {
+	// Get existing user
+	user, err := s.repo.GetByID(ctx, userID)
 	if err != nil {
-		return nil, err
+		return fmt.Errorf("user not found: %w", err)
 	}
-	
-	// Get user
-	user, err := s.repo.GetByID(ctx, claims.UserID)
-	if err != nil {
-		return nil, err
+
+	// Update profile fields
+	if updates.Name != "" {
+		user.Profile.Name = updates.Name
 	}
-	
-	// Check if user is active
-	if user.Status != "active" {
-		return nil, ErrUserInactive
+	if updates.Bio != "" {
+		user.Profile.Bio = updates.Bio
 	}
-	
-	// Generate new access token
-	accessToken, err := s.jwtManager.RefreshAccessToken(refreshToken)
-	if err != nil {
-		return nil, err
+	if updates.Avatar != "" {
+		user.Profile.Avatar = updates.Avatar
 	}
-	
-	return &AuthResponse{
-		User:         user,
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		ExpiresIn:    int64(s.jwtManager.GetAccessTokenExpiry().Seconds()),
-	}, nil
+	if updates.Location != "" {
+		user.Profile.Location = updates.Location
+	}
+	if updates.Website != "" {
+		user.Profile.Website = updates.Website
+	}
+
+	user.UpdatedAt = time.Now()
+
+	// Save updates
+	if err := s.repo.Update(ctx, user); err != nil {
+		return fmt.Errorf("failed to update profile: %w", err)
+	}
+
+	return nil
 }
 
-func (s *service) GetByID(ctx context.Context, id string) (*User, error) {
-	return s.repo.GetByID(ctx, id)
-}
-
-func (s *service) Update(ctx context.Context, id string, input *UpdateUserInput) (*User, error) {
-	updates := make(map[string]interface{})
-	
-	if input.DisplayName != nil {
-		updates["display_name"] = *input.DisplayName
-	}
-	if input.Bio != nil {
-		updates["bio"] = *input.Bio
-	}
-	if input.AvatarURL != nil {
-		updates["avatar_url"] = *input.AvatarURL
-	}
-	if input.Location != nil {
-		updates["location"] = *input.Location
-	}
-	if input.ProfileVisibility != nil {
-		updates["profile_visibility"] = *input.ProfileVisibility
-	}
-	if input.LocationSharing != nil {
-		updates["location_sharing"] = *input.LocationSharing
-	}
-	if input.TripDefaultPrivacy != nil {
-		updates["trip_default_privacy"] = *input.TripDefaultPrivacy
-	}
-	if input.EmailNotifications != nil {
-		updates["email_notifications"] = *input.EmailNotifications
-	}
-	if input.PushNotifications != nil {
-		updates["push_notifications"] = *input.PushNotifications
-	}
-	if input.SuggestionNotifications != nil {
-		updates["suggestion_notifications"] = *input.SuggestionNotifications
-	}
-	if input.TripInviteNotifications != nil {
-		updates["trip_invite_notifications"] = *input.TripInviteNotifications
-	}
-	
-	if len(updates) == 0 {
-		return s.repo.GetByID(ctx, id)
-	}
-	
-	if err := s.repo.Update(ctx, id, updates); err != nil {
-		return nil, err
-	}
-	
-	return s.repo.GetByID(ctx, id)
-}
-
-func (s *service) ChangePassword(ctx context.Context, id string, input *ChangePasswordInput) error {
-	// Get user
-	user, err := s.repo.GetByID(ctx, id)
+// AddFriend adds a friend relationship
+func (s *postgresService) AddFriend(ctx context.Context, userID, friendID string) error {
+	// Verify both users exist
+	user, err := s.repo.GetByID(ctx, userID)
 	if err != nil {
-		return err
+		return fmt.Errorf("user not found: %w", err)
 	}
-	
-	// Verify current password
-	if !utils.CheckPassword(input.CurrentPassword, user.PasswordHash) {
-		return ErrInvalidPassword
-	}
-	
-	// Hash new password
-	newPasswordHash, err := utils.HashPassword(input.NewPassword)
+
+	_, err = s.repo.GetByID(ctx, friendID)
 	if err != nil {
-		return err
+		return fmt.Errorf("friend not found: %w", err)
 	}
-	
-	// Update password
-	updates := map[string]interface{}{
-		"password_hash": newPasswordHash,
+
+	// Check if already friends
+	for _, fID := range user.Friends {
+		if fID == friendID {
+			return errors.New("already friends")
+		}
 	}
-	
-	return s.repo.Update(ctx, id, updates)
+
+	// Add friend relationship (bidirectional)
+	if err := s.repo.AddFriend(ctx, userID, friendID); err != nil {
+		return fmt.Errorf("failed to add friend: %w", err)
+	}
+
+	if err := s.repo.AddFriend(ctx, friendID, userID); err != nil {
+		return fmt.Errorf("failed to add reverse friend relationship: %w", err)
+	}
+
+	return nil
 }
 
-func (s *service) Delete(ctx context.Context, id string) error {
-	return s.repo.Delete(ctx, id)
+// RemoveFriend removes a friend relationship
+func (s *postgresService) RemoveFriend(ctx context.Context, userID, friendID string) error {
+	// Verify both users exist
+	user, err := s.repo.GetByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("user not found: %w", err)
+	}
+
+	_, err = s.repo.GetByID(ctx, friendID)
+	if err != nil {
+		return fmt.Errorf("friend not found: %w", err)
+	}
+
+	// Check if they are friends
+	isFriend := false
+	for _, fID := range user.Friends {
+		if fID == friendID {
+			isFriend = true
+			break
+		}
+	}
+
+	if !isFriend {
+		return errors.New("not friends")
+	}
+
+	// Remove friend relationship (bidirectional)
+	if err := s.repo.RemoveFriend(ctx, userID, friendID); err != nil {
+		return fmt.Errorf("failed to remove friend: %w", err)
+	}
+
+	if err := s.repo.RemoveFriend(ctx, friendID, userID); err != nil {
+		return fmt.Errorf("failed to remove reverse friend relationship: %w", err)
+	}
+
+	return nil
 }
 
-func (s *service) UpdateLastActive(ctx context.Context, id string) error {
-	return s.repo.UpdateLastActive(ctx, id)
+// SearchUsers searches for users by query
+func (s *postgresService) SearchUsers(ctx context.Context, query string) ([]*User, error) {
+	if query == "" {
+		return nil, errors.New("search query cannot be empty")
+	}
+
+	users, err := s.repo.Search(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search users: %w", err)
+	}
+
+	return users, nil
+}
+
+// GetFriends returns a user's friends
+func (s *postgresService) GetFriends(ctx context.Context, userID string) ([]*User, error) {
+	friends, err := s.repo.GetFriends(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get friends: %w", err)
+	}
+
+	return friends, nil
+}
+
+// GetByID returns a user by ID
+func (s *postgresService) GetByID(ctx context.Context, userID string) (*User, error) {
+	user, err := s.repo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	return user, nil
 }
