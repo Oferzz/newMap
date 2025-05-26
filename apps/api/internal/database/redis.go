@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/Oferzz/newMap/apps/api/internal/config"
-	"github.com/redis/go-redis/v9"
+	redis "github.com/redis/go-redis/v9"
 )
 
 type RedisClient struct {

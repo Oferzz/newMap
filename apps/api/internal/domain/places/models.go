@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/lib/pq"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Place struct {
@@ -328,4 +329,38 @@ func (p *Place) CanUserDelete(userID string) bool {
 	}
 	
 	return collaborator.Role == "admin"
+}
+
+// PlaceFilter contains filter criteria for places
+type PlaceFilter struct {
+	TripID      *primitive.ObjectID
+	ParentID    *primitive.ObjectID
+	Category    *PlaceCategory
+	IsVisited   *bool
+	Tags        []string
+	MinRating   *float32
+	MaxCost     *float64
+	SearchQuery string
+}
+
+// PlaceCategory represents place categories
+type PlaceCategory string
+
+const (
+	PlaceCategoryRestaurant PlaceCategory = "restaurant"
+	PlaceCategoryHotel      PlaceCategory = "hotel"
+	PlaceCategoryAttraction PlaceCategory = "attraction"
+	PlaceCategoryShopping   PlaceCategory = "shopping"
+	PlaceCategoryTransport  PlaceCategory = "transport"
+	PlaceCategoryOther      PlaceCategory = "other"
+)
+
+// IsValid checks if the category is valid
+func (c PlaceCategory) IsValid() bool {
+	switch c {
+	case PlaceCategoryRestaurant, PlaceCategoryHotel, PlaceCategoryAttraction,
+		PlaceCategoryShopping, PlaceCategoryTransport, PlaceCategoryOther:
+		return true
+	}
+	return false
 }

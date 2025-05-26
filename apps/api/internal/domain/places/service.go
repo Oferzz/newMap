@@ -14,12 +14,10 @@ import (
 
 // PlaceListOptions contains options for listing places
 type PlaceListOptions struct {
-	TripID   *primitive.ObjectID
-	ParentID *primitive.ObjectID
-	Category string
-	Search   string
-	Limit    int
-	Offset   int
+	Filter PlaceFilter
+	Page   int
+	Limit  int
+	Sort   string
 }
 
 type Service interface {

@@ -11,6 +11,34 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// TripListOptions contains options for listing trips
+type TripListOptions struct {
+	Filter   TripFilter
+	Sort     string
+	Limit    int
+	Offset   int
+}
+
+// TripFilter contains filter criteria for trips
+type TripFilter struct {
+	Status    string
+	StartDate *time.Time
+	EndDate   *time.Time
+	IsPublic  *bool
+}
+
+// InviteCollaboratorInput contains input for inviting a collaborator
+type InviteCollaboratorInput struct {
+	UserID string `json:"user_id" binding:"required"`
+	Role   string `json:"role" binding:"required,oneof=viewer editor"`
+}
+
+// UpdateCollaboratorRoleInput contains input for updating collaborator role
+type UpdateCollaboratorRoleInput struct {
+	UserID string `json:"user_id" binding:"required"`
+	Role   string `json:"role" binding:"required,oneof=viewer editor"`
+}
+
 type Service interface {
 	Create(ctx context.Context, userID primitive.ObjectID, input *CreateTripInput) (*Trip, error)
 	GetByID(ctx context.Context, tripID, userID primitive.ObjectID) (*Trip, error)
