@@ -1,12 +1,17 @@
 package places
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/Oferzz/newMap/apps/api/internal/middleware"
 	"github.com/Oferzz/newMap/apps/api/pkg/response"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+var (
+	ErrUnauthorized = errors.New("unauthorized")
 )
 
 type Handler struct {

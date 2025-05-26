@@ -21,7 +21,7 @@ func TestJWTManager_GenerateAndValidateTokens(t *testing.T) {
 	email := "test@example.com"
 
 	// Test token generation
-	accessToken, refreshToken, err := jwtManager.GenerateTokenPair(userID, email)
+	accessToken, refreshToken, err := jwtManager.GenerateTokenPair(userID.Hex(), email)
 	if err != nil {
 		t.Fatalf("Failed to generate tokens: %v", err)
 	}
@@ -78,7 +78,7 @@ func TestJWTManager_RefreshAccessToken(t *testing.T) {
 	email := "test@example.com"
 
 	// Generate initial tokens
-	_, refreshToken, err := jwtManager.GenerateTokenPair(userID, email)
+	_, refreshToken, err := jwtManager.GenerateTokenPair(userID.Hex(), email)
 	if err != nil {
 		t.Fatalf("Failed to generate tokens: %v", err)
 	}
@@ -121,7 +121,7 @@ func TestJWTManager_ExpiredToken(t *testing.T) {
 	email := "test@example.com"
 
 	// Generate expired token
-	accessToken, _, err := jwtManager.GenerateTokenPair(userID, email)
+	accessToken, _, err := jwtManager.GenerateTokenPair(userID.Hex(), email)
 	if err != nil {
 		t.Fatalf("Failed to generate tokens: %v", err)
 	}

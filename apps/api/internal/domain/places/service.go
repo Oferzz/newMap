@@ -12,6 +12,16 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// PlaceListOptions contains options for listing places
+type PlaceListOptions struct {
+	TripID   *primitive.ObjectID
+	ParentID *primitive.ObjectID
+	Category string
+	Search   string
+	Limit    int
+	Offset   int
+}
+
 type Service interface {
 	Create(ctx context.Context, userID primitive.ObjectID, input *CreatePlaceInput) (*Place, error)
 	GetByID(ctx context.Context, placeID, userID primitive.ObjectID) (*Place, error)
