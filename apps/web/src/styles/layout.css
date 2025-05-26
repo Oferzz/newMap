@@ -1,0 +1,250 @@
+/* Layout Variables */
+:root {
+  --header-height-mobile: 48px;
+  --header-height-tablet: 56px;
+  --header-height-desktop: 64px;
+  --panel-width-desktop: 400px;
+  --panel-width-tablet: 350px;
+}
+
+/* Header Heights */
+@media (max-width: 768px) {
+  .header {
+    height: var(--header-height-mobile);
+  }
+  
+  .main-content {
+    top: var(--header-height-mobile);
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .header {
+    height: var(--header-height-tablet);
+  }
+  
+  .main-content {
+    top: var(--header-height-tablet);
+  }
+}
+
+@media (min-width: 1025px) {
+  .header {
+    height: var(--header-height-desktop);
+  }
+  
+  .main-content {
+    top: var(--header-height-desktop);
+  }
+}
+
+/* Map Container */
+.map-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Panel Animations */
+.panel-slide-right {
+  transform: translateX(100%);
+  transition: transform 0.3s ease-in-out;
+}
+
+.panel-slide-right.open {
+  transform: translateX(0);
+}
+
+.panel-slide-left {
+  transform: translateX(-100%);
+  transition: transform 0.3s ease-in-out;
+}
+
+.panel-slide-left.open {
+  transform: translateX(0);
+}
+
+.panel-slide-bottom {
+  transform: translateY(100%);
+  transition: transform 0.3s ease-in-out;
+}
+
+.panel-slide-bottom.open {
+  transform: translateY(0);
+}
+
+/* Desktop Panels */
+@media (min-width: 1025px) {
+  .details-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: var(--panel-width-desktop);
+    background: white;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+    z-index: 45;
+  }
+  
+  .trip-planning-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: var(--panel-width-desktop);
+    background: white;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+    z-index: 45;
+  }
+}
+
+/* Tablet Panels */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .details-panel,
+  .trip-planning-panel {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 50vh;
+    background: white;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 45;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+  }
+}
+
+/* Mobile Panels */
+@media (max-width: 768px) {
+  .details-panel,
+  .trip-planning-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-height: 85vh;
+    background: white;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 45;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+  }
+  
+  /* Bottom sheet handle */
+  .panel-handle {
+    width: 40px;
+    height: 4px;
+    background: #e5e7eb;
+    border-radius: 2px;
+    margin: 12px auto;
+  }
+}
+
+/* Search Overlay */
+.search-overlay {
+  position: absolute;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 672px;
+  z-index: 40;
+}
+
+@media (max-width: 768px) {
+  .search-overlay {
+    top: 60px;
+    width: calc(100% - 16px);
+  }
+}
+
+/* Map Controls Override */
+.mapboxgl-ctrl-top-right {
+  top: 80px;
+  right: 16px;
+}
+
+@media (max-width: 768px) {
+  .mapboxgl-ctrl-top-right {
+    top: 60px;
+    right: 8px;
+  }
+}
+
+/* Responsive Utilities */
+.hide-mobile {
+  @media (max-width: 768px) {
+    display: none !important;
+  }
+}
+
+.hide-tablet {
+  @media (min-width: 769px) and (max-width: 1024px) {
+    display: none !important;
+  }
+}
+
+.hide-desktop {
+  @media (min-width: 1025px) {
+    display: none !important;
+  }
+}
+
+.show-mobile {
+  display: none !important;
+  
+  @media (max-width: 768px) {
+    display: block !important;
+  }
+}
+
+.show-tablet {
+  display: none !important;
+  
+  @media (min-width: 769px) and (max-width: 1024px) {
+    display: block !important;
+  }
+}
+
+.show-desktop {
+  display: none !important;
+  
+  @media (min-width: 1025px) {
+    display: block !important;
+  }
+}
+
+/* Prevent body scroll when panels are open on mobile */
+.panel-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+}
+
+/* Smooth scrolling for panels */
+.panel-content {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #e5e7eb transparent;
+}
+
+.panel-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.panel-content::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 3px;
+}
+
+.panel-content::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}

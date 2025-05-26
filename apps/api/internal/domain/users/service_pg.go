@@ -1,0 +1,234 @@
+package users
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/google/uuid"
+)
+
+// postgresService implements the service layer for PostgreSQL
+type postgresService struct {
+	repo Repository
+}
+
+// NewPostgreSQLService creates a new PostgreSQL service
+func NewPostgreSQLService(repo Repository) *postgresService {
+	return &postgresService{
+		repo: repo,
+	}
+}
+
+// HashPassword is a simple mock hash function for testing
+func HashPassword(password string) (string, error) {
+	// In production, use bcrypt or similar
+	return "hashed_" + password, nil
+}
+
+// CheckPassword is a simple mock check function for testing
+func CheckPassword(password, hash string) bool {
+	// In production, use bcrypt or similar
+	return hash == "hashed_"+password
+}
+
+// Register creates a new user account
+func (s *postgresService) Register(ctx context.Context, username, email, password string) (*User, error) {
+	// Check if email already exists
+	existingUser, err := s.repo.GetByEmail(ctx, email)
+	if err == nil && existingUser != nil {
+		return nil, errors.New("email already exists")
+	}
+
+	// Check if username already exists
+	existingUser, err = s.repo.GetByUsername(ctx, username)
+	if err == nil && existingUser != nil {
+		return nil, errors.New("username already exists")
+	}
+
+	// Hash password
+	hashedPassword, err := HashPassword(password)
+	if err != nil {
+		return nil, fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	// Create user
+	user := &User{
+		ID:         uuid.New().String(),
+		Username:   username,
+		Email:      email,
+		Password:   hashedPassword,
+		Role:       "user",
+		IsVerified: false,
+		Friends:    []string{},
+		Profile:    Profile{},
+		CreatedAt:  time.Now(),
+		UpdatedAt:  time.Now(),
+	}
+
+	if err := s.repo.Create(ctx, user); err != nil {
+		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	return user, nil
+}
+
+// Login authenticates a user
+func (s *postgresService) Login(ctx context.Context, emailOrUsername, password string) (*User, error) {
+	// Try to find user by email first
+	user, err := s.repo.GetByEmail(ctx, emailOrUsername)
+	if err != nil {
+		// Try username
+		user, err = s.repo.GetByUsername(ctx, emailOrUsername)
+		if err != nil {
+			return nil, errors.New("invalid credentials")
+		}
+	}
+
+	// Check password
+	if !CheckPassword(password, user.Password) {
+		return nil, errors.New("invalid credentials")
+	}
+
+	return user, nil
+}
+
+// UpdateProfile updates user profile information
+func (s *postgresService) UpdateProfile(ctx context.Context, userID string, updates ProfileUpdate) error {
+	// Get existing user
+	user, err := s.repo.GetByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("user not found: %w", err)
+	}
+
+	// Update profile fields
+	if updates.Name != "" {
+		user.Profile.Name = updates.Name
+	}
+	if updates.Bio != "" {
+		user.Profile.Bio = updates.Bio
+	}
+	if updates.Avatar != "" {
+		user.Profile.Avatar = updates.Avatar
+	}
+	if updates.Location != "" {
+		user.Profile.Location = updates.Location
+	}
+	if updates.Website != "" {
+		user.Profile.Website = updates.Website
+	}
+
+	user.UpdatedAt = time.Now()
+
+	// Save updates
+	if err := s.repo.Update(ctx, user); err != nil {
+		return fmt.Errorf("failed to update profile: %w", err)
+	}
+
+	return nil
+}
+
+// AddFriend adds a friend relationship
+func (s *postgresService) AddFriend(ctx context.Context, userID, friendID string) error {
+	// Verify both users exist
+	user, err := s.repo.GetByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("user not found: %w", err)
+	}
+
+	_, err = s.repo.GetByID(ctx, friendID)
+	if err != nil {
+		return fmt.Errorf("friend not found: %w", err)
+	}
+
+	// Check if already friends
+	for _, fID := range user.Friends {
+		if fID == friendID {
+			return errors.New("already friends")
+		}
+	}
+
+	// Add friend relationship (bidirectional)
+	if err := s.repo.AddFriend(ctx, userID, friendID); err != nil {
+		return fmt.Errorf("failed to add friend: %w", err)
+	}
+
+	if err := s.repo.AddFriend(ctx, friendID, userID); err != nil {
+		return fmt.Errorf("failed to add reverse friend relationship: %w", err)
+	}
+
+	return nil
+}
+
+// RemoveFriend removes a friend relationship
+func (s *postgresService) RemoveFriend(ctx context.Context, userID, friendID string) error {
+	// Verify both users exist
+	user, err := s.repo.GetByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("user not found: %w", err)
+	}
+
+	_, err = s.repo.GetByID(ctx, friendID)
+	if err != nil {
+		return fmt.Errorf("friend not found: %w", err)
+	}
+
+	// Check if they are friends
+	isFriend := false
+	for _, fID := range user.Friends {
+		if fID == friendID {
+			isFriend = true
+			break
+		}
+	}
+
+	if !isFriend {
+		return errors.New("not friends")
+	}
+
+	// Remove friend relationship (bidirectional)
+	if err := s.repo.RemoveFriend(ctx, userID, friendID); err != nil {
+		return fmt.Errorf("failed to remove friend: %w", err)
+	}
+
+	if err := s.repo.RemoveFriend(ctx, friendID, userID); err != nil {
+		return fmt.Errorf("failed to remove reverse friend relationship: %w", err)
+	}
+
+	return nil
+}
+
+// SearchUsers searches for users by query
+func (s *postgresService) SearchUsers(ctx context.Context, query string) ([]*User, error) {
+	if query == "" {
+		return nil, errors.New("search query cannot be empty")
+	}
+
+	users, err := s.repo.Search(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to search users: %w", err)
+	}
+
+	return users, nil
+}
+
+// GetFriends returns a user's friends
+func (s *postgresService) GetFriends(ctx context.Context, userID string) ([]*User, error) {
+	friends, err := s.repo.GetFriends(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get friends: %w", err)
+	}
+
+	return friends, nil
+}
+
+// GetByID returns a user by ID
+func (s *postgresService) GetByID(ctx context.Context, userID string) (*User, error) {
+	user, err := s.repo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	return user, nil
+}
