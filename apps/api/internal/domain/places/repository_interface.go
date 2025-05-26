@@ -2,67 +2,47 @@ package places
 
 import (
 	"context"
+	"errors"
 )
 
-// Repository defines the interface for place data operations
+var (
+	ErrPlaceNotFound = errors.New("place not found")
+)
+
+// Repository defines the interface for place data access
 type Repository interface {
-	// Create creates a new place
 	Create(ctx context.Context, place *Place) error
-	
-	// GetByID retrieves a place by ID
 	GetByID(ctx context.Context, id string) (*Place, error)
-	
-	// Update updates a place
-	Update(ctx context.Context, id string, updates map[string]interface{}) error
-	
-	// Delete soft deletes a place
+	GetByCreator(ctx context.Context, creatorID string) ([]*Place, error)
+	Update(ctx context.Context, place *Place) error
 	Delete(ctx context.Context, id string) error
-	
-	// Search searches for places
-	Search(ctx context.Context, input SearchPlacesInput) ([]*Place, error)
-	
-	// GetNearby finds nearby places
-	GetNearby(ctx context.Context, input NearbyPlacesInput) ([]*Place, error)
-	
-	// GetByTripID retrieves all places for a trip
-	GetByTripID(ctx context.Context, tripID string) ([]*Place, error)
-	
-	// GetChildren retrieves child places
+	Search(ctx context.Context, query string, filters SearchFilters) (*SearchResult, error)
+	GetNearby(ctx context.Context, lat, lng, radiusKm float64, limit int) ([]*Place, error)
+	GetInBounds(ctx context.Context, bounds Bounds) ([]*Place, error)
+	GetByCategory(ctx context.Context, category string, limit, offset int) ([]*Place, error)
 	GetChildren(ctx context.Context, parentID string) ([]*Place, error)
-	
-	// UpdateRating updates the average rating for a place
-	UpdateRating(ctx context.Context, placeID string, newRating float32) error
-	
-	// IncrementRatingCount increments the rating count
-	IncrementRatingCount(ctx context.Context, placeID string) error
+	UpdateRating(ctx context.Context, placeID string, rating float64, count int) error
 }
 
-// MediaRepository defines the interface for place media operations
-type MediaRepository interface {
-	// AddMedia adds media to a place
-	AddMedia(ctx context.Context, placeID string, media Media) error
-	
-	// RemoveMedia removes media from a place
-	RemoveMedia(ctx context.Context, placeID, mediaID string) error
-	
-	// UpdateMediaOrder updates the order of media items
-	UpdateMediaOrder(ctx context.Context, placeID string, mediaIDs []string) error
-	
-	// GetMedia retrieves all media for a place
-	GetMedia(ctx context.Context, placeID string) ([]Media, error)
+// SearchFilters contains filters for place search
+type SearchFilters struct {
+	Category  []string
+	Tags      []string
+	CreatorID string
+	Limit     int
+	Offset    int
 }
 
-// CollaboratorRepository defines the interface for place collaborator operations
-type CollaboratorRepository interface {
-	// AddCollaborator adds a collaborator to a place
-	AddCollaborator(ctx context.Context, placeID string, collaborator Collaborator) error
-	
-	// UpdateCollaborator updates a collaborator's role and permissions
-	UpdateCollaborator(ctx context.Context, placeID, userID string, updates map[string]interface{}) error
-	
-	// RemoveCollaborator removes a collaborator from a place
-	RemoveCollaborator(ctx context.Context, placeID, userID string) error
-	
-	// GetCollaborators retrieves all collaborators for a place
-	GetCollaborators(ctx context.Context, placeID string) ([]Collaborator, error)
+// SearchResult contains search results with metadata
+type SearchResult struct {
+	Places []*Place
+	Total  int64
+}
+
+// Bounds represents geographical bounds
+type Bounds struct {
+	MinLat float64
+	MaxLat float64
+	MinLng float64
+	MaxLng float64
 }

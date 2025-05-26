@@ -201,6 +201,7 @@ func TestServicePG_Login(t *testing.T) {
 		password := "password123"
 
 		mockRepo.On("GetByEmail", ctx, email).Return(nil, errors.New("not found")).Once()
+		mockRepo.On("GetByUsername", ctx, email).Return(nil, errors.New("not found")).Once()
 
 		result, err := service.Login(ctx, email, password)
 		assert.Error(t, err)

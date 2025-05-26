@@ -243,7 +243,7 @@ func (r *postgresRepository) Search(ctx context.Context, query string) ([]*User,
 		WHERE username ILIKE $1 OR email ILIKE $1 OR profile_name ILIKE $1`
 
 	searchPattern := "%" + query + "%"
-	rows, err := r.db.QueryContext(ctx, searchQuery, searchPattern)
+	rows, err := r.db.QueryContext(ctx, searchQuery, searchPattern, searchPattern, searchPattern)
 	if err != nil {
 		return nil, fmt.Errorf("failed to search users: %w", err)
 	}
