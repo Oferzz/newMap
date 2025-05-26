@@ -3,7 +3,6 @@ package trips
 import (
 	"strconv"
 
-	"github.com/Oferzz/newMap/apps/api/internal/middleware"
 	"github.com/Oferzz/newMap/apps/api/pkg/response"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -19,8 +18,23 @@ func NewHandler(service Service) *Handler {
 	}
 }
 
+// getUserID extracts the user ID from the gin context
+func getUserID(c *gin.Context) (primitive.ObjectID, bool) {
+	userIDValue, exists := c.Get("userID")
+	if !exists {
+		return primitive.NilObjectID, false
+	}
+	
+	userID, ok := userIDValue.(primitive.ObjectID)
+	if !ok {
+		return primitive.NilObjectID, false
+	}
+	
+	return userID, true
+}
+
 func (h *Handler) Create(c *gin.Context) {
-	userID, exists := middleware.GetUserID(c)
+	userID, exists := getUserID(c)
 	if !exists {
 		response.Unauthorized(c, "User not authenticated")
 		return
@@ -53,7 +67,7 @@ func (h *Handler) GetByID(c *gin.Context) {
 
 	// Get user ID if authenticated (optional for public trips)
 	userID := primitive.NilObjectID
-	if id, exists := middleware.GetUserID(c); exists {
+	if id, exists := getUserID(c); exists {
 		userID = id
 	}
 
@@ -74,7 +88,7 @@ func (h *Handler) GetByID(c *gin.Context) {
 }
 
 func (h *Handler) Update(c *gin.Context) {
-	userID, exists := middleware.GetUserID(c)
+	userID, exists := getUserID(c)
 	if !exists {
 		response.Unauthorized(c, "User not authenticated")
 		return
@@ -112,7 +126,7 @@ func (h *Handler) Update(c *gin.Context) {
 }
 
 func (h *Handler) Delete(c *gin.Context) {
-	userID, exists := middleware.GetUserID(c)
+	userID, exists := getUserID(c)
 	if !exists {
 		response.Unauthorized(c, "User not authenticated")
 		return
@@ -195,7 +209,7 @@ func (h *Handler) List(c *gin.Context) {
 
 	// Get current user ID if authenticated
 	var userID *primitive.ObjectID
-	if id, exists := middleware.GetUserID(c); exists {
+	if id, exists := getUserID(c); exists {
 		userID = &id
 	}
 
@@ -217,7 +231,7 @@ func (h *Handler) List(c *gin.Context) {
 }
 
 func (h *Handler) InviteCollaborator(c *gin.Context) {
-	userID, exists := middleware.GetUserID(c)
+	userID, exists := getUserID(c)
 	if !exists {
 		response.Unauthorized(c, "User not authenticated")
 		return
@@ -257,7 +271,7 @@ func (h *Handler) InviteCollaborator(c *gin.Context) {
 }
 
 func (h *Handler) RemoveCollaborator(c *gin.Context) {
-	userID, exists := middleware.GetUserID(c)
+	userID, exists := getUserID(c)
 	if !exists {
 		response.Unauthorized(c, "User not authenticated")
 		return
@@ -296,7 +310,7 @@ func (h *Handler) RemoveCollaborator(c *gin.Context) {
 }
 
 func (h *Handler) UpdateCollaboratorRole(c *gin.Context) {
-	userID, exists := middleware.GetUserID(c)
+	userID, exists := getUserID(c)
 	if !exists {
 		response.Unauthorized(c, "User not authenticated")
 		return
@@ -336,7 +350,7 @@ func (h *Handler) UpdateCollaboratorRole(c *gin.Context) {
 }
 
 func (h *Handler) LeaveTrip(c *gin.Context) {
-	userID, exists := middleware.GetUserID(c)
+	userID, exists := getUserID(c)
 	if !exists {
 		response.Unauthorized(c, "User not authenticated")
 		return

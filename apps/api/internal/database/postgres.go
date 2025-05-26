@@ -103,7 +103,7 @@ func (db *PostgresDB) CreateExtensions(ctx context.Context) error {
 	}
 
 	for _, ext := range extensions {
-		if _, err := db.ExecContext(ctx, ext); err != nil {
+		if _, err := db.DB.ExecContext(ctx, ext); err != nil {
 			return fmt.Errorf("failed to create extension: %w", err)
 		}
 	}
@@ -129,7 +129,7 @@ func (db *PostgresDB) BeginTx(ctx context.Context) (*sql.Tx, error) {
 
 // Transaction executes a function within a database transaction
 func (db *PostgresDB) Transaction(ctx context.Context, fn func(*sqlx.Tx) error) error {
-	tx, err := db.BeginTxx(ctx, nil)
+	tx, err := db.DB.BeginTxx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
@@ -160,13 +160,13 @@ func (db *PostgresDB) HealthCheck(ctx context.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	if err := db.PingContext(ctx); err != nil {
+	if err := db.DB.PingContext(ctx); err != nil {
 		return fmt.Errorf("database health check failed: %w", err)
 	}
 
 	// Check if we can execute a simple query
 	var result int
-	if err := db.GetContext(ctx, &result, "SELECT 1"); err != nil {
+	if err := db.DB.GetContext(ctx, &result, "SELECT 1"); err != nil {
 		return fmt.Errorf("database query health check failed: %w", err)
 	}
 
