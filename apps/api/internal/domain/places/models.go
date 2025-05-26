@@ -1,137 +1,331 @@
 package places
 
 import (
+	"database/sql/driver"
+	"encoding/json"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"github.com/lib/pq"
 )
-
-type PlaceCategory string
-
-const (
-	CategoryAccommodation PlaceCategory = "accommodation"
-	CategoryRestaurant    PlaceCategory = "restaurant"
-	CategoryAttraction    PlaceCategory = "attraction"
-	CategoryTransport     PlaceCategory = "transport"
-	CategoryShopping      PlaceCategory = "shopping"
-	CategoryNightlife     PlaceCategory = "nightlife"
-	CategoryOutdoor       PlaceCategory = "outdoor"
-	CategoryCultural      PlaceCategory = "cultural"
-	CategoryOther         PlaceCategory = "other"
-)
-
-type Location struct {
-	Type        string    `bson:"type" json:"type"`
-	Coordinates []float64 `bson:"coordinates" json:"coordinates"` // [longitude, latitude]
-}
 
 type Place struct {
-	ID          primitive.ObjectID   `bson:"_id,omitempty" json:"id"`
-	TripID      primitive.ObjectID   `bson:"trip_id" json:"trip_id"`
-	ParentID    *primitive.ObjectID  `bson:"parent_id,omitempty" json:"parent_id,omitempty"`
-	Name        string               `bson:"name" json:"name"`
-	Description string               `bson:"description" json:"description"`
-	Category    PlaceCategory        `bson:"category" json:"category"`
-	Location    Location             `bson:"location" json:"location"`
-	Address     string               `bson:"address" json:"address"`
-	GooglePlaceID string             `bson:"google_place_id,omitempty" json:"google_place_id,omitempty"`
-	Images      []string             `bson:"images" json:"images"`
-	Tags        []string             `bson:"tags" json:"tags"`
-	Notes       string               `bson:"notes" json:"notes"`
-	Rating      float32              `bson:"rating" json:"rating"`
-	Cost        *Cost                `bson:"cost,omitempty" json:"cost,omitempty"`
-	VisitDate   *time.Time           `bson:"visit_date,omitempty" json:"visit_date,omitempty"`
-	Duration    int                  `bson:"duration" json:"duration"` // in minutes
-	IsVisited   bool                 `bson:"is_visited" json:"is_visited"`
-	CreatedBy   primitive.ObjectID   `bson:"created_by" json:"created_by"`
-	CreatedAt   time.Time            `bson:"created_at" json:"created_at"`
-	UpdatedAt   time.Time            `bson:"updated_at" json:"updated_at"`
+	ID            string         `db:"id" json:"id"`
+	Name          string         `db:"name" json:"name"`
+	Description   string         `db:"description" json:"description"`
+	Type          string         `db:"type" json:"type"` // 'poi', 'area', 'region'
+	ParentID      *string        `db:"parent_id" json:"parent_id,omitempty"`
+	Location      *GeoPoint      `db:"location" json:"location,omitempty"`
+	Bounds        *GeoPolygon    `db:"bounds" json:"bounds,omitempty"`
+	StreetAddress string         `db:"street_address" json:"street_address"`
+	City          string         `db:"city" json:"city"`
+	State         string         `db:"state" json:"state"`
+	Country       string         `db:"country" json:"country"`
+	PostalCode    string         `db:"postal_code" json:"postal_code"`
+	CreatedBy     string         `db:"created_by" json:"created_by"`
+	Category      pq.StringArray `db:"category" json:"category"`
+	Tags          pq.StringArray `db:"tags" json:"tags"`
+	OpeningHours  *OpeningHours  `db:"opening_hours" json:"opening_hours,omitempty"`
+	ContactInfo   *ContactInfo   `db:"contact_info" json:"contact_info,omitempty"`
+	Amenities     pq.StringArray `db:"amenities" json:"amenities"`
+	AverageRating *float32       `db:"average_rating" json:"average_rating,omitempty"`
+	RatingCount   int            `db:"rating_count" json:"rating_count"`
+	Privacy       string         `db:"privacy" json:"privacy"`
+	Status        string         `db:"status" json:"status"`
+	CreatedAt     time.Time      `db:"created_at" json:"created_at"`
+	UpdatedAt     time.Time      `db:"updated_at" json:"updated_at"`
+
+	// Joined fields
+	Media         []Media        `json:"media,omitempty"`
+	Collaborators []Collaborator `json:"collaborators,omitempty"`
 }
 
-type Cost struct {
-	Currency string  `bson:"currency" json:"currency"`
-	Amount   float64 `bson:"amount" json:"amount"`
-	PerPerson bool   `bson:"per_person" json:"per_person"`
+// GeoPoint represents a PostGIS geography point
+type GeoPoint struct {
+	Type        string    `json:"type"`
+	Coordinates []float64 `json:"coordinates"` // [longitude, latitude]
 }
 
+// GeoPolygon represents a PostGIS geography polygon
+type GeoPolygon struct {
+	Type        string        `json:"type"`
+	Coordinates [][][]float64 `json:"coordinates"`
+}
+
+// OpeningHours stores business hours in JSONB
+type OpeningHours struct {
+	Monday    []TimeRange `json:"monday,omitempty"`
+	Tuesday   []TimeRange `json:"tuesday,omitempty"`
+	Wednesday []TimeRange `json:"wednesday,omitempty"`
+	Thursday  []TimeRange `json:"thursday,omitempty"`
+	Friday    []TimeRange `json:"friday,omitempty"`
+	Saturday  []TimeRange `json:"saturday,omitempty"`
+	Sunday    []TimeRange `json:"sunday,omitempty"`
+}
+
+type TimeRange struct {
+	Open  string `json:"open"`  // "09:00"
+	Close string `json:"close"` // "17:00"
+}
+
+// ContactInfo stores contact information in JSONB
+type ContactInfo struct {
+	Phone   string `json:"phone,omitempty"`
+	Email   string `json:"email,omitempty"`
+	Website string `json:"website,omitempty"`
+	Social  Social `json:"social,omitempty"`
+}
+
+type Social struct {
+	Facebook  string `json:"facebook,omitempty"`
+	Instagram string `json:"instagram,omitempty"`
+	Twitter   string `json:"twitter,omitempty"`
+}
+
+type Media struct {
+	ID              string     `db:"id" json:"id"`
+	MediaID         string     `db:"media_id" json:"media_id"`
+	PlaceID         string     `db:"place_id" json:"place_id"`
+	Caption         string     `db:"caption" json:"caption"`
+	OrderPosition   int        `db:"order_position" json:"order_position"`
+	CreatedAt       time.Time  `db:"created_at" json:"created_at"`
+	
+	// Joined media details
+	URL           string     `json:"url,omitempty"`
+	ThumbnailURL  string     `json:"thumbnail_url,omitempty"`
+	MimeType      string     `json:"mime_type,omitempty"`
+	UploadedBy    string     `json:"uploaded_by,omitempty"`
+}
+
+type Collaborator struct {
+	ID          string          `db:"id" json:"id"`
+	PlaceID     string          `db:"place_id" json:"place_id"`
+	UserID      string          `db:"user_id" json:"user_id"`
+	Role        string          `db:"role" json:"role"`
+	Permissions json.RawMessage `db:"permissions" json:"permissions"`
+	CreatedAt   time.Time       `db:"created_at" json:"created_at"`
+
+	// Joined user info
+	Username    string `json:"username,omitempty"`
+	DisplayName string `json:"display_name,omitempty"`
+	AvatarURL   string `json:"avatar_url,omitempty"`
+}
+
+// Value implementations for custom types
+func (g GeoPoint) Value() (driver.Value, error) {
+	if len(g.Coordinates) == 0 {
+		return nil, nil
+	}
+	// Convert to PostGIS format: POINT(longitude latitude)
+	return json.Marshal(g)
+}
+
+func (g *GeoPoint) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+	
+	var data []byte
+	switch v := value.(type) {
+	case []byte:
+		data = v
+	case string:
+		data = []byte(v)
+	default:
+		return nil
+	}
+	
+	return json.Unmarshal(data, g)
+}
+
+func (g GeoPolygon) Value() (driver.Value, error) {
+	if len(g.Coordinates) == 0 {
+		return nil, nil
+	}
+	return json.Marshal(g)
+}
+
+func (g *GeoPolygon) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+	
+	var data []byte
+	switch v := value.(type) {
+	case []byte:
+		data = v
+	case string:
+		data = []byte(v)
+	default:
+		return nil
+	}
+	
+	return json.Unmarshal(data, g)
+}
+
+func (o OpeningHours) Value() (driver.Value, error) {
+	return json.Marshal(o)
+}
+
+func (o *OpeningHours) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+	
+	var data []byte
+	switch v := value.(type) {
+	case []byte:
+		data = v
+	case string:
+		data = []byte(v)
+	default:
+		return nil
+	}
+	
+	return json.Unmarshal(data, o)
+}
+
+func (c ContactInfo) Value() (driver.Value, error) {
+	return json.Marshal(c)
+}
+
+func (c *ContactInfo) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+	
+	var data []byte
+	switch v := value.(type) {
+	case []byte:
+		data = v
+	case string:
+		data = []byte(v)
+	default:
+		return nil
+	}
+	
+	return json.Unmarshal(data, c)
+}
+
+// Input types
 type CreatePlaceInput struct {
-	TripID      string         `json:"trip_id" binding:"required"`
-	ParentID    *string        `json:"parent_id,omitempty"`
-	Name        string         `json:"name" binding:"required,min=1,max=200"`
-	Description string         `json:"description" binding:"max=1000"`
-	Category    PlaceCategory  `json:"category" binding:"required"`
-	Latitude    float64        `json:"latitude" binding:"required,min=-90,max=90"`
-	Longitude   float64        `json:"longitude" binding:"required,min=-180,max=180"`
-	Address     string         `json:"address" binding:"max=500"`
-	GooglePlaceID *string      `json:"google_place_id,omitempty"`
-	Images      []string       `json:"images,omitempty" binding:"omitempty,max=10,dive,url"`
-	Tags        []string       `json:"tags,omitempty" binding:"omitempty,max=10,dive,min=1,max=30"`
-	Notes       string         `json:"notes,omitempty" binding:"omitempty,max=2000"`
-	Rating      float32        `json:"rating,omitempty" binding:"omitempty,min=0,max=5"`
-	Cost        *Cost          `json:"cost,omitempty"`
-	VisitDate   *time.Time     `json:"visit_date,omitempty"`
-	Duration    int            `json:"duration,omitempty" binding:"omitempty,min=0,max=1440"`
+	Name          string        `json:"name" binding:"required,min=1,max=255"`
+	Description   string        `json:"description" binding:"max=1000"`
+	Type          string        `json:"type" binding:"required,oneof=poi area region"`
+	ParentID      *string       `json:"parent_id,omitempty" binding:"omitempty,uuid"`
+	Location      *LocationInput `json:"location,omitempty"`
+	Bounds        *BoundsInput   `json:"bounds,omitempty"`
+	StreetAddress string        `json:"street_address" binding:"max=255"`
+	City          string        `json:"city" binding:"max=100"`
+	State         string        `json:"state" binding:"max=100"`
+	Country       string        `json:"country" binding:"max=100"`
+	PostalCode    string        `json:"postal_code" binding:"max=20"`
+	Category      []string      `json:"category"`
+	Tags          []string      `json:"tags"`
+	OpeningHours  *OpeningHours `json:"opening_hours,omitempty"`
+	ContactInfo   *ContactInfo  `json:"contact_info,omitempty"`
+	Amenities     []string      `json:"amenities"`
+	Privacy       string        `json:"privacy" binding:"omitempty,oneof=public friends private"`
+}
+
+type LocationInput struct {
+	Latitude  float64 `json:"latitude" binding:"required,min=-90,max=90"`
+	Longitude float64 `json:"longitude" binding:"required,min=-180,max=180"`
+}
+
+type BoundsInput struct {
+	Coordinates [][][]float64 `json:"coordinates" binding:"required"`
 }
 
 type UpdatePlaceInput struct {
-	Name        *string        `json:"name,omitempty" binding:"omitempty,min=1,max=200"`
-	Description *string        `json:"description,omitempty" binding:"omitempty,max=1000"`
-	Category    *PlaceCategory `json:"category,omitempty"`
-	Latitude    *float64       `json:"latitude,omitempty" binding:"omitempty,min=-90,max=90"`
-	Longitude   *float64       `json:"longitude,omitempty" binding:"omitempty,min=-180,max=180"`
-	Address     *string        `json:"address,omitempty" binding:"omitempty,max=500"`
-	Images      []string       `json:"images,omitempty" binding:"omitempty,max=10,dive,url"`
-	Tags        []string       `json:"tags,omitempty" binding:"omitempty,max=10,dive,min=1,max=30"`
-	Notes       *string        `json:"notes,omitempty" binding:"omitempty,max=2000"`
-	Rating      *float32       `json:"rating,omitempty" binding:"omitempty,min=0,max=5"`
-	Cost        *Cost          `json:"cost,omitempty"`
-	VisitDate   *time.Time     `json:"visit_date,omitempty"`
-	Duration    *int           `json:"duration,omitempty" binding:"omitempty,min=0,max=1440"`
-	IsVisited   *bool          `json:"is_visited,omitempty"`
+	Name          *string        `json:"name,omitempty" binding:"omitempty,min=1,max=255"`
+	Description   *string        `json:"description,omitempty" binding:"omitempty,max=1000"`
+	Type          *string        `json:"type,omitempty" binding:"omitempty,oneof=poi area region"`
+	Location      *LocationInput `json:"location,omitempty"`
+	Bounds        *BoundsInput   `json:"bounds,omitempty"`
+	StreetAddress *string        `json:"street_address,omitempty" binding:"omitempty,max=255"`
+	City          *string        `json:"city,omitempty" binding:"omitempty,max=100"`
+	State         *string        `json:"state,omitempty" binding:"omitempty,max=100"`
+	Country       *string        `json:"country,omitempty" binding:"omitempty,max=100"`
+	PostalCode    *string        `json:"postal_code,omitempty" binding:"omitempty,max=20"`
+	Category      []string       `json:"category,omitempty"`
+	Tags          []string       `json:"tags,omitempty"`
+	OpeningHours  *OpeningHours  `json:"opening_hours,omitempty"`
+	ContactInfo   *ContactInfo   `json:"contact_info,omitempty"`
+	Amenities     []string       `json:"amenities,omitempty"`
+	Privacy       *string        `json:"privacy,omitempty" binding:"omitempty,oneof=public friends private"`
+	Status        *string        `json:"status,omitempty" binding:"omitempty,oneof=active pending archived"`
 }
 
-type PlaceFilter struct {
-	TripID     *primitive.ObjectID
-	ParentID   *primitive.ObjectID
-	Category   *PlaceCategory
-	IsVisited  *bool
-	Tags       []string
-	MinRating  *float32
-	MaxCost    *float64
-	DateFrom   *time.Time
-	DateTo     *time.Time
-	Bounds     *GeoBounds
-	SearchQuery string
+type SearchPlacesInput struct {
+	Query     string   `form:"q" binding:"max=100"`
+	Type      string   `form:"type" binding:"omitempty,oneof=poi area region"`
+	Category  []string `form:"category"`
+	Tags      []string `form:"tags"`
+	City      string   `form:"city"`
+	Country   string   `form:"country"`
+	Latitude  *float64 `form:"lat" binding:"omitempty,min=-90,max=90"`
+	Longitude *float64 `form:"lng" binding:"omitempty,min=-180,max=180"`
+	Radius    *int     `form:"radius" binding:"omitempty,min=1,max=50000"` // meters
+	Limit     int      `form:"limit" binding:"min=1,max=100"`
+	Offset    int      `form:"offset" binding:"min=0"`
 }
 
-type GeoBounds struct {
-	MinLat float64 `json:"min_lat"`
-	MaxLat float64 `json:"max_lat"`
-	MinLng float64 `json:"min_lng"`
-	MaxLng float64 `json:"max_lng"`
+type NearbyPlacesInput struct {
+	Latitude  float64  `form:"lat" binding:"required,min=-90,max=90"`
+	Longitude float64  `form:"lng" binding:"required,min=-180,max=180"`
+	Radius    int      `form:"radius" binding:"required,min=1,max=50000"` // meters
+	Type      string   `form:"type" binding:"omitempty,oneof=poi area region"`
+	Category  []string `form:"category"`
+	Tags      []string `form:"tags"`
+	Limit     int      `form:"limit" binding:"min=1,max=100"`
+	Offset    int      `form:"offset" binding:"min=0"`
 }
 
-type PlaceListOptions struct {
-	Filter PlaceFilter
-	Page   int
-	Limit  int
-	Sort   string
+// Helper methods
+func (p *Place) IsOwner(userID string) bool {
+	return p.CreatedBy == userID
 }
 
-func (c PlaceCategory) IsValid() bool {
-	switch c {
-	case CategoryAccommodation, CategoryRestaurant, CategoryAttraction,
-		CategoryTransport, CategoryShopping, CategoryNightlife,
-		CategoryOutdoor, CategoryCultural, CategoryOther:
+func (p *Place) HasCollaborator(userID string) bool {
+	for _, c := range p.Collaborators {
+		if c.UserID == userID {
+			return true
+		}
+	}
+	return false
+}
+
+func (p *Place) GetCollaborator(userID string) *Collaborator {
+	for _, c := range p.Collaborators {
+		if c.UserID == userID {
+			return &c
+		}
+	}
+	return nil
+}
+
+func (p *Place) CanUserEdit(userID string) bool {
+	if p.IsOwner(userID) {
 		return true
-	default:
+	}
+	
+	collaborator := p.GetCollaborator(userID)
+	if collaborator == nil {
 		return false
 	}
+	
+	return collaborator.Role == "admin" || collaborator.Role == "editor"
 }
 
-func NewLocation(longitude, latitude float64) Location {
-	return Location{
-		Type:        "Point",
-		Coordinates: []float64{longitude, latitude},
+func (p *Place) CanUserDelete(userID string) bool {
+	if p.IsOwner(userID) {
+		return true
 	}
+	
+	collaborator := p.GetCollaborator(userID)
+	if collaborator == nil {
+		return false
+	}
+	
+	return collaborator.Role == "admin"
 }
