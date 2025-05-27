@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/lib/pq"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Place struct {
@@ -333,8 +332,8 @@ func (p *Place) CanUserDelete(userID string) bool {
 
 // PlaceFilter contains filter criteria for places
 type PlaceFilter struct {
-	TripID      *primitive.ObjectID
-	ParentID    *primitive.ObjectID
+	TripID      *string
+	ParentID    *string
 	Category    *PlaceCategory
 	IsVisited   *bool
 	Tags        []string

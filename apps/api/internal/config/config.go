@@ -1,9 +1,11 @@
 package config
 
 import (
+	"bufio"
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -56,6 +58,8 @@ type AppConfig struct {
 	AllowedOrigins  []string
 	MaxUploadSize   int64
 	RateLimitPerMin int
+	MapboxAPIKey    string
+	MongoDBURI      string // For backward compatibility if needed
 }
 
 type MediaConfig struct {
@@ -66,10 +70,59 @@ type MediaConfig struct {
 	ThumbnailQuality int
 }
 
+// loadRenderSecrets loads secrets from Render's secret file if it exists
+func loadRenderSecrets() {
+	secretsFile := "/etc/secrets/tokens"
+	
+	// Check if file exists
+	if _, err := os.Stat(secretsFile); os.IsNotExist(err) {
+		return
+	}
+	
+	file, err := os.Open(secretsFile)
+	if err != nil {
+		log.Printf("Failed to open Render secrets file: %v", err)
+		return
+	}
+	defer file.Close()
+	
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		// Skip empty lines and comments
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		
+		// Split key=value
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		
+		key := strings.TrimSpace(parts[0])
+		value := strings.TrimSpace(parts[1])
+		
+		// Set environment variable if not already set
+		if os.Getenv(key) == "" {
+			os.Setenv(key, value)
+			log.Printf("Loaded secret from Render: %s", key)
+		}
+	}
+	
+	if err := scanner.Err(); err != nil {
+		log.Printf("Error reading Render secrets file: %v", err)
+	}
+}
+
 func Load() (*Config, error) {
+	// Load .env file first (for local development)
 	if err := godotenv.Load(); err != nil {
 		log.Println("No .env file found")
 	}
+	
+	// Load Render secrets (will override .env if keys exist)
+	loadRenderSecrets()
 
 	cfg := &Config{
 		Server: ServerConfig{
@@ -106,6 +159,8 @@ func Load() (*Config, error) {
 			AllowedOrigins:  []string{"http://localhost:3000", "http://localhost:5173"},
 			MaxUploadSize:   getInt64Env("MAX_UPLOAD_SIZE", 10*1024*1024), // 10MB
 			RateLimitPerMin: getIntEnv("RATE_LIMIT_PER_MIN", 60),
+			MapboxAPIKey:    getEnv("MAPBOX_ACCESS_TOKEN", getEnv("MAPBOX_API_KEY", "")), // Support both naming conventions
+			MongoDBURI:      getEnv("MONGODB_URI", ""), // For backward compatibility
 		},
 		Media: MediaConfig{
 			StoragePath:      getEnv("MEDIA_PATH", "/data/media"),

@@ -1,231 +1,253 @@
-# Production Deployment Guide
+# Deployment Guide for Trip Planning Platform
 
-## 🚀 Quick Start Deployment
+This guide explains how to deploy the Trip Planning Platform to Render.com.
 
-### Prerequisites
-1. GitHub account with the repository
-2. Render.com account (free tier available)
-3. Mapbox account for API keys
+## Prerequisites
 
-### Step-by-Step Deployment
+1. A Render.com account
+2. A GitHub repository with the code
+3. PostgreSQL database (provided by Render)
+4. Redis instance (provided by Render)
+5. Mapbox API key
 
-#### 1. Fork/Clone Repository
+## Step-by-Step Deployment
+
+### 1. Fork/Clone the Repository
+
+First, ensure your code is pushed to GitHub:
+
 ```bash
-git clone https://github.com/Oferzz/newMap.git
-cd newMap
+git add .
+git commit -m "feat: prepare for deployment"
+git push origin main
 ```
 
-#### 2. Set Up Render Account
-1. Go to [render.com](https://render.com) and sign up
-2. Connect your GitHub account
-3. Add a payment method (required for database and Redis)
+### 2. Create Render Services
 
-#### 3. Deploy from Blueprint
-1. In Render dashboard, click **"New +"** → **"Blueprint"**
+Log in to [Render.com](https://render.com) and create the following services:
+
+#### A. PostgreSQL Database
+
+1. Click "New +" → "PostgreSQL"
+2. Configure:
+   - Name: `trip-planner-db`
+   - Database: `trip_planner`
+   - User: `trip_planner_user`
+   - Region: Choose closest to your users
+   - Plan: Starter ($7/month) or Free (for testing)
+3. Click "Create Database"
+4. Wait for the database to be ready
+5. Note the connection strings (Internal and External)
+
+#### B. Redis Instance
+
+1. Click "New +" → "Redis"
+2. Configure:
+   - Name: `trip-planner-cache`
+   - Region: Same as database
+   - Maxmemory Policy: `allkeys-lru`
+   - Plan: Starter ($7/month) or Free (for testing)
+3. Click "Create Redis"
+4. Note the connection strings
+
+#### C. Backend API Service
+
+1. Click "New +" → "Web Service"
 2. Connect your GitHub repository
-3. Select the `main` branch
-4. Review the services that will be created:
-   - Web Service (API) - $7/month
-   - Static Site (Frontend) - Free
-   - PostgreSQL Database - $7/month
-   - Redis - $7/month
-   - **Total: ~$21/month** (starter plan)
-
-#### 4. Configure Environment Variables
-Before clicking "Apply", set these environment variables:
-
-**For API Service:**
-```
-MAPBOX_API_KEY=sk.your_mapbox_secret_key
-```
-
-**For Web Service:**
-```
-VITE_MAPBOX_TOKEN=pk.your_mapbox_public_token
-```
-
-#### 5. Deploy
-1. Click **"Apply"** to start deployment
-2. Wait 10-15 minutes for all services to deploy
-3. Your app will be available at:
-   - API: `https://trip-planner-api.onrender.com`
-   - Web: `https://trip-planner-web.onrender.com`
-
-## 📊 Architecture Overview
-
-```
-┌─────────────────┐     ┌─────────────────┐
-│   React Web     │────▶│    Go API       │
-│  (Static Site)  │     │  (Web Service)  │
-└─────────────────┘     └─────┬───────────┘
-                              │
-                    ┌─────────┴─────────┐
-                    ▼                   ▼
-            ┌─────────────┐     ┌─────────────┐
-            │ PostgreSQL  │     │    Redis    │
-            │   (PostGIS) │     │   (Cache)   │
-            └─────────────┘     └─────────────┘
-```
-
-## 🔧 Configuration Details
-
-### Database Schema
-The PostgreSQL database includes:
-- PostGIS extension for geospatial queries
-- Tables: users, trips, places, media
-- Automatic migrations on deployment
-
-### API Endpoints
-- Health: `GET /api/health`
-- Auth: `POST /api/v1/auth/register`, `POST /api/v1/auth/login`
-- Users: `GET/PUT /api/v1/users/:id`
-- Trips: Full CRUD at `/api/v1/trips`
-- Places: Full CRUD at `/api/v1/places`
-
-### Security Features
-- JWT authentication
-- Role-based access control (RBAC)
-- Rate limiting (60 requests/minute)
-- CORS configuration
-- Input validation
-
-## 🎯 Post-Deployment Tasks
-
-### 1. Verify Deployment
-```bash
-# Check API health
-curl https://trip-planner-api.onrender.com/api/health
-
-# Response should be:
-# {"status":"ok","timestamp":"...","services":{...}}
-```
-
-### 2. Create First Admin User
-```bash
-curl -X POST https://trip-planner-api.onrender.com/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@example.com",
-    "username": "admin",
-    "password": "your-secure-password",
-    "display_name": "Admin User"
-  }'
-```
-
-### 3. Set Up Monitoring
-1. Enable Render's metrics in the dashboard
-2. Set up alerts for service health
-3. Configure log retention (7 days free, more with paid plans)
-
-### 4. Custom Domain (Optional)
-1. Add custom domain in Render dashboard
-2. Update DNS records:
+3. Configure:
+   - Name: `trip-planner-api`
+   - Environment: Docker
+   - Dockerfile Path: `./apps/api/Dockerfile.render`
+   - Docker Context Directory: `.`
+   - Branch: `main`
+4. Add secret file:
+   - Go to "Environment" → "Secret Files"
+   - Create file: `/etc/secrets/tokens`
+   - Add content:
+     ```
+     MAPBOX_ACCESS_TOKEN=your_mapbox_token_here
+     MONGODB_URI=your_mongodb_uri_if_needed
+     ```
+5. Add environment variables:
    ```
-   Type: CNAME
-   Name: app
-   Value: trip-planner-web.onrender.com
+   PORT=8080
+   DATABASE_URL=[Internal Database URL from PostgreSQL]
+   REDIS_URL=[Internal Redis URL]
+   INTERNAL_REDIS_URL=[Internal Redis URL]
+   JWT_SECRET=[Generate a secure random string]
+   JWT_ISSUER=trip-planner
+   MEDIA_PATH=/data/media
+   CDN_URL=https://trip-planner-api.onrender.com
+   DB_MIGRATIONS_PATH=./migrations
+   ENVIRONMENT=production
+   RUN_MIGRATIONS=true
    ```
-3. SSL certificates are automatic
+   Note: MAPBOX_ACCESS_TOKEN is loaded from /etc/secrets/tokens
+6. Add a disk:
+   - Mount Path: `/data`
+   - Size: 20GB (for media storage)
+7. Click "Create Web Service"
 
-## 🔄 Continuous Deployment
+#### D. Frontend Web Service
 
-### GitHub Actions Integration
-The repository includes GitHub Actions workflows:
-- **CI Pipeline**: Runs on every PR
-- **Deploy Pipeline**: Auto-deploys on merge to main
-- **Security Scans**: Weekly vulnerability scanning
+1. Click "New +" → "Static Site"
+2. Connect your GitHub repository
+3. Configure:
+   - Name: `trip-planner-web`
+   - Build Command: `cd apps/web && npm install && npm run build`
+   - Publish Directory: `apps/web/dist`
+   - Branch: `main`
+4. Add environment variables:
+   ```
+   VITE_API_URL=https://trip-planner-api.onrender.com/api/v1
+   VITE_WS_URL=wss://trip-planner-api.onrender.com
+   VITE_MAPBOX_TOKEN=[Your Mapbox API key]
+   ```
+5. Click "Create Static Site"
 
-### Manual Deployment
-```bash
-# From Render dashboard
-# 1. Go to your service
-# 2. Click "Manual Deploy"
-# 3. Select branch and deploy
-```
+### 3. Configure render.yaml
 
-## 📈 Scaling Options
+The repository includes a `render.yaml` file that defines all services. You can also use Render Blueprints:
 
-### Starter → Standard Upgrade
-When you need more resources:
+1. Go to Blueprints in Render dashboard
+2. Click "New Blueprint Instance"
+3. Connect your GitHub repository
+4. Select the branch with `render.yaml`
+5. Review and apply the configuration
 
-1. **API Service**: Upgrade to Standard ($25/month)
-   - 2GB RAM → 4GB RAM
-   - Shared CPU → Dedicated CPU
-   - Auto-scaling to 10 instances
+### 4. Set Up GitHub Secrets
 
-2. **Database**: Upgrade to Standard ($30/month)
-   - 256MB RAM → 1GB RAM
-   - 1GB storage → 16GB storage
-   - Daily backups
+For automated deployments, add these secrets to your GitHub repository:
 
-3. **Redis**: Upgrade to Standard ($30/month)
-   - 25MB → 1GB memory
-   - Persistence enabled
+1. Go to Settings → Secrets and variables → Actions
+2. Add:
+   - `RENDER_API_KEY`: Get from Render Account Settings
+   - `RENDER_SERVICE_ID`: Your API service ID from Render
+   - `SLACK_WEBHOOK` (optional): For deployment notifications
 
-### Performance Optimization
-1. Enable CDN for static assets
-2. Use Cloudflare for global distribution
-3. Implement database read replicas
-4. Add more Redis cache strategies
+### 5. Run Database Migrations
 
-## 🐛 Troubleshooting
+After the API service is deployed:
+
+1. Go to the API service in Render
+2. Click "Shell" tab
+3. Run:
+   ```bash
+   cd /app
+   ./server migrate up
+   ```
+
+### 6. Verify Deployment
+
+1. Check service logs in Render dashboard
+2. Visit your API health endpoint: `https://trip-planner-api.onrender.com/api/health`
+3. Visit your frontend: `https://trip-planner-web.onrender.com`
+
+## Environment-Specific Configuration
+
+### Production Environment Variables
+
+Make sure these are set in Render:
+
+- `ENVIRONMENT=production`
+- `JWT_SECRET`: Use a strong, unique secret
+- `ALLOWED_ORIGINS`: Set to your frontend URL
+- `CORS_ORIGINS`: Set to your frontend URL
+
+### Security Considerations
+
+1. Enable Render's DDoS protection
+2. Set up Cloudflare (optional) for CDN and additional security
+3. Configure rate limiting in the API
+4. Use environment-specific secrets
+5. Enable HTTPS (automatic with Render)
+
+## Monitoring and Maintenance
+
+### Health Checks
+
+The API includes health endpoints:
+- `/api/health` - Basic health check
+- `/api/health/ready` - Readiness check (includes DB connection)
+
+### Logs
+
+Access logs through:
+1. Render dashboard → Service → Logs
+2. Use Render's log streaming API
+3. Integrate with external logging services
+
+### Backups
+
+1. Enable automatic PostgreSQL backups in Render
+2. Set up regular exports for critical data
+3. Test restore procedures regularly
+
+## Troubleshooting
 
 ### Common Issues
 
-#### Build Failures
-```bash
-# Check build logs
-# Render Dashboard → Service → Events → Build Logs
-```
+1. **Database Connection Failed**
+   - Check DATABASE_URL is using internal URL
+   - Verify PostgreSQL service is running
+   - Check network connectivity
 
-#### Database Connection Errors
-```bash
-# Verify DATABASE_URL format
-postgres://user:password@host:5432/database?sslmode=require
-```
+2. **Redis Connection Failed**
+   - Verify REDIS_URL is correct
+   - Check Redis service status
 
-#### Cold Starts
-- First request may take 10-30 seconds
-- Consider upgrading to eliminate cold starts
+3. **Frontend Can't Connect to API**
+   - Verify CORS settings
+   - Check API URL in frontend env vars
+   - Ensure API service is running
+
+4. **Media Upload Issues**
+   - Verify disk is mounted at `/data`
+   - Check file permissions
+   - Ensure sufficient disk space
 
 ### Debug Commands
+
+SSH into your API service:
 ```bash
-# SSH into service (Standard plan+)
-render ssh <service-name>
+# Check environment variables
+env | grep -E 'DATABASE|REDIS|JWT'
 
-# View logs
-render logs <service-name> --tail 100
+# Test database connection
+psql $DATABASE_URL -c "SELECT 1"
 
-# Run migrations manually
-render run --service api -- migrate up
+# Check disk usage
+df -h /data
+
+# View recent logs
+tail -f /var/log/app.log
 ```
 
-## 📚 Additional Resources
+## Scaling
 
-- [Render Documentation](https://render.com/docs)
-- [API Documentation](https://trip-planner-api.onrender.com/docs) (when Swagger is added)
-- [GitHub Repository](https://github.com/Oferzz/newMap)
-- [Mapbox Documentation](https://docs.mapbox.com)
+When ready to scale:
 
-## 💡 Tips
+1. **Vertical Scaling**: Upgrade to higher Render plans
+2. **Horizontal Scaling**: Increase min/max instances in render.yaml
+3. **Database Scaling**: Upgrade PostgreSQL plan
+4. **Caching**: Increase Redis memory allocation
 
-1. **Cost Optimization**
-   - Use free tier for staging environments
-   - Enable auto-sleep for non-production
-   - Monitor usage in billing dashboard
+## Cost Optimization
 
-2. **Security**
-   - Rotate JWT secrets quarterly
-   - Use environment groups for shared secrets
-   - Enable 2FA on Render account
+Estimated monthly costs:
+- PostgreSQL Starter: $7
+- Redis Starter: $7
+- API Service (Starter): $7
+- Static Site: Free
+- **Total**: ~$21/month
 
-3. **Performance**
-   - Pre-warm services with health checks
-   - Use aggressive caching strategies
-   - Optimize images before upload
+For production, consider:
+- Standard plans for better performance
+- Reserved instances for cost savings
+- CDN integration for static assets
 
-## 🆘 Support
+## Support
 
-- Render Support: support@render.com
-- GitHub Issues: [Create Issue](https://github.com/Oferzz/newMap/issues)
-- Community: [Render Community](https://community.render.com)
+- Render Documentation: https://render.com/docs
+- Render Community: https://community.render.com
+- GitHub Issues: Report bugs in the repository

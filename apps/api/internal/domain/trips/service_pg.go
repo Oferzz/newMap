@@ -11,12 +11,12 @@ import (
 )
 
 type servicePg struct {
-	repo     RepositoryInterface
+	repo     Repository
 	userRepo users.Repository
 }
 
 // NewService creates a new trip service
-func NewService(repo RepositoryInterface, userRepo users.Repository) Service {
+func NewService(repo Repository, userRepo users.Repository) Service {
 	return &servicePg{
 		repo:     repo,
 		userRepo: userRepo,

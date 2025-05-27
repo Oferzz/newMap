@@ -7,7 +7,6 @@ import (
 	"github.com/Oferzz/newMap/apps/api/internal/utils"
 	"github.com/Oferzz/newMap/apps/api/pkg/response"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
@@ -47,14 +46,7 @@ func (m *AuthMiddleware) RequireAuth() gin.HandlerFunc {
 			return
 		}
 		
-		userID, err := primitive.ObjectIDFromHex(claims.UserID)
-		if err != nil {
-			response.Unauthorized(c, "Invalid user ID in token")
-			c.Abort()
-			return
-		}
-		
-		c.Set(UserIDKey, userID)
+		c.Set(UserIDKey, claims.UserID)
 		c.Set(UserEmailKey, claims.Email)
 		c.Next()
 	}
@@ -74,13 +66,7 @@ func (m *AuthMiddleware) OptionalAuth() gin.HandlerFunc {
 			return
 		}
 		
-		userID, err := primitive.ObjectIDFromHex(claims.UserID)
-		if err != nil {
-			c.Next()
-			return
-		}
-		
-		c.Set(UserIDKey, userID)
+		c.Set(UserIDKey, claims.UserID)
 		c.Set(UserEmailKey, claims.Email)
 		c.Next()
 	}
@@ -108,13 +94,13 @@ func (m *AuthMiddleware) extractToken(c *gin.Context) string {
 	return strings.TrimPrefix(header, BearerPrefix)
 }
 
-func GetUserID(c *gin.Context) (primitive.ObjectID, bool) {
+func GetUserID(c *gin.Context) (string, bool) {
 	userID, exists := c.Get(UserIDKey)
 	if !exists {
-		return primitive.NilObjectID, false
+		return "", false
 	}
 	
-	id, ok := userID.(primitive.ObjectID)
+	id, ok := userID.(string)
 	return id, ok
 }
 

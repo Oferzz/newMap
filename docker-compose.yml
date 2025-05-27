@@ -1,0 +1,148 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database with PostGIS extension
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: trip-planner-db
+    environment:
+      POSTGRES_USER: trip_planner_user
+      POSTGRES_PASSWORD: trip_planner_pass
+      POSTGRES_DB: trip_planner
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./apps/api/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trip_planner_user -d trip_planner"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: trip-planner-cache
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Go API Service
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: trip-planner-api
+    ports:
+      - "8080:8080"
+    environment:
+      # Database
+      DATABASE_URL: postgresql://trip_planner_user:trip_planner_pass@postgres:5432/trip_planner?sslmode=disable
+      
+      # Redis
+      REDIS_URL: redis://redis:6379
+      INTERNAL_REDIS_URL: redis://redis:6379
+      
+      # Server
+      PORT: 8080
+      ENVIRONMENT: development
+      
+      # JWT
+      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      JWT_ISSUER: trip-planner
+      JWT_ACCESS_EXPIRY: 15m
+      JWT_REFRESH_EXPIRY: 7d
+      
+      # Media
+      MEDIA_PATH: /data/media
+      CDN_URL: http://localhost:8080
+      
+      # Database Migrations
+      DB_MIGRATIONS_PATH: ./migrations
+      
+      # CORS
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:5173
+      
+      # Application
+      APP_NAME: Trip Planning Platform
+      LOG_LEVEL: info
+      
+      # External Services (add your own keys)
+      MAPBOX_API_KEY: ${MAPBOX_API_KEY:-pk.your-mapbox-api-key}
+    volumes:
+      - ./apps/api:/app
+      - api_media:/data/media
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        until nc -z postgres 5432; do sleep 1; done &&
+        echo 'Database is ready!' &&
+        echo 'Running migrations...' &&
+        go run cmd/server/main.go migrate up &&
+        echo 'Starting server...' &&
+        go run cmd/server/main.go
+      "
+
+  # React Frontend (Development)
+  web:
+    image: node:20-alpine
+    container_name: trip-planner-web
+    working_dir: /app
+    ports:
+      - "3000:3000"
+    environment:
+      # API Configuration
+      VITE_API_URL: http://localhost:8080/api/v1
+      VITE_WS_URL: ws://localhost:8080
+      
+      # External Services
+      VITE_MAPBOX_TOKEN: ${MAPBOX_API_KEY:-pk.your-mapbox-api-key}
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+    command: >
+      sh -c "
+        npm install &&
+        npm run dev -- --host 0.0.0.0 --port 3000
+      "
+    depends_on:
+      - api
+
+  # Nginx Reverse Proxy (Optional - for production-like setup)
+  nginx:
+    image: nginx:alpine
+    container_name: trip-planner-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
+      - web
+    profiles:
+      - production
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  api_media:
+    driver: local
+
+networks:
+  default:
+    name: trip-planner-network

@@ -7,7 +7,6 @@ import (
 	"github.com/Oferzz/newMap/apps/api/internal/domain/users"
 	"github.com/Oferzz/newMap/apps/api/pkg/response"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type RBACMiddleware struct {
@@ -80,12 +79,7 @@ func (m *RBACMiddleware) RequireTripPermission(permission users.Permission) gin.
 			tripIDStr = c.Param("id")
 		}
 
-		tripID, err := primitive.ObjectIDFromHex(tripIDStr)
-		if err != nil {
-			response.BadRequest(c, "Invalid trip ID")
-			c.Abort()
-			return
-		}
+		tripID := tripIDStr
 
 		// Get trip from database
 		trip, err := m.tripRepo.GetByID(context.Background(), tripID)
@@ -128,12 +122,7 @@ func (m *RBACMiddleware) RequireTripOwnership() gin.HandlerFunc {
 			tripIDStr = c.Param("id")
 		}
 
-		tripID, err := primitive.ObjectIDFromHex(tripIDStr)
-		if err != nil {
-			response.BadRequest(c, "Invalid trip ID")
-			c.Abort()
-			return
-		}
+		tripID := tripIDStr
 
 		// Get trip from database
 		trip, err := m.tripRepo.GetByID(context.Background(), tripID)
@@ -180,11 +169,7 @@ func (m *RBACMiddleware) OptionalTripPermission(permission users.Permission) gin
 			return
 		}
 
-		tripID, err := primitive.ObjectIDFromHex(tripIDStr)
-		if err != nil {
-			c.Next()
-			return
-		}
+		tripID := tripIDStr
 
 		// Get trip from database
 		trip, err := m.tripRepo.GetByID(context.Background(), tripID)
