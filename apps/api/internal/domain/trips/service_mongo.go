@@ -11,6 +11,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// UpdateCollaboratorRoleInput contains input for updating collaborator role
+type UpdateCollaboratorRoleInput struct {
+	UserID string `json:"user_id" binding:"required"`
+	Role   string `json:"role" binding:"required,oneof=viewer editor"`
+}
+
 // TripListOptions contains options for listing trips
 type TripListOptions struct {
 	Filter   TripFilter
@@ -19,27 +25,8 @@ type TripListOptions struct {
 	Offset   int
 }
 
-// TripFilter contains filter criteria for trips
-type TripFilter struct {
-	Status    string
-	StartDate *time.Time
-	EndDate   *time.Time
-	IsPublic  *bool
-}
-
-// InviteCollaboratorInput contains input for inviting a collaborator
-type InviteCollaboratorInput struct {
-	UserID string `json:"user_id" binding:"required"`
-	Role   string `json:"role" binding:"required,oneof=viewer editor"`
-}
-
-// UpdateCollaboratorRoleInput contains input for updating collaborator role
-type UpdateCollaboratorRoleInput struct {
-	UserID string `json:"user_id" binding:"required"`
-	Role   string `json:"role" binding:"required,oneof=viewer editor"`
-}
-
-type Service interface {
+// MongoDB-specific service interface
+type ServiceMongo interface {
 	Create(ctx context.Context, userID primitive.ObjectID, input *CreateTripInput) (*Trip, error)
 	GetByID(ctx context.Context, tripID, userID primitive.ObjectID) (*Trip, error)
 	Update(ctx context.Context, tripID, userID primitive.ObjectID, input *UpdateTripInput) (*Trip, error)
@@ -56,7 +43,7 @@ type service struct {
 	userRepo users.Repository
 }
 
-func NewService(repo Repository, userRepo users.Repository) Service {
+func NewServiceMongo(repo Repository, userRepo users.Repository) ServiceMongo {
 	return &service{
 		repo:     repo,
 		userRepo: userRepo,
