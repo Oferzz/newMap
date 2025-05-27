@@ -90,7 +90,7 @@ func main() {
 		tripService = baseTripService
 	}
 	
-	placeService := places.NewService(placeRepo, tripRepo)
+	placeService := places.NewServicePg(placeRepo, tripRepo)
 	mediaService := media.NewService(db.DB, mediaStorage)
 
 	// Initialize handlers
