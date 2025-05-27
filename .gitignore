@@ -46,7 +46,6 @@ temp/
 *.tmp
 
 # Go specific
-go.sum
 *.test
 
 # Frontend specific
