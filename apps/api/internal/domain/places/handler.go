@@ -7,7 +7,6 @@ import (
 	"github.com/Oferzz/newMap/apps/api/internal/middleware"
 	"github.com/Oferzz/newMap/apps/api/pkg/response"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 var (
@@ -61,11 +60,7 @@ func (h *Handler) GetByID(c *gin.Context) {
 	}
 
 	placeIDStr := c.Param("id")
-	placeID, err := primitive.ObjectIDFromHex(placeIDStr)
-	if err != nil {
-		response.BadRequest(c, "Invalid place ID")
-		return
-	}
+	placeID := placeIDStr
 
 	place, err := h.service.GetByID(c.Request.Context(), placeID, userID)
 	if err != nil {
@@ -91,11 +86,7 @@ func (h *Handler) Update(c *gin.Context) {
 	}
 
 	placeIDStr := c.Param("id")
-	placeID, err := primitive.ObjectIDFromHex(placeIDStr)
-	if err != nil {
-		response.BadRequest(c, "Invalid place ID")
-		return
-	}
+	placeID := placeIDStr
 
 	var input UpdatePlaceInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -129,11 +120,7 @@ func (h *Handler) Delete(c *gin.Context) {
 	}
 
 	placeIDStr := c.Param("id")
-	placeID, err := primitive.ObjectIDFromHex(placeIDStr)
-	if err != nil {
-		response.BadRequest(c, "Invalid place ID")
-		return
-	}
+	placeID := placeIDStr
 
 	err = h.service.Delete(c.Request.Context(), placeID, userID)
 	if err != nil {
@@ -175,15 +162,15 @@ func (h *Handler) List(c *gin.Context) {
 
 	// Filter by trip ID
 	if tripID := c.Query("trip_id"); tripID != "" {
-		if id, err := primitive.ObjectIDFromHex(tripID); err == nil {
-			filter.TripID = &id
+		if tripID != "" {
+			filter.TripID = &tripID
 		}
 	}
 
 	// Filter by parent ID
 	if parentID := c.Query("parent_id"); parentID != "" {
-		if id, err := primitive.ObjectIDFromHex(parentID); err == nil {
-			filter.ParentID = &id
+		if parentID != "" {
+			filter.ParentID = &parentID
 		}
 	}
 
@@ -253,11 +240,7 @@ func (h *Handler) GetByTripID(c *gin.Context) {
 	}
 
 	tripIDStr := c.Param("tripId")
-	tripID, err := primitive.ObjectIDFromHex(tripIDStr)
-	if err != nil {
-		response.BadRequest(c, "Invalid trip ID")
-		return
-	}
+	tripID := tripIDStr
 
 	places, err := h.service.GetByTripID(c.Request.Context(), tripID, userID)
 	if err != nil {
@@ -281,11 +264,7 @@ func (h *Handler) MarkAsVisited(c *gin.Context) {
 	}
 
 	placeIDStr := c.Param("id")
-	placeID, err := primitive.ObjectIDFromHex(placeIDStr)
-	if err != nil {
-		response.BadRequest(c, "Invalid place ID")
-		return
-	}
+	placeID := placeIDStr
 
 	var input struct {
 		IsVisited bool `json:"is_visited"`
@@ -323,11 +302,7 @@ func (h *Handler) GetChildren(c *gin.Context) {
 	}
 
 	parentIDStr := c.Param("id")
-	parentID, err := primitive.ObjectIDFromHex(parentIDStr)
-	if err != nil {
-		response.BadRequest(c, "Invalid parent ID")
-		return
-	}
+	parentID := parentIDStr
 
 	places, err := h.service.GetChildren(c.Request.Context(), parentID, userID)
 	if err != nil {

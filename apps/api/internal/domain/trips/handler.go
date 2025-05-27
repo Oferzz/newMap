@@ -5,7 +5,6 @@ import (
 
 	"github.com/Oferzz/newMap/apps/api/pkg/response"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type Handler struct {
@@ -19,15 +18,15 @@ func NewHandler(service Service) *Handler {
 }
 
 // getUserID extracts the user ID from the gin context
-func getUserID(c *gin.Context) (primitive.ObjectID, bool) {
+func getUserID(c *gin.Context) (string, bool) {
 	userIDValue, exists := c.Get("userID")
 	if !exists {
-		return primitive.NilObjectID, false
+		return "", false
 	}
 	
-	userID, ok := userIDValue.(primitive.ObjectID)
+	userID, ok := userIDValue.(string)
 	if !ok {
-		return primitive.NilObjectID, false
+		return "", false
 	}
 	
 	return userID, true
@@ -59,14 +58,10 @@ func (h *Handler) Create(c *gin.Context) {
 
 func (h *Handler) GetByID(c *gin.Context) {
 	tripIDStr := c.Param("id")
-	tripID, err := primitive.ObjectIDFromHex(tripIDStr)
-	if err != nil {
-		response.BadRequest(c, "Invalid trip ID")
-		return
-	}
+	tripID := tripIDStr
 
 	// Get user ID if authenticated (optional for public trips)
-	userID := primitive.NilObjectID
+	userID := ""
 	if id, exists := getUserID(c); exists {
 		userID = id
 	}
@@ -95,11 +90,7 @@ func (h *Handler) Update(c *gin.Context) {
 	}
 
 	tripIDStr := c.Param("id")
-	tripID, err := primitive.ObjectIDFromHex(tripIDStr)
-	if err != nil {
-		response.BadRequest(c, "Invalid trip ID")
-		return
-	}
+	tripID := tripIDStr
 
 	var input UpdateTripInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -133,11 +124,7 @@ func (h *Handler) Delete(c *gin.Context) {
 	}
 
 	tripIDStr := c.Param("id")
-	tripID, err := primitive.ObjectIDFromHex(tripIDStr)
-	if err != nil {
-		response.BadRequest(c, "Invalid trip ID")
-		return
-	}
+	tripID := tripIDStr
 
 	err = h.service.Delete(c.Request.Context(), tripID, userID)
 	if err != nil {
@@ -173,15 +160,15 @@ func (h *Handler) List(c *gin.Context) {
 
 	// Filter by owner
 	if ownerID := c.Query("owner_id"); ownerID != "" {
-		if id, err := primitive.ObjectIDFromHex(ownerID); err == nil {
-			filter.OwnerID = &id
+		if ownerID != "" {
+			filter.OwnerID = &ownerID
 		}
 	}
 
 	// Filter by collaborator (includes owner)
 	if collaboratorID := c.Query("collaborator_id"); collaboratorID != "" {
-		if id, err := primitive.ObjectIDFromHex(collaboratorID); err == nil {
-			filter.CollaboratorID = &id
+		if collaboratorID != "" {
+			filter.CollaboratorID = &collaboratorID
 		}
 	}
 
@@ -208,7 +195,7 @@ func (h *Handler) List(c *gin.Context) {
 	filter.SearchQuery = c.Query("q")
 
 	// Get current user ID if authenticated
-	var userID *primitive.ObjectID
+	var userID *string
 	if id, exists := getUserID(c); exists {
 		userID = &id
 	}
@@ -238,11 +225,7 @@ func (h *Handler) InviteCollaborator(c *gin.Context) {
 	}
 
 	tripIDStr := c.Param("id")
-	tripID, err := primitive.ObjectIDFromHex(tripIDStr)
-	if err != nil {
-		response.BadRequest(c, "Invalid trip ID")
-		return
-	}
+	tripID := tripIDStr
 
 	var input InviteCollaboratorInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -278,18 +261,10 @@ func (h *Handler) RemoveCollaborator(c *gin.Context) {
 	}
 
 	tripIDStr := c.Param("id")
-	tripID, err := primitive.ObjectIDFromHex(tripIDStr)
-	if err != nil {
-		response.BadRequest(c, "Invalid trip ID")
-		return
-	}
+	tripID := tripIDStr
 
 	collaboratorIDStr := c.Param("userId")
-	collaboratorID, err := primitive.ObjectIDFromHex(collaboratorIDStr)
-	if err != nil {
-		response.BadRequest(c, "Invalid user ID")
-		return
-	}
+	collaboratorID := collaboratorIDStr
 
 	err = h.service.RemoveCollaborator(c.Request.Context(), tripID, userID, collaboratorID)
 	if err != nil {
@@ -317,11 +292,7 @@ func (h *Handler) UpdateCollaboratorRole(c *gin.Context) {
 	}
 
 	tripIDStr := c.Param("id")
-	tripID, err := primitive.ObjectIDFromHex(tripIDStr)
-	if err != nil {
-		response.BadRequest(c, "Invalid trip ID")
-		return
-	}
+	tripID := tripIDStr
 
 	var input UpdateCollaboratorRoleInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -357,11 +328,7 @@ func (h *Handler) LeaveTrip(c *gin.Context) {
 	}
 
 	tripIDStr := c.Param("id")
-	tripID, err := primitive.ObjectIDFromHex(tripIDStr)
-	if err != nil {
-		response.BadRequest(c, "Invalid trip ID")
-		return
-	}
+	tripID := tripIDStr
 
 	err = h.service.LeaveTrip(c.Request.Context(), tripID, userID)
 	if err != nil {

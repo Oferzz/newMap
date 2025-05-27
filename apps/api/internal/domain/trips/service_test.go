@@ -5,10 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/Oferzz/newMap/apps/api/internal/domain/users"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type mockTripRepository struct {
@@ -22,21 +20,21 @@ func newMockTripRepository() *mockTripRepository {
 }
 
 func (m *mockTripRepository) Create(ctx context.Context, trip *Trip) error {
-	trip.ID = primitive.NewObjectID()
+	trip.ID = uuid.New().String()
 	trip.CreatedAt = time.Now()
 	trip.UpdatedAt = time.Now()
-	m.trips[trip.ID.Hex()] = trip
+	m.trips[trip.ID] = trip
 	return nil
 }
 
-func (m *mockTripRepository) GetByID(ctx context.Context, id primitive.ObjectID) (*Trip, error) {
-	if trip, exists := m.trips[id.Hex()]; exists {
+func (m *mockTripRepository) GetByID(ctx context.Context, id string) (*Trip, error) {
+	if trip, exists := m.trips[id]; exists {
 		return trip, nil
 	}
 	return nil, ErrTripNotFound
 }
 
-func (m *mockTripRepository) Update(ctx context.Context, id primitive.ObjectID, update bson.M) error {
+func (m *mockTripRepository) Update(ctx context.Context, trip *Trip) error {
 	if trip, exists := m.trips[id.Hex()]; exists {
 		// Simple update simulation
 		if name, ok := update["name"].(string); ok {
@@ -51,7 +49,7 @@ func (m *mockTripRepository) Update(ctx context.Context, id primitive.ObjectID, 
 	return ErrTripNotFound
 }
 
-func (m *mockTripRepository) Delete(ctx context.Context, id primitive.ObjectID) error {
+func (m *mockTripRepository) Delete(ctx context.Context, id string) error {
 	if _, exists := m.trips[id.Hex()]; exists {
 		delete(m.trips, id.Hex())
 		return nil
@@ -79,7 +77,7 @@ func (m *mockTripRepository) Count(ctx context.Context, filter TripFilter) (int6
 	return int64(len(trips)), nil
 }
 
-func (m *mockTripRepository) AddCollaborator(ctx context.Context, tripID primitive.ObjectID, collaborator *Collaborator) error {
+func (m *mockTripRepository) AddCollaborator(ctx context.Context, tripID, userID, role string, canEdit, canDelete, canInvite, canModerate bool) error {
 	if trip, exists := m.trips[tripID.Hex()]; exists {
 		trip.Collaborators = append(trip.Collaborators, *collaborator)
 		trip.UpdatedAt = time.Now()
@@ -88,7 +86,7 @@ func (m *mockTripRepository) AddCollaborator(ctx context.Context, tripID primiti
 	return ErrTripNotFound
 }
 
-func (m *mockTripRepository) RemoveCollaborator(ctx context.Context, tripID, userID primitive.ObjectID) error {
+func (m *mockTripRepository) RemoveCollaborator(ctx context.Context, tripID, userID string) error {
 	if trip, exists := m.trips[tripID.Hex()]; exists {
 		for i, collab := range trip.Collaborators {
 			if collab.UserID == userID {
@@ -102,7 +100,7 @@ func (m *mockTripRepository) RemoveCollaborator(ctx context.Context, tripID, use
 	return ErrTripNotFound
 }
 
-func (m *mockTripRepository) UpdateCollaboratorRole(ctx context.Context, tripID, userID primitive.ObjectID, role string) error {
+func (m *mockTripRepository) UpdateCollaboratorRole(ctx context.Context, tripID, userID, role string, canEdit, canDelete, canInvite, canModerate bool) error {
 	if trip, exists := m.trips[tripID.Hex()]; exists {
 		for i, collab := range trip.Collaborators {
 			if collab.UserID == userID {
@@ -116,7 +114,7 @@ func (m *mockTripRepository) UpdateCollaboratorRole(ctx context.Context, tripID,
 	return ErrTripNotFound
 }
 
-func (m *mockTripRepository) IncrementPlaceCount(ctx context.Context, tripID primitive.ObjectID, delta int) error {
+func (m *mockTripRepository) IncrementPlaceCount(ctx context.Context, tripID string, delta int) error {
 	if trip, exists := m.trips[tripID.Hex()]; exists {
 		trip.PlaceCount += delta
 		return nil
@@ -124,7 +122,7 @@ func (m *mockTripRepository) IncrementPlaceCount(ctx context.Context, tripID pri
 	return ErrTripNotFound
 }
 
-func (m *mockTripRepository) IncrementViewCount(ctx context.Context, tripID primitive.ObjectID) error {
+func (m *mockTripRepository) IncrementViewCount(ctx context.Context, tripID string) error {
 	if trip, exists := m.trips[tripID.Hex()]; exists {
 		trip.ViewCount++
 		return nil

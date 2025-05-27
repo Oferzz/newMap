@@ -89,12 +89,15 @@ type LoginInput struct {
 	Password string `json:"password" binding:"required"`
 }
 
-type AuthResponse struct {
+type LoginResponse struct {
 	User         *User  `json:"user"`
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 	ExpiresIn    int64  `json:"expires_in"`
 }
+
+// AuthResponse is an alias for backward compatibility
+type AuthResponse = LoginResponse
 
 type RefreshTokenInput struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
@@ -103,6 +106,21 @@ type RefreshTokenInput struct {
 type ChangePasswordInput struct {
 	CurrentPassword string `json:"current_password" binding:"required"`
 	NewPassword     string `json:"new_password" binding:"required,min=8"`
+}
+
+type ResetPasswordInput struct {
+	Token       string `json:"token" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required,min=8"`
+}
+
+type FriendRequest struct {
+	ID          string    `json:"id"`
+	FromUserID  string    `json:"from_user_id"`
+	ToUserID    string    `json:"to_user_id"`
+	Status      string    `json:"status"`
+	CreatedAt   time.Time `json:"created_at"`
+	FromUser    *User     `json:"from_user,omitempty"`
+	ToUser      *User     `json:"to_user,omitempty"`
 }
 
 // UserFriend represents a friendship relationship
