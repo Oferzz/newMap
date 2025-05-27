@@ -57,10 +57,18 @@ Log in to [Render.com](https://render.com) and create the following services:
 3. Configure:
    - Name: `trip-planner-api`
    - Environment: Docker
-   - Dockerfile Path: `./apps/api/Dockerfile`
+   - Dockerfile Path: `./apps/api/Dockerfile.render`
    - Docker Context Directory: `.`
    - Branch: `main`
-4. Add environment variables:
+4. Add secret file:
+   - Go to "Environment" → "Secret Files"
+   - Create file: `/etc/secrets/tokens`
+   - Add content:
+     ```
+     MAPBOX_ACCESS_TOKEN=your_mapbox_token_here
+     MONGODB_URI=your_mongodb_uri_if_needed
+     ```
+5. Add environment variables:
    ```
    PORT=8080
    DATABASE_URL=[Internal Database URL from PostgreSQL]
@@ -70,14 +78,15 @@ Log in to [Render.com](https://render.com) and create the following services:
    JWT_ISSUER=trip-planner
    MEDIA_PATH=/data/media
    CDN_URL=https://trip-planner-api.onrender.com
-   MAPBOX_API_KEY=[Your Mapbox API key]
    DB_MIGRATIONS_PATH=./migrations
    ENVIRONMENT=production
+   RUN_MIGRATIONS=true
    ```
-5. Add a disk:
+   Note: MAPBOX_ACCESS_TOKEN is loaded from /etc/secrets/tokens
+6. Add a disk:
    - Mount Path: `/data`
    - Size: 20GB (for media storage)
-6. Click "Create Web Service"
+7. Click "Create Web Service"
 
 #### D. Frontend Web Service
 

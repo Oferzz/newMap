@@ -53,35 +53,13 @@ COPY --from=builder /build/server .
 # Copy migrations
 COPY apps/api/migrations ./migrations
 
+# Copy startup script
+COPY apps/api/scripts/startup.sh ./startup.sh
+RUN chmod +x ./startup.sh
+
 # Create necessary directories with proper permissions
 RUN mkdir -p /data/media /app/logs && \
     chown -R appuser:appuser /data /app
-
-# Create a script to run migrations and start the server
-RUN echo '#!/bin/bash\n\
-set -e\n\
-\n\
-echo "Starting Trip Planner API..."\n\
-\n\
-# Wait for database to be ready\n\
-echo "Waiting for database..."\n\
-until pg_isready -h ${DATABASE_HOST:-localhost} -p ${DATABASE_PORT:-5432} -U ${DATABASE_USER:-postgres}; do\n\
-  echo "Database is unavailable - sleeping"\n\
-  sleep 2\n\
-done\n\
-echo "Database is ready!"\n\
-\n\
-# Run migrations if enabled\n\
-if [ "${RUN_MIGRATIONS}" = "true" ]; then\n\
-  echo "Running database migrations..."\n\
-  ./server migrate up\n\
-  echo "Migrations completed!"\n\
-fi\n\
-\n\
-# Start the server\n\
-echo "Starting server on port ${PORT:-8080}..."\n\
-exec ./server\n\
-' > /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 # Switch to non-root user
 USER appuser
@@ -102,5 +80,5 @@ ENV PORT=8080 \
     DATABASE_USER=postgres \
     GIN_MODE=release
 
-# Run the entrypoint script
-ENTRYPOINT ["/app/entrypoint.sh"]
+# Run the startup script (which handles Render secrets)
+ENTRYPOINT ["/app/startup.sh"]

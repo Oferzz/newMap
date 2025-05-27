@@ -43,8 +43,8 @@ services:
         value: ./migrations
       - key: ENVIRONMENT
         value: production
-      - key: MAPBOX_API_KEY
-        sync: false # Set manually in Render dashboard
+      # MAPBOX_ACCESS_TOKEN is loaded from /etc/secrets/tokens
+      # MONGODB_URI is loaded from /etc/secrets/tokens (if needed for migration)
     disk:
       name: media-storage
       mountPath: /data
@@ -99,8 +99,8 @@ services:
         value: https://trip-planner-api.onrender.com/api/v1
       - key: VITE_WS_URL
         value: wss://trip-planner-api.onrender.com
-      - key: VITE_MAPBOX_TOKEN
-        sync: false # Set manually in Render dashboard
+      # VITE_MAPBOX_TOKEN will need to be set manually in Render dashboard
+      # as frontend builds can't access /etc/secrets/tokens
     autoDeploy: true
 
   # Redis Cache Service (Render Key-Value)
