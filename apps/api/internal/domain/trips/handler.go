@@ -126,7 +126,11 @@ func (h *Handler) Delete(c *gin.Context) {
 	tripIDStr := c.Param("id")
 	tripID := tripIDStr
 
-	userID := getUserIDFromContext(c)
+	userID, exists := getUserID(c)
+	if !exists {
+		response.Unauthorized(c, "User not authenticated")
+		return
+	}
 	err := h.service.Delete(c.Request.Context(), userID, tripID)
 	if err != nil {
 		switch err {
@@ -177,9 +181,10 @@ func (h *Handler) List(c *gin.Context) {
 	}
 
 	// Get current user ID if authenticated
-	userID := getUserIDFromContext(c)
-	if userID == "" {
+	userID, exists := getUserID(c)
+	if !exists {
 		// For unauthenticated users, only show public trips
+		userID = ""
 		filter.Privacy = "public"
 	}
 
@@ -241,7 +246,7 @@ func (h *Handler) RemoveCollaborator(c *gin.Context) {
 	collaboratorIDStr := c.Param("userId")
 	collaboratorID := collaboratorIDStr
 
-	err = h.service.RemoveCollaborator(c.Request.Context(), tripID, userID, collaboratorID)
+	err := h.service.RemoveCollaborator(c.Request.Context(), userID, tripID, collaboratorID)
 	if err != nil {
 		switch err {
 		case ErrTripNotFound:
@@ -269,7 +274,11 @@ func (h *Handler) UpdateCollaboratorRole(c *gin.Context) {
 	tripIDStr := c.Param("id")
 	tripID := tripIDStr
 
-	var input UpdateCollaboratorRoleInput
+	collaboratorID := c.Param("userId")
+	
+	var input struct {
+		Role string `json:"role" binding:"required,oneof=viewer editor admin"`
+	}
 	if err := c.ShouldBindJSON(&input); err != nil {
 		response.ValidationError(c, map[string]interface{}{
 			"error": err.Error(),
@@ -277,7 +286,7 @@ func (h *Handler) UpdateCollaboratorRole(c *gin.Context) {
 		return
 	}
 
-	err = h.service.UpdateCollaboratorRole(c.Request.Context(), tripID, userID, &input)
+	err := h.service.UpdateCollaboratorRole(c.Request.Context(), userID, tripID, collaboratorID, input.Role)
 	if err != nil {
 		switch err {
 		case ErrTripNotFound:
