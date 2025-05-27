@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"newmap/apps/api/pkg/response"
+	"github.com/Oferzz/newMap/apps/api/pkg/response"
 )
 
 type Handler struct {
