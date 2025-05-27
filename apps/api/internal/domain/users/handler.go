@@ -1,7 +1,6 @@
 package users
 
 import (
-	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -212,11 +211,11 @@ func (h *Handler) SearchUsers(c *gin.Context) {
 		return
 	}
 
-	response.SuccessWithMeta(c, users, gin.H{
-		"total":  total,
-		"limit":  limit,
-		"offset": offset,
-	})
+	response.SuccessWithMeta(c, users, response.NewMeta(
+		offset/limit+1,
+		limit,
+		total,
+	))
 }
 
 // GetFriends retrieves user's friends
@@ -236,11 +235,11 @@ func (h *Handler) GetFriends(c *gin.Context) {
 		return
 	}
 
-	response.SuccessWithMeta(c, friends, gin.H{
-		"total":  total,
-		"limit":  limit,
-		"offset": offset,
-	})
+	response.SuccessWithMeta(c, friends, response.NewMeta(
+		offset/limit+1,
+		limit,
+		total,
+	))
 }
 
 // SendFriendRequest sends a friend request
@@ -345,9 +344,9 @@ func (h *Handler) GetFriendRequests(c *gin.Context) {
 		return
 	}
 
-	response.SuccessWithMeta(c, requests, gin.H{
-		"total":  total,
-		"limit":  limit,
-		"offset": offset,
-	})
+	response.SuccessWithMeta(c, requests, response.NewMeta(
+		offset/limit+1,
+		limit,
+		total,
+	))
 }
