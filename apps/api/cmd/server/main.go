@@ -85,12 +85,12 @@ func main() {
 	baseTripService := trips.NewService(tripRepo, userRepo)
 	var tripService trips.Service
 	if cacheService != nil {
-		tripService = trips.NewCachedService(baseTripService, cacheService)
+		tripService = trips.NewCachedServicePg(baseTripService, cacheService)
 	} else {
 		tripService = baseTripService
 	}
 	
-	placeService := places.NewService(placeRepo, tripRepo)
+	placeService := places.NewServicePg(placeRepo, tripRepo)
 	mediaService := media.NewService(db.DB, mediaStorage)
 
 	// Initialize handlers
