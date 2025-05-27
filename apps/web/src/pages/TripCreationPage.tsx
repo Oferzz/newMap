@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch } from '../hooks/redux';
-import { addTrip } from '../store/slices/tripsSlice';
+import { createTripThunk } from '../store/thunks/trips.thunks';
 import { setActivePanel } from '../store/slices/uiSlice';
 import { Calendar, MapPin, Lock, Globe, Users, Loader2, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -28,34 +28,21 @@ export const TripCreationPage: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/v1/trips', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
-        },
-        body: JSON.stringify({
-          ...formData,
-          start_date: formData.startDate,
-          end_date: formData.endDate,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create trip');
-      }
-
-      dispatch(addTrip(data.data));
-      toast.success('Trip created successfully!');
+      const result = await dispatch(createTripThunk({
+        title: formData.title,
+        description: formData.description,
+        start_date: formData.startDate,
+        end_date: formData.endDate,
+        privacy: formData.privacy,
+        tags: formData.tags,
+        cover_image: formData.coverImage,
+      })).unwrap();
       
       // Navigate to the trip page and open planning panel
-      navigate(`/trips/${data.data.id}`);
+      navigate(`/trips/${result.id}`);
       dispatch(setActivePanel('trip-planning'));
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create trip';
-      toast.error(message);
+      // Error handling is done in the thunk
     } finally {
       setIsLoading(false);
     }

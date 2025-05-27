@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
+import { useWebSocket } from '../../hooks/useWebSocket';
 import { 
   Calendar, 
   MapPin, 
@@ -14,11 +15,14 @@ import {
   Navigation,
   X,
   Search,
-  Loader2
+  Loader2,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import toast from 'react-hot-toast';
+import { reorderWaypointsThunk, removeWaypointThunk } from '../../store/thunks/trips.thunks';
 
 interface TripPlanningPanelProps {
   isOpen: boolean;
@@ -34,6 +38,81 @@ export const TripPlanningPanel: React.FC<TripPlanningPanelProps> = ({ isOpen, on
   const [selectedDay, setSelectedDay] = useState(0);
   const [isAddingPlace, setIsAddingPlace] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeUsers, setActiveUsers] = useState<Array<{ id: string; name: string; avatar?: string }>>([]);
+  const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
+  
+  // WebSocket integration
+  const { isConnected, on, emit } = useWebSocket({
+    room: tripId ? `trip:${tripId}` : undefined,
+  });
+  
+  // Set up real-time event listeners
+  useEffect(() => {
+    if (!tripId) return;
+    
+    const unsubscribers: Array<() => void> = [];
+    
+    // Listen for user join/leave events
+    unsubscribers.push(
+      on('user:joined', (data) => {
+        if (data.tripId === tripId) {
+          setActiveUsers(prev => [...prev, { id: data.userId, name: data.userName }]);
+          toast(`${data.userName} joined the trip`, {
+            icon: '👋',
+          });
+        }
+      })
+    );
+    
+    unsubscribers.push(
+      on('user:left', (data) => {
+        if (data.tripId === tripId) {
+          setActiveUsers(prev => prev.filter(u => u.id !== data.userId));
+          toast(`${data.userName} left the trip`, {
+            icon: '👋',
+          });
+        }
+      })
+    );
+    
+    // Listen for typing events
+    unsubscribers.push(
+      on('user:typing', (data) => {
+        if (data.context === `trip:${tripId}`) {
+          setTypingUsers(prev => ({
+            ...prev,
+            [data.userId]: data.isTyping,
+          }));
+        }
+      })
+    );
+    
+    // Listen for waypoint updates
+    unsubscribers.push(
+      on('trip:waypoint:added', (data) => {
+        if (data.tripId === tripId) {
+          toast(`New place added to the trip`, {
+            icon: '📍',
+          });
+        }
+      })
+    );
+    
+    unsubscribers.push(
+      on('trip:waypoints:reordered', (data) => {
+        if (data.tripId === tripId) {
+          toast(`Itinerary updated`, {
+            icon: '🔄',
+          });
+        }
+      })
+    );
+    
+    // Cleanup
+    return () => {
+      unsubscribers.forEach(unsub => unsub());
+    };
+  }, [tripId, on]);
   
   // Mock data - replace with Redux selectors
   const trip = {
@@ -87,15 +166,22 @@ export const TripPlanningPanel: React.FC<TripPlanningPanelProps> = ({ isOpen, on
   
   const waypointsForDay = trip.waypoints.filter(w => w.day === selectedDay + 1);
 
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
+  const handleDragEnd = async (result: any) => {
+    if (!result.destination || !tripId) return;
 
     const items = Array.from(waypointsForDay);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
 
-    // TODO: Dispatch action to reorder waypoints
-    toast.success('Itinerary reordered');
+    // Dispatch action to reorder waypoints
+    try {
+      await dispatch(reorderWaypointsThunk({
+        tripId,
+        waypoints: items,
+      })).unwrap();
+    } catch (error) {
+      // Error handled in thunk
+    }
   };
 
   const handleAddPlace = () => {
@@ -103,9 +189,17 @@ export const TripPlanningPanel: React.FC<TripPlanningPanelProps> = ({ isOpen, on
     // TODO: Open place search modal
   };
 
-  const handleRemoveWaypoint = (waypointId: string) => {
-    // TODO: Dispatch action to remove waypoint
-    toast.success('Place removed from itinerary');
+  const handleRemoveWaypoint = async (waypointId: string) => {
+    if (!tripId) return;
+    
+    try {
+      await dispatch(removeWaypointThunk({
+        tripId,
+        waypointId,
+      })).unwrap();
+    } catch (error) {
+      // Error handled in thunk
+    }
   };
 
   const formatDayDate = (dayIndex: number) => {
@@ -122,12 +216,30 @@ export const TripPlanningPanel: React.FC<TripPlanningPanelProps> = ({ isOpen, on
       <div className="p-4 border-b bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-xl font-bold">{trip.title}</h2>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-white/20 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Connection indicator */}
+            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs ${
+              isConnected ? 'bg-green-500/20' : 'bg-red-500/20'
+            }`}>
+              {isConnected ? (
+                <>
+                  <Wifi className="w-3 h-3" />
+                  <span>Live</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-3 h-3" />
+                  <span>Offline</span>
+                </>
+              )}
+            </div>
+            <button
+              onClick={onClose}
+              className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
         <p className="text-sm opacity-90">{trip.description}</p>
         <div className="flex items-center gap-4 mt-3 text-sm">
@@ -340,27 +452,59 @@ export const TripPlanningPanel: React.FC<TripPlanningPanelProps> = ({ isOpen, on
 
         {activeTab === 'collaborators' && (
           <div className="flex-1 p-4">
-            <div className="space-y-3">
-              {trip.collaborators.map((collaborator) => (
-                <div key={collaborator.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                      <span className="text-indigo-600 font-semibold">
-                        {collaborator.name.charAt(0).toUpperCase()}
-                      </span>
+            {/* Active users */}
+            {activeUsers.length > 0 && (
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-gray-600 mb-2">Currently Active</h4>
+                <div className="flex gap-2 flex-wrap">
+                  {activeUsers.map((user) => (
+                    <div key={user.id} className="flex items-center gap-2 px-3 py-1 bg-green-50 border border-green-200 rounded-full">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      <span className="text-sm text-green-800">{user.name}</span>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{collaborator.name}</p>
-                      <p className="text-sm text-gray-500 capitalize">{collaborator.role}</p>
-                    </div>
-                  </div>
-                  {collaborator.role !== 'owner' && (
-                    <button className="text-gray-400 hover:text-gray-600">
-                      <MoreVertical className="w-5 h-5" />
-                    </button>
-                  )}
+                  ))}
                 </div>
-              ))}
+              </div>
+            )}
+            
+            {/* Collaborators list */}
+            <h4 className="text-sm font-medium text-gray-600 mb-3">All Collaborators</h4>
+            <div className="space-y-3">
+              {trip.collaborators.map((collaborator) => {
+                const isActive = activeUsers.some(u => u.id === collaborator.id);
+                const isTyping = typingUsers[collaborator.id];
+                
+                return (
+                  <div key={collaborator.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                          <span className="text-indigo-600 font-semibold">
+                            {collaborator.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        {isActive && (
+                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {collaborator.name}
+                          {isTyping && (
+                            <span className="text-xs text-gray-500 ml-2 italic">typing...</span>
+                          )}
+                        </p>
+                        <p className="text-sm text-gray-500 capitalize">{collaborator.role}</p>
+                      </div>
+                    </div>
+                    {collaborator.role !== 'owner' && (
+                      <button className="text-gray-400 hover:text-gray-600">
+                        <MoreVertical className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
             
             <button className="w-full mt-4 py-2 border border-indigo-600 text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors">

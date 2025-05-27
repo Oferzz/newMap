@@ -8,6 +8,8 @@ import { MapControls } from './MapControls';
 import { SearchOverlay } from '../search/SearchOverlay';
 import { DetailsPanel } from '../details/DetailsPanel';
 import { TripPlanningPanel } from '../trips/TripPlanningPanel';
+import { CollaborativeCursors } from './CollaborativeCursors';
+import { useParams } from 'react-router-dom';
 
 // Initialize Mapbox
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -24,6 +26,7 @@ export const MapView: React.FC<MapViewProps> = ({
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const dispatch = useAppDispatch();
+  const { id: tripId } = useParams();
 
   // Redux state
   const places = useAppSelector((state) => state.places.items);
@@ -192,6 +195,9 @@ export const MapView: React.FC<MapViewProps> = ({
 
       {/* Map Controls */}
       <MapControls map={map.current} />
+
+      {/* Collaborative Cursors for trips */}
+      {tripId && <CollaborativeCursors map={map.current} tripId={tripId} />}
 
       {/* Search Overlay */}
       {isSearching && searchResults && (

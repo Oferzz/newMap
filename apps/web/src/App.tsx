@@ -7,24 +7,26 @@ import { MapView } from './components/map/MapView';
 import { LoginPage } from './pages/LoginPage';
 import { TripCreationPage } from './pages/TripCreationPage';
 import { PrivateRoute } from './components/auth/PrivateRoute';
+import { WebSocketProvider } from './components/WebSocketProvider';
 import { Toaster } from 'react-hot-toast';
 import './App.css';
 
 function App() {
   return (
     <Provider store={store}>
-      <Router>
-        <div className="relative h-screen w-screen overflow-hidden">
-          {/* Global Toast Notifications */}
-          <Toaster 
-            position="top-center"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                marginTop: '4rem', // Account for header
-              },
-            }}
-          />
+      <WebSocketProvider>
+        <Router>
+          <div className="relative h-screen w-screen overflow-hidden">
+            {/* Global Toast Notifications */}
+            <Toaster 
+              position="top-center"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  marginTop: '4rem', // Account for header
+                },
+              }}
+            />
 
           <Routes>
             {/* Auth Routes - No Header */}
@@ -80,6 +82,7 @@ function App() {
           </Routes>
         </div>
       </Router>
+      </WebSocketProvider>
     </Provider>
   );
 }

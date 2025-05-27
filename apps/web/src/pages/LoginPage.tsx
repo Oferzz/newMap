@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAppDispatch } from '../hooks/redux';
-import { loginStart, loginSuccess, loginFailure } from '../store/slices/authSlice';
+import { loginThunk, registerThunk } from '../store/thunks/auth.thunks';
 import { Mail, Lock, User, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -30,46 +30,31 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isRegister = false }) => {
     }
 
     setIsLoading(true);
-    dispatch(loginStart());
 
     try {
-      const endpoint = isRegister ? '/api/v1/auth/register' : '/api/v1/auth/login';
-      const body = isRegister 
-        ? {
-            email: formData.email,
-            username: formData.username,
-            password: formData.password,
-            display_name: formData.displayName,
-          }
-        : {
-            email: formData.email,
-            password: formData.password,
-          };
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Authentication failed');
+      if (isRegister) {
+        await dispatch(registerThunk({
+          email: formData.email,
+          username: formData.username,
+          password: formData.password,
+          display_name: formData.displayName,
+        })).unwrap();
+        
+        // After successful registration, log them in
+        await dispatch(loginThunk({
+          email: formData.email,
+          password: formData.password,
+        })).unwrap();
+      } else {
+        await dispatch(loginThunk({
+          email: formData.email,
+          password: formData.password,
+        })).unwrap();
       }
-
-      dispatch(loginSuccess({
-        user: data.data.user,
-        accessToken: data.data.access_token,
-        refreshToken: data.data.refresh_token,
-      }));
-
-      toast.success(isRegister ? 'Account created successfully!' : 'Welcome back!');
+      
       navigate('/');
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Authentication failed';
-      dispatch(loginFailure(message));
-      toast.error(message);
+      // Error handling is done in the thunks
     } finally {
       setIsLoading(false);
     }
