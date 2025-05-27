@@ -7,7 +7,7 @@ import { TripRoute } from './TripRoute';
 import { MapControls } from './MapControls';
 import { SearchOverlay } from '../search/SearchOverlay';
 import { DetailsPanel } from '../details/DetailsPanel';
-import { TripPlanningPanel } from '../trip/TripPlanningPanel';
+import { TripPlanningPanel } from '../trips/TripPlanningPanel';
 
 // Initialize Mapbox
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -211,11 +211,10 @@ export const MapView: React.FC<MapViewProps> = ({
       )}
 
       {/* Trip Planning Panel */}
-      {activePanel === 'trip-planning' && (
-        <TripPlanningPanel
-          onClose={handleClosePanel}
-        />
-      )}
+      <TripPlanningPanel
+        isOpen={activePanel === 'trip-planning'}
+        onClose={handleClosePanel}
+      />
     </div>
   );
 };
