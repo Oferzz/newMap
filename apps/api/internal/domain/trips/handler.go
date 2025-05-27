@@ -126,7 +126,8 @@ func (h *Handler) Delete(c *gin.Context) {
 	tripIDStr := c.Param("id")
 	tripID := tripIDStr
 
-	err = h.service.Delete(c.Request.Context(), tripID, userID)
+	userID := getUserIDFromContext(c)
+	err := h.service.Delete(c.Request.Context(), userID, tripID)
 	if err != nil {
 		switch err {
 		case ErrTripNotFound:
@@ -146,7 +147,6 @@ func (h *Handler) List(c *gin.Context) {
 	// Parse query parameters
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	sort := c.DefaultQuery("sort", "-created_at")
 
 	if page < 1 {
 		page = 1
@@ -155,35 +155,20 @@ func (h *Handler) List(c *gin.Context) {
 		limit = 20
 	}
 
+	// Calculate offset from page
+	offset := (page - 1) * limit
+
 	// Build filter
-	filter := TripFilter{}
-
-	// Filter by owner
-	if ownerID := c.Query("owner_id"); ownerID != "" {
-		if ownerID != "" {
-			filter.OwnerID = &ownerID
-		}
-	}
-
-	// Filter by collaborator (includes owner)
-	if collaboratorID := c.Query("collaborator_id"); collaboratorID != "" {
-		if collaboratorID != "" {
-			filter.CollaboratorID = &collaboratorID
-		}
-	}
+	filter := &TripFilter{}
 
 	// Filter by status
 	if status := c.Query("status"); status != "" {
-		tripStatus := TripStatus(status)
-		if tripStatus.IsValid() {
-			filter.Status = &tripStatus
-		}
+		filter.Status = status
 	}
 
-	// Filter by public/private
-	if isPublic := c.Query("is_public"); isPublic != "" {
-		public := isPublic == "true"
-		filter.IsPublic = &public
+	// Filter by privacy
+	if privacy := c.Query("privacy"); privacy != "" {
+		filter.Privacy = privacy
 	}
 
 	// Filter by tags
@@ -191,24 +176,14 @@ func (h *Handler) List(c *gin.Context) {
 		filter.Tags = tags
 	}
 
-	// Search query
-	filter.SearchQuery = c.Query("q")
-
 	// Get current user ID if authenticated
-	var userID *string
-	if id, exists := getUserID(c); exists {
-		userID = &id
+	userID := getUserIDFromContext(c)
+	if userID == "" {
+		// For unauthenticated users, only show public trips
+		filter.Privacy = "public"
 	}
 
-	// List options
-	opts := TripListOptions{
-		Filter: filter,
-		Page:   page,
-		Limit:  limit,
-		Sort:   sort,
-	}
-
-	trips, total, err := h.service.List(c.Request.Context(), opts, userID)
+	trips, total, err := h.service.List(c.Request.Context(), userID, filter, limit, offset)
 	if err != nil {
 		response.InternalServerError(c, "Failed to list trips")
 		return
@@ -235,7 +210,7 @@ func (h *Handler) InviteCollaborator(c *gin.Context) {
 		return
 	}
 
-	err = h.service.InviteCollaborator(c.Request.Context(), tripID, userID, &input)
+	err := h.service.InviteCollaborator(c.Request.Context(), userID, tripID, &input)
 	if err != nil {
 		switch err {
 		case ErrTripNotFound:
