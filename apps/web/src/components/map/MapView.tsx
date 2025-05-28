@@ -136,7 +136,7 @@ export const MapView: React.FC<MapViewProps> = ({
       // It's a trip - fit bounds to show all waypoints
       const bounds = new mapboxgl.LngLatBounds();
       selectedItem.waypoints.forEach((waypoint) => {
-        const place = waypoint.place;
+        const place = waypoint.place as any;
         if (place?.location) {
           bounds.extend(place.location.coordinates);
         } else if (place?.coordinates) {

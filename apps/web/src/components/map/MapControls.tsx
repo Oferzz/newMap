@@ -1,5 +1,5 @@
 import React from 'react';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+// @ts-ignore
 import mapboxgl from 'mapbox-gl';
 import { Layers } from 'lucide-react';
 
