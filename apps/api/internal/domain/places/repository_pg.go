@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"strings"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
@@ -210,7 +210,7 @@ func (r *PostgresRepository) GetByID(ctx context.Context, id string) (*Place, er
 }
 
 // Update updates a place
-func (r *PostgresRepository) Update(ctx context.Context, id string, updates map[string]interface{}) error {
+func (r *PostgresRepository) UpdateByID(ctx context.Context, id string, updates map[string]interface{}) error {
 	// Build dynamic update query
 	setClause := ""
 	args := []interface{}{id}
@@ -295,7 +295,7 @@ func (r *PostgresRepository) Delete(ctx context.Context, id string) error {
 }
 
 // Search searches for places
-func (r *PostgresRepository) Search(ctx context.Context, input SearchPlacesInput) ([]*Place, error) {
+func (r *PostgresRepository) SearchPlaces(ctx context.Context, input SearchPlacesInput) ([]*Place, error) {
 	var places []*Place
 	query := `
 		SELECT 
@@ -427,7 +427,7 @@ func (r *PostgresRepository) Search(ctx context.Context, input SearchPlacesInput
 }
 
 // GetNearby finds nearby places
-func (r *PostgresRepository) GetNearby(ctx context.Context, input NearbyPlacesInput) ([]*Place, error) {
+func (r *PostgresRepository) GetNearbyPlaces(ctx context.Context, input NearbyPlacesInput) ([]*Place, error) {
 	// Convert to SearchPlacesInput and use Search method
 	searchInput := SearchPlacesInput{
 		Type:      input.Type,
@@ -440,7 +440,16 @@ func (r *PostgresRepository) GetNearby(ctx context.Context, input NearbyPlacesIn
 		Offset:    input.Offset,
 	}
 
-	return r.Search(ctx, searchInput)
+	result, err := r.Search(ctx, searchInput.Query, SearchFilters{
+		Category: searchInput.Category,
+		Tags:     searchInput.Tags,
+		Limit:    searchInput.Limit,
+		Offset:   searchInput.Offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.Places, nil
 }
 
 // GetByTripID retrieves all places for a trip
@@ -613,17 +622,15 @@ func (r *PostgresRepository) getCollaborators(ctx context.Context, placeID strin
 }
 
 // UpdateRating updates the average rating for a place
-func (r *PostgresRepository) UpdateRating(ctx context.Context, placeID string, newRating float32) error {
+func (r *PostgresRepository) UpdateRating(ctx context.Context, placeID string, rating float64, count int) error {
 	query := `
 		UPDATE places
-		SET average_rating = (
-			(COALESCE(average_rating, 0) * rating_count + $2) / (rating_count + 1)
-		),
-		rating_count = rating_count + 1,
-		updated_at = CURRENT_TIMESTAMP
-		WHERE id = $1 AND status = 'active'`
+		SET average_rating = $2,
+			rating_count = $3,
+			updated_at = CURRENT_TIMESTAMP
+		WHERE id = $1`
 
-	_, err := r.db.ExecContext(ctx, query, placeID, newRating)
+	_, err := r.db.ExecContext(ctx, query, placeID, rating, count)
 	if err != nil {
 		return fmt.Errorf("failed to update rating: %w", err)
 	}
@@ -645,4 +652,244 @@ func (r *PostgresRepository) IncrementRatingCount(ctx context.Context, placeID s
 	}
 
 	return nil
+}
+
+// Add missing string import
+// import "strings" - should be added at the top
+
+// GetByCreator retrieves all places created by a specific user
+func (r *PostgresRepository) GetByCreator(ctx context.Context, creatorID string) ([]*Place, error) {
+	query := `
+		SELECT 
+			id, name, description, type, parent_id,
+			ST_AsGeoJSON(location) as location,
+			street_address, city, state, country, postal_code,
+			created_by, category, tags, average_rating, rating_count,
+			privacy, status, created_at, updated_at
+		FROM places
+		WHERE created_by = $1 AND status = 'active'
+		ORDER BY created_at DESC`
+	
+	rows, err := r.db.QueryContext(ctx, query, creatorID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get places by creator: %w", err)
+	}
+	defer rows.Close()
+	
+	var places []*Place
+	for rows.Next() {
+		place := &Place{}
+		var locationJSON sql.NullString
+		var tagsArray pq.StringArray
+		
+		err := rows.Scan(
+			&place.ID, &place.Name, &place.Description, &place.Type, &place.ParentID,
+			&locationJSON, &place.StreetAddress, &place.City, &place.State,
+			&place.Country, &place.PostalCode, &place.CreatedBy, &place.Category,
+			&tagsArray, &place.AverageRating, &place.RatingCount,
+			&place.Privacy, &place.Status, &place.CreatedAt, &place.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		
+		// Parse location
+		if locationJSON.Valid {
+			var geoJSON struct {
+				Type        string    `json:"type"`
+				Coordinates []float64 `json:"coordinates"`
+			}
+			if err := json.Unmarshal([]byte(locationJSON.String), &geoJSON); err == nil && len(geoJSON.Coordinates) >= 2 {
+				place.Location = &GeoPoint{
+					Type:        geoJSON.Type,
+					Coordinates: geoJSON.Coordinates,
+				}
+			}
+		}
+		
+		place.Tags = tagsArray
+		places = append(places, place)
+	}
+	
+	return places, nil
+}
+
+// Update updates a place - implementation matches interface
+func (r *PostgresRepository) Update(ctx context.Context, place *Place) error {
+	// Convert to map and use existing Update method
+	updates := map[string]interface{}{
+		"name":           place.Name,
+		"description":    place.Description,
+		"type":           place.Type,
+		"street_address": place.StreetAddress,
+		"city":           place.City,
+		"state":          place.State,
+		"country":        place.Country,
+		"postal_code":    place.PostalCode,
+		"category":       place.Category,
+		"tags":           place.Tags,
+		"privacy":        place.Privacy,
+		"status":         place.Status,
+		"updated_at":     time.Now(),
+	}
+	
+	return r.UpdateByID(ctx, place.ID, updates)
+}
+
+// GetByCategory retrieves places by category with pagination
+func (r *PostgresRepository) GetByCategory(ctx context.Context, category string, limit, offset int) ([]*Place, error) {
+	query := `
+		SELECT 
+			id, name, description, type, parent_id,
+			ST_AsGeoJSON(location) as location,
+			street_address, city, state, country, postal_code,
+			created_by, category, tags, average_rating, rating_count,
+			privacy, status, created_at, updated_at
+		FROM places
+		WHERE category = $1 AND status = 'active'
+		ORDER BY average_rating DESC, created_at DESC
+		LIMIT $2 OFFSET $3`
+	
+	rows, err := r.db.QueryContext(ctx, query, category, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get places by category: %w", err)
+	}
+	defer rows.Close()
+	
+	var places []*Place
+	for rows.Next() {
+		place := &Place{}
+		var locationJSON sql.NullString
+		var tagsArray pq.StringArray
+		
+		err := rows.Scan(
+			&place.ID, &place.Name, &place.Description, &place.Type, &place.ParentID,
+			&locationJSON, &place.StreetAddress, &place.City, &place.State,
+			&place.Country, &place.PostalCode, &place.CreatedBy, &place.Category,
+			&tagsArray, &place.AverageRating, &place.RatingCount,
+			&place.Privacy, &place.Status, &place.CreatedAt, &place.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		
+		// Parse location
+		if locationJSON.Valid {
+			var geoJSON struct {
+				Type        string    `json:"type"`
+				Coordinates []float64 `json:"coordinates"`
+			}
+			if err := json.Unmarshal([]byte(locationJSON.String), &geoJSON); err == nil && len(geoJSON.Coordinates) >= 2 {
+				place.Location = &GeoPoint{
+					Type:        geoJSON.Type,
+					Coordinates: geoJSON.Coordinates,
+				}
+			}
+		}
+		
+		place.Tags = tagsArray
+		places = append(places, place)
+	}
+	
+	return places, nil
+}
+
+
+// Search implements the Repository interface Search method
+func (r *PostgresRepository) Search(ctx context.Context, query string, filters SearchFilters) (*SearchResult, error) {
+	// Use existing SearchPlaces method
+	input := SearchPlacesInput{
+		Query:    query,
+		Category: filters.Category,
+		Tags:     filters.Tags,
+		Limit:    filters.Limit,
+		Offset:   filters.Offset,
+	}
+	
+	places, err := r.SearchPlaces(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Count total results - simplified for now
+	total := int64(len(places))
+	
+	return &SearchResult{
+		Places: places,
+		Total:  total,
+	}, nil
+}
+
+// GetNearby implements the Repository interface GetNearby method
+func (r *PostgresRepository) GetNearby(ctx context.Context, lat, lng, radiusKm float64, limit int) ([]*Place, error) {
+	// Use existing GetNearbyPlaces method
+	input := NearbyPlacesInput{
+		Latitude:  lat,
+		Longitude: lng,
+		Radius:    int(radiusKm * 1000), // Convert km to meters
+		Limit:     limit,
+	}
+	
+	return r.GetNearbyPlaces(ctx, input)
+}
+
+// GetInBounds retrieves places within geographical bounds
+func (r *PostgresRepository) GetInBounds(ctx context.Context, bounds Bounds) ([]*Place, error) {
+	query := `
+		SELECT 
+			id, name, description, type, parent_id,
+			ST_AsGeoJSON(location) as location,
+			street_address, city, state, country, postal_code,
+			created_by, category, tags, average_rating, rating_count,
+			privacy, status, created_at, updated_at
+		FROM places
+		WHERE status = 'active'
+			AND ST_Within(
+				location,
+				ST_MakeEnvelope($1, $2, $3, $4, 4326)
+			)
+		ORDER BY created_at DESC`
+	
+	rows, err := r.db.QueryContext(ctx, query, bounds.MinLng, bounds.MinLat, bounds.MaxLng, bounds.MaxLat)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get places in bounds: %w", err)
+	}
+	defer rows.Close()
+	
+	var places []*Place
+	for rows.Next() {
+		place := &Place{}
+		var locationJSON sql.NullString
+		var tagsArray pq.StringArray
+		
+		err := rows.Scan(
+			&place.ID, &place.Name, &place.Description, &place.Type, &place.ParentID,
+			&locationJSON, &place.StreetAddress, &place.City, &place.State,
+			&place.Country, &place.PostalCode, &place.CreatedBy, &place.Category,
+			&tagsArray, &place.AverageRating, &place.RatingCount,
+			&place.Privacy, &place.Status, &place.CreatedAt, &place.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		
+		// Parse location
+		if locationJSON.Valid {
+			var geoJSON struct {
+				Type        string    `json:"type"`
+				Coordinates []float64 `json:"coordinates"`
+			}
+			if err := json.Unmarshal([]byte(locationJSON.String), &geoJSON); err == nil && len(geoJSON.Coordinates) >= 2 {
+				place.Location = &GeoPoint{
+					Type:        geoJSON.Type,
+					Coordinates: geoJSON.Coordinates,
+				}
+			}
+		}
+		
+		place.Tags = tagsArray
+		places = append(places, place)
+	}
+	
+	return places, nil
 }

@@ -74,12 +74,12 @@ func main() {
 	}
 
 	// Initialize repositories
-	userRepo := users.NewPostgresRepository(db.DB)
+	userRepo := users.NewPostgresRepository(db.DB.DB)
 	tripRepo := trips.NewPostgresRepository(db.DB)
 	placeRepo := places.NewPostgresRepository(db.DB)
 
 	// Initialize services
-	userService := users.NewService(userRepo, jwtManager)
+	userService := users.NewPostgreSQLService(userRepo)
 	
 	// Use cached trip service if Redis is available
 	baseTripService := trips.NewService(tripRepo, userRepo)
@@ -181,7 +181,7 @@ func setupRouter(cfg *config.Config, userHandler *users.Handler, tripHandler *tr
 			userRoutes.GET("/me", authMiddleware.RequireAuth(), userHandler.GetProfile)
 			userRoutes.PUT("/me", authMiddleware.RequireAuth(), userHandler.UpdateProfile)
 			userRoutes.PUT("/me/password", authMiddleware.RequireAuth(), userHandler.ChangePassword)
-			userRoutes.DELETE("/me", authMiddleware.RequireAuth(), userHandler.DeleteAccount)
+			// userRoutes.DELETE("/me", authMiddleware.RequireAuth(), userHandler.DeleteAccount) // TODO: Implement DeleteAccount
 		}
 
 		// Trip routes
@@ -228,7 +228,7 @@ func setupRouter(cfg *config.Config, userHandler *users.Handler, tripHandler *tr
 				
 				// Special operations
 				placeRoutes.PUT("/:id/visited", placeHandler.MarkAsVisited)
-				placeRoutes.GET("/:id/children", placeHandler.GetChildren)
+				// placeRoutes.GET("/:id/children", placeHandler.GetChildren) // TODO: Implement GetChildren
 			}
 		}
 

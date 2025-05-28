@@ -113,7 +113,21 @@ func (s *servicePg) Update(ctx context.Context, userID, tripID string, input *Up
 	
 	trip.UpdatedAt = time.Now()
 	
-	if err := s.repo.Update(ctx, trip); err != nil {
+	// Convert trip to update map
+	updates := map[string]interface{}{
+		"title":       trip.Title,
+		"description": trip.Description,
+		"start_date":  trip.StartDate,
+		"end_date":    trip.EndDate,
+		"privacy":     trip.Privacy,
+		"status":      trip.Status,
+		"tags":        trip.Tags,
+		"cover_image": trip.CoverImage,
+		"timezone":    trip.Timezone,
+		"updated_at":  trip.UpdatedAt,
+	}
+	
+	if err := s.repo.Update(ctx, tripID, updates); err != nil {
 		return nil, fmt.Errorf("failed to update trip: %w", err)
 	}
 	
@@ -135,20 +149,76 @@ func (s *servicePg) Delete(ctx context.Context, userID, tripID string) error {
 }
 
 func (s *servicePg) List(ctx context.Context, userID string, filter *TripFilter, limit, offset int) ([]*Trip, int64, error) {
-	// TODO: Implement proper filtering with privacy checks
-	return s.repo.GetByUser(ctx, userID, limit, offset)
+	// Build filters for repository
+	filters := TripFilters{
+		CollaboratorID: userID,
+		Status:         filter.Status,
+		Privacy:        filter.Privacy,
+		Tags:           filter.Tags,
+		Limit:          limit,
+		Offset:         offset,
+	}
+	
+	trips, err := s.repo.List(ctx, filters)
+	if err != nil {
+		return nil, 0, err
+	}
+	
+	// TODO: Get total count properly
+	total := int64(len(trips))
+	
+	return trips, total, nil
 }
 
 func (s *servicePg) GetUserTrips(ctx context.Context, userID string, limit, offset int) ([]*Trip, int64, error) {
-	return s.repo.GetByUser(ctx, userID, limit, offset)
+	// Get trips where user is owner
+	filters := TripFilters{
+		OwnerID: userID,
+		Limit:   limit,
+		Offset:  offset,
+	}
+	
+	trips, err := s.repo.List(ctx, filters)
+	if err != nil {
+		return nil, 0, err
+	}
+	
+	total := int64(len(trips))
+	return trips, total, nil
 }
 
 func (s *servicePg) GetSharedTrips(ctx context.Context, userID string, limit, offset int) ([]*Trip, int64, error) {
-	return s.repo.GetSharedWithUser(ctx, userID, limit, offset)
+	// Get trips where user is collaborator
+	filters := TripFilters{
+		CollaboratorID: userID,
+		Limit:          limit,
+		Offset:         offset,
+	}
+	
+	trips, err := s.repo.List(ctx, filters)
+	if err != nil {
+		return nil, 0, err
+	}
+	
+	total := int64(len(trips))
+	return trips, total, nil
 }
 
 func (s *servicePg) Search(ctx context.Context, userID string, query string, limit, offset int) ([]*Trip, int64, error) {
-	return s.repo.Search(ctx, query, userID, limit, offset)
+	filters := TripFilters{
+		CollaboratorID: userID,
+		Search:         query,
+		Limit:          limit,
+		Offset:         offset,
+	}
+	
+	trips, err := s.repo.List(ctx, filters)
+	if err != nil {
+		return nil, 0, err
+	}
+	
+	total := int64(len(trips))
+	return trips, total, nil
 }
 
 func (s *servicePg) AddCollaborator(ctx context.Context, userID, tripID, collaboratorID, role string) error {
@@ -180,7 +250,18 @@ func (s *servicePg) AddCollaborator(ctx context.Context, userID, tripID, collabo
 	canInvite := role == "admin"
 	canModerate := role == "admin" || role == "editor"
 	
-	return s.repo.AddCollaborator(ctx, tripID, collaboratorID, role, canEdit, canDelete, canInvite, canModerate)
+	collaborator := Collaborator{
+		TripID:                 tripID,
+		UserID:                 collaboratorID,
+		Role:                   role,
+		CanEdit:                canEdit,
+		CanDelete:              canDelete,
+		CanInvite:              canInvite,
+		CanModerateSuggestions: canModerate,
+		InvitedAt:              time.Now(),
+	}
+	
+	return s.repo.AddCollaborator(ctx, tripID, collaborator)
 }
 
 func (s *servicePg) RemoveCollaborator(ctx context.Context, userID, tripID, collaboratorID string) error {
@@ -214,7 +295,15 @@ func (s *servicePg) UpdateCollaboratorRole(ctx context.Context, userID, tripID, 
 	canInvite := role == "admin"
 	canModerate := role == "admin" || role == "editor"
 	
-	return s.repo.UpdateCollaboratorRole(ctx, tripID, collaboratorID, role, canEdit, canDelete, canInvite, canModerate)
+	updates := map[string]interface{}{
+		"role":                     role,
+		"can_edit":                 canEdit,
+		"can_delete":               canDelete,
+		"can_invite":               canInvite,
+		"can_moderate_suggestions": canModerate,
+	}
+	
+	return s.repo.UpdateCollaborator(ctx, tripID, collaboratorID, updates)
 }
 
 func (s *servicePg) InviteCollaborator(ctx context.Context, userID, tripID string, input *InviteCollaboratorInput) error {
@@ -240,108 +329,38 @@ func (s *servicePg) InviteCollaborator(ctx context.Context, userID, tripID strin
 		}
 	}
 	
-	return s.repo.AddCollaborator(ctx, tripID, input.UserID, input.Role, input.CanEdit, input.CanDelete, input.CanInvite, input.CanModerate)
+	collaborator := Collaborator{
+		TripID:                 tripID,
+		UserID:                 input.UserID,
+		Role:                   input.Role,
+		CanEdit:                input.CanEdit,
+		CanDelete:              input.CanDelete,
+		CanInvite:              input.CanInvite,
+		CanModerateSuggestions: input.CanModerate,
+		InvitedAt:              time.Now(),
+	}
+	
+	return s.repo.AddCollaborator(ctx, tripID, collaborator)
 }
 
 func (s *servicePg) AddWaypoint(ctx context.Context, userID, tripID string, input *AddWaypointInput) (*Waypoint, error) {
-	trip, err := s.repo.GetByID(ctx, tripID)
-	if err != nil {
-		return nil, err
-	}
-	
-	// Check if user can edit
-	if !s.canUserEditTrip(trip, userID) {
-		return nil, ErrUnauthorized
-	}
-	
-	waypoint := &Waypoint{
-		ID:            uuid.New().String(),
-		TripID:        tripID,
-		PlaceID:       input.PlaceID,
-		OrderPosition: input.OrderPosition,
-		ArrivalTime:   input.ArrivalTime,
-		DepartureTime: input.DepartureTime,
-		Notes:         input.Notes,
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
-	}
-	
-	if err := s.repo.AddWaypoint(ctx, waypoint); err != nil {
-		return nil, fmt.Errorf("failed to add waypoint: %w", err)
-	}
-	
-	return waypoint, nil
+	// TODO: Implement waypoint functionality with WaypointRepository
+	return nil, errors.New("waypoint functionality not yet implemented")
 }
 
 func (s *servicePg) UpdateWaypoint(ctx context.Context, userID, tripID, waypointID string, input *UpdateWaypointInput) (*Waypoint, error) {
-	trip, err := s.repo.GetByID(ctx, tripID)
-	if err != nil {
-		return nil, err
-	}
-	
-	// Check if user can edit
-	if !s.canUserEditTrip(trip, userID) {
-		return nil, ErrUnauthorized
-	}
-	
-	waypoint, err := s.repo.GetWaypoint(ctx, waypointID)
-	if err != nil {
-		return nil, err
-	}
-	
-	if waypoint.TripID != tripID {
-		return nil, errors.New("waypoint does not belong to this trip")
-	}
-	
-	// Update fields
-	if input.OrderPosition != nil {
-		waypoint.OrderPosition = *input.OrderPosition
-	}
-	if input.ArrivalTime != nil {
-		waypoint.ArrivalTime = input.ArrivalTime
-	}
-	if input.DepartureTime != nil {
-		waypoint.DepartureTime = input.DepartureTime
-	}
-	if input.Notes != nil {
-		waypoint.Notes = *input.Notes
-	}
-	
-	waypoint.UpdatedAt = time.Now()
-	
-	if err := s.repo.UpdateWaypoint(ctx, waypoint); err != nil {
-		return nil, fmt.Errorf("failed to update waypoint: %w", err)
-	}
-	
-	return waypoint, nil
+	// TODO: Implement waypoint functionality with WaypointRepository
+	return nil, errors.New("waypoint functionality not yet implemented")
 }
 
 func (s *servicePg) RemoveWaypoint(ctx context.Context, userID, tripID, waypointID string) error {
-	trip, err := s.repo.GetByID(ctx, tripID)
-	if err != nil {
-		return err
-	}
-	
-	// Check if user can edit
-	if !s.canUserEditTrip(trip, userID) {
-		return ErrUnauthorized
-	}
-	
-	return s.repo.RemoveWaypoint(ctx, tripID, waypointID)
+	// TODO: Implement waypoint functionality with WaypointRepository
+	return errors.New("waypoint functionality not yet implemented")
 }
 
 func (s *servicePg) ReorderWaypoints(ctx context.Context, userID, tripID string, waypointIDs []string) error {
-	trip, err := s.repo.GetByID(ctx, tripID)
-	if err != nil {
-		return err
-	}
-	
-	// Check if user can edit
-	if !s.canUserEditTrip(trip, userID) {
-		return ErrUnauthorized
-	}
-	
-	return s.repo.ReorderWaypoints(ctx, tripID, waypointIDs)
+	// TODO: Implement waypoint functionality with WaypointRepository
+	return errors.New("waypoint functionality not yet implemented")
 }
 
 func (s *servicePg) GetTripStats(ctx context.Context, userID, tripID string) (*TripStats, error) {

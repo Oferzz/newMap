@@ -2,7 +2,6 @@ package places
 
 import (
 	"context"
-	"errors"
 	"time"
 )
 
@@ -37,8 +36,3 @@ type Service interface {
 	AddNote(ctx context.Context, userID, placeID, note string) error
 }
 
-// Common errors
-var (
-	ErrPlaceNotFound = errors.New("place not found")
-	ErrUnauthorized  = errors.New("unauthorized")
-)

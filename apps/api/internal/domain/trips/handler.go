@@ -126,11 +126,6 @@ func (h *Handler) Delete(c *gin.Context) {
 	tripIDStr := c.Param("id")
 	tripID := tripIDStr
 
-	userID, exists := getUserID(c)
-	if !exists {
-		response.Unauthorized(c, "User not authenticated")
-		return
-	}
 	err := h.service.Delete(c.Request.Context(), userID, tripID)
 	if err != nil {
 		switch err {
@@ -314,7 +309,8 @@ func (h *Handler) LeaveTrip(c *gin.Context) {
 	tripIDStr := c.Param("id")
 	tripID := tripIDStr
 
-	err = h.service.LeaveTrip(c.Request.Context(), tripID, userID)
+	// User leaves by removing themselves as a collaborator
+	err := h.service.RemoveCollaborator(c.Request.Context(), userID, tripID, userID)
 	if err != nil {
 		switch err {
 		case ErrTripNotFound:

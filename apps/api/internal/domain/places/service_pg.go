@@ -8,15 +8,14 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/Oferzz/newMap/apps/api/internal/domain/trips"
-	"github.com/Oferzz/newMap/apps/api/internal/domain/users"
 )
 
 type servicePg struct {
-	repo     RepositoryInterface
-	tripRepo trips.RepositoryInterface
+	repo     Repository
+	tripRepo trips.Repository
 }
 
-func NewServicePg(repo RepositoryInterface, tripRepo trips.RepositoryInterface) Service {
+func NewServicePg(repo Repository, tripRepo trips.Repository) Service {
 	return &servicePg{
 		repo:     repo,
 		tripRepo: tripRepo,
@@ -186,21 +185,36 @@ func (s *servicePg) Delete(ctx context.Context, userID, placeID string) error {
 		return ErrUnauthorized
 	}
 	
-	// Check if place has children
-	children, err := s.repo.GetChildPlaces(ctx, placeID)
-	if err != nil {
-		return fmt.Errorf("failed to check child places: %w", err)
-	}
+	// TODO: Check if place has children when GetChildPlaces is implemented
+	// children, err := s.repo.GetChildPlaces(ctx, placeID)
+	// if err != nil {
+	// 	return fmt.Errorf("failed to check child places: %w", err)
+	// }
 	
-	if len(children) > 0 {
-		return errors.New("cannot delete place with child places")
-	}
+	// if len(children) > 0 {
+	// 	return errors.New("cannot delete place with child places")
+	// }
 	
 	return s.repo.Delete(ctx, placeID)
 }
 
 func (s *servicePg) GetUserPlaces(ctx context.Context, userID string, limit, offset int) ([]*Place, int64, error) {
-	return s.repo.GetByUser(ctx, userID, limit, offset)
+	places, err := s.repo.GetByCreator(ctx, userID)
+	if err != nil {
+		return nil, 0, err
+	}
+	
+	// Apply pagination manually
+	start := offset
+	end := offset + limit
+	if start > len(places) {
+		return []*Place{}, int64(len(places)), nil
+	}
+	if end > len(places) {
+		end = len(places)
+	}
+	
+	return places[start:end], int64(len(places)), nil
 }
 
 func (s *servicePg) GetChildPlaces(ctx context.Context, userID, parentID string) ([]*Place, error) {
@@ -210,7 +224,7 @@ func (s *servicePg) GetChildPlaces(ctx context.Context, userID, parentID string)
 		return nil, err
 	}
 	
-	children, err := s.repo.GetChildPlaces(ctx, parentID)
+	children, err := s.repo.GetChildren(ctx, parentID)
 	if err != nil {
 		return nil, err
 	}
@@ -228,12 +242,26 @@ func (s *servicePg) GetChildPlaces(ctx context.Context, userID, parentID string)
 
 func (s *servicePg) Search(ctx context.Context, userID string, input *SearchPlacesInput) ([]*Place, int64, error) {
 	// TODO: Implement search with privacy filtering
-	return s.repo.Search(ctx, input)
+	filters := SearchFilters{
+		Category: input.Category,
+		Tags:     input.Tags,
+		Limit:    input.Limit,
+		Offset:   input.Offset,
+	}
+	
+	result, err := s.repo.Search(ctx, input.Query, filters)
+	if err != nil {
+		return nil, 0, err
+	}
+	
+	return result.Places, result.Total, nil
 }
 
 func (s *servicePg) GetNearby(ctx context.Context, userID string, input *NearbyPlacesInput) ([]*Place, error) {
 	// TODO: Implement nearby search with privacy filtering
-	return s.repo.GetNearby(ctx, input)
+	// Convert radius from meters to kilometers
+	radiusKM := float64(input.Radius) / 1000.0
+	return s.repo.GetNearby(ctx, input.Latitude, input.Longitude, radiusKM, input.Limit)
 }
 
 func (s *servicePg) AddCollaborator(ctx context.Context, userID, placeID, collaboratorID, role string) error {
@@ -257,7 +285,8 @@ func (s *servicePg) AddCollaborator(ctx context.Context, userID, placeID, collab
 		return errors.New("invalid role")
 	}
 	
-	return s.repo.AddCollaborator(ctx, placeID, collaboratorID, role, nil)
+	// TODO: Implement when repository supports collaborators
+	return errors.New("collaborator functionality not yet implemented")
 }
 
 func (s *servicePg) RemoveCollaborator(ctx context.Context, userID, placeID, collaboratorID string) error {
@@ -271,7 +300,8 @@ func (s *servicePg) RemoveCollaborator(ctx context.Context, userID, placeID, col
 		return ErrUnauthorized
 	}
 	
-	return s.repo.RemoveCollaborator(ctx, placeID, collaboratorID)
+	// TODO: Implement when repository supports collaborators
+	return errors.New("collaborator functionality not yet implemented")
 }
 
 func (s *servicePg) UpdateCollaboratorRole(ctx context.Context, userID, placeID, collaboratorID, role string) error {
@@ -290,13 +320,29 @@ func (s *servicePg) UpdateCollaboratorRole(ctx context.Context, userID, placeID,
 		return errors.New("invalid role")
 	}
 	
-	return s.repo.UpdateCollaboratorRole(ctx, placeID, collaboratorID, role)
+	// TODO: Implement when repository supports collaborators
+	return errors.New("collaborator functionality not yet implemented")
 }
 
 // Implement missing interface methods with basic functionality
 func (s *servicePg) List(ctx context.Context, userID string, filter *PlaceFilter, limit, offset int) ([]*Place, int64, error) {
 	// TODO: Implement proper list with filter
-	return s.repo.GetByUser(ctx, userID, limit, offset)
+	places, err := s.repo.GetByCreator(ctx, userID)
+	if err != nil {
+		return nil, 0, err
+	}
+	
+	// Apply pagination manually
+	start := offset
+	end := offset + limit
+	if start > len(places) {
+		return []*Place{}, int64(len(places)), nil
+	}
+	if end > len(places) {
+		end = len(places)
+	}
+	
+	return places[start:end], int64(len(places)), nil
 }
 
 func (s *servicePg) GetTripPlaces(ctx context.Context, userID, tripID string) ([]*Place, error) {

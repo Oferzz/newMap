@@ -254,3 +254,23 @@ func (t *Trip) CanUserModerateSuggestions(userID string) bool {
 	
 	return collaborator.CanModerateSuggestions || collaborator.Role == "admin"
 }
+
+func (t *Trip) CanUserPerform(userID string, permission string) bool {
+	// Convert permission string to check specific capabilities
+	switch permission {
+	case "trip.read":
+		// For read, check if user is owner or collaborator
+		return t.IsOwner(userID) || t.HasCollaborator(userID)
+	case "trip.update":
+		return t.CanUserEdit(userID)
+	case "trip.delete":
+		return t.CanUserDelete(userID)
+	case "trip.invite":
+		return t.CanUserInvite(userID)
+	case "suggestion.moderate":
+		return t.CanUserModerateSuggestions(userID)
+	default:
+		// For any other permission, check if user is owner
+		return t.IsOwner(userID)
+	}
+}

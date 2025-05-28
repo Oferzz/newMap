@@ -122,7 +122,7 @@ func (h *Handler) Delete(c *gin.Context) {
 	placeIDStr := c.Param("id")
 	placeID := placeIDStr
 
-	err = h.service.Delete(c.Request.Context(), placeID, userID)
+	err := h.service.Delete(c.Request.Context(), placeID, userID)
 	if err != nil {
 		switch err {
 		case ErrPlaceNotFound:
@@ -148,7 +148,7 @@ func (h *Handler) List(c *gin.Context) {
 	// Parse query parameters
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	sort := c.DefaultQuery("sort", "-created_at")
+	// sort := c.DefaultQuery("sort", "-created_at") // TODO: Implement sorting in service
 
 	if page < 1 {
 		page = 1
@@ -211,15 +211,10 @@ func (h *Handler) List(c *gin.Context) {
 	// Search query
 	filter.SearchQuery = c.Query("q")
 
-	// List options
-	opts := PlaceListOptions{
-		Filter: filter,
-		Page:   page,
-		Limit:  limit,
-		Sort:   sort,
-	}
+	// Calculate offset from page
+	offset := (page - 1) * limit
 
-	places, total, err := h.service.List(c.Request.Context(), opts, userID)
+	places, total, err := h.service.List(c.Request.Context(), userID, &filter, limit, offset)
 	if err != nil {
 		if err == ErrUnauthorized {
 			response.Forbidden(c, "You don't have permission to view these places")
@@ -242,7 +237,7 @@ func (h *Handler) GetByTripID(c *gin.Context) {
 	tripIDStr := c.Param("tripId")
 	tripID := tripIDStr
 
-	places, err := h.service.GetByTripID(c.Request.Context(), tripID, userID)
+	places, err := h.service.GetTripPlaces(c.Request.Context(), userID, tripID)
 	if err != nil {
 		switch err {
 		case ErrUnauthorized:
@@ -276,7 +271,7 @@ func (h *Handler) MarkAsVisited(c *gin.Context) {
 		return
 	}
 
-	err = h.service.MarkAsVisited(c.Request.Context(), placeID, userID, input.IsVisited)
+	err := h.service.UpdateVisitStatus(c.Request.Context(), userID, placeID, input.IsVisited, nil)
 	if err != nil {
 		switch err {
 		case ErrPlaceNotFound:
@@ -294,28 +289,29 @@ func (h *Handler) MarkAsVisited(c *gin.Context) {
 	})
 }
 
-func (h *Handler) GetChildren(c *gin.Context) {
-	userID, exists := middleware.GetUserID(c)
-	if !exists {
-		response.Unauthorized(c, "User not authenticated")
-		return
-	}
+// TODO: Implement GetChildren functionality
+// func (h *Handler) GetChildren(c *gin.Context) {
+// 	userID, exists := middleware.GetUserID(c)
+// 	if !exists {
+// 		response.Unauthorized(c, "User not authenticated")
+// 		return
+// 	}
 
-	parentIDStr := c.Param("id")
-	parentID := parentIDStr
+// 	parentIDStr := c.Param("id")
+// 	parentID := parentIDStr
 
-	places, err := h.service.GetChildren(c.Request.Context(), parentID, userID)
-	if err != nil {
-		switch err {
-		case ErrPlaceNotFound:
-			response.NotFound(c, "Parent place not found")
-		case ErrUnauthorized:
-			response.Forbidden(c, "You don't have permission to view these places")
-		default:
-			response.InternalServerError(c, "Failed to get child places")
-		}
-		return
-	}
+// 	places, err := h.service.GetChildren(c.Request.Context(), parentID, userID)
+// 	if err != nil {
+// 		switch err {
+// 		case ErrPlaceNotFound:
+// 			response.NotFound(c, "Parent place not found")
+// 		case ErrUnauthorized:
+// 			response.Forbidden(c, "You don't have permission to view these places")
+// 		default:
+// 			response.InternalServerError(c, "Failed to get child places")
+// 		}
+// 		return
+// 	}
 
-	response.Success(c, places)
-}
+// 	response.Success(c, places)
+// }

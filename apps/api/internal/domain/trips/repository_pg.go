@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"

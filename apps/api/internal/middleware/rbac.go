@@ -94,7 +94,7 @@ func (m *RBACMiddleware) RequireTripPermission(permission users.Permission) gin.
 		}
 
 		// Check if user has permission for this specific trip
-		if !trip.CanUserPerform(userID, permission) {
+		if !trip.CanUserPerform(userID, string(permission)) {
 			response.Forbidden(c, "You don't have permission to perform this action on this trip")
 			c.Abort()
 			return
@@ -179,7 +179,7 @@ func (m *RBACMiddleware) OptionalTripPermission(permission users.Permission) gin
 		}
 
 		// Store trip permission status
-		canPerform := trip.CanUserPerform(userID, permission)
+		canPerform := trip.CanUserPerform(userID, string(permission))
 		c.Set("canPerformTripAction", canPerform)
 		c.Set("trip", trip)
 		c.Next()

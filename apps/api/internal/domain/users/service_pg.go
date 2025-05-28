@@ -75,7 +75,7 @@ func (s *postgresService) Register(ctx context.Context, username, email, passwor
 }
 
 // Login authenticates a user
-func (s *postgresService) Login(ctx context.Context, emailOrUsername, password string) (*User, error) {
+func (s *postgresService) LoginOriginal(ctx context.Context, emailOrUsername, password string) (*User, error) {
 	// Try to find user by email first
 	user, err := s.repo.GetByEmail(ctx, emailOrUsername)
 	if err != nil {
@@ -214,7 +214,7 @@ func (s *postgresService) SearchUsers(ctx context.Context, query string) ([]*Use
 }
 
 // GetFriends returns a user's friends
-func (s *postgresService) GetFriends(ctx context.Context, userID string) ([]*User, error) {
+func (s *postgresService) GetFriendsOriginal(ctx context.Context, userID string) ([]*User, error) {
 	friends, err := s.repo.GetFriends(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get friends: %w", err)
@@ -231,4 +231,112 @@ func (s *postgresService) GetByID(ctx context.Context, userID string) (*User, er
 	}
 
 	return user, nil
+}
+
+// Missing interface methods - stub implementations for now
+
+func (s *postgresService) Create(ctx context.Context, input *CreateUserInput) (*User, error) {
+	// TODO: Implement
+	return nil, errors.New("not implemented")
+}
+
+func (s *postgresService) GetByEmail(ctx context.Context, email string) (*User, error) {
+	// TODO: Implement
+	return nil, errors.New("not implemented")
+}
+
+func (s *postgresService) Update(ctx context.Context, id string, input *UpdateUserInput) (*User, error) {
+	// TODO: Implement
+	return nil, errors.New("not implemented")
+}
+
+func (s *postgresService) Delete(ctx context.Context, id string) error {
+	// TODO: Implement
+	return errors.New("not implemented")
+}
+
+func (s *postgresService) Login(ctx context.Context, input *LoginInput) (*LoginResponse, error) {
+	// TODO: Implement
+	return nil, errors.New("not implemented")
+}
+
+func (s *postgresService) RefreshToken(ctx context.Context, refreshToken string) (*LoginResponse, error) {
+	// TODO: Implement
+	return nil, errors.New("not implemented")
+}
+
+func (s *postgresService) ChangePassword(ctx context.Context, userID string, input *ChangePasswordInput) error {
+	// TODO: Implement
+	return errors.New("not implemented")
+}
+
+func (s *postgresService) ResetPassword(ctx context.Context, input *ResetPasswordInput) error {
+	// TODO: Implement
+	return errors.New("not implemented")
+}
+
+func (s *postgresService) SendPasswordResetEmail(ctx context.Context, email string) error {
+	// TODO: Implement
+	return errors.New("not implemented")
+}
+
+func (s *postgresService) VerifyEmail(ctx context.Context, token string) error {
+	// TODO: Implement
+	return errors.New("not implemented")
+}
+
+func (s *postgresService) ResendVerificationEmail(ctx context.Context, email string) error {
+	// TODO: Implement
+	return errors.New("not implemented")
+}
+
+func (s *postgresService) Search(ctx context.Context, query string, limit, offset int) ([]*User, int64, error) {
+	// TODO: Implement
+	return nil, 0, errors.New("not implemented")
+}
+
+// Rename existing GetFriends to avoid conflict
+func (s *postgresService) getFriendsInternal(ctx context.Context, userID string) ([]*User, error) {
+	return s.GetFriendsOriginal(ctx, userID)
+}
+
+// GetFriends with pagination to match interface
+func (s *postgresService) GetFriends(ctx context.Context, userID string, limit, offset int) ([]*User, int64, error) {
+	// TODO: Implement - convert existing GetFriends method
+	users, err := s.getFriendsInternal(ctx, userID)
+	if err != nil {
+		return nil, 0, err
+	}
+	
+	// Apply pagination manually
+	start := offset
+	end := offset + limit
+	if start > len(users) {
+		return []*User{}, int64(len(users)), nil
+	}
+	if end > len(users) {
+		end = len(users)
+	}
+	
+	return users[start:end], int64(len(users)), nil
+}
+
+func (s *postgresService) SendFriendRequest(ctx context.Context, fromUserID, toUserID string) error {
+	// TODO: Implement
+	return errors.New("not implemented")
+}
+
+func (s *postgresService) AcceptFriendRequest(ctx context.Context, userID, requestID string) error {
+	// TODO: Implement
+	return errors.New("not implemented")
+}
+
+func (s *postgresService) RejectFriendRequest(ctx context.Context, userID, requestID string) error {
+	// TODO: Implement
+	return errors.New("not implemented")
+}
+
+func (s *postgresService) GetFriendRequests(ctx context.Context, userID string, incoming bool, limit, offset int) ([]*FriendRequest, int64, error) {
+	// TODO: Implement
+	return nil, 0, errors.New("not implemented")
 }
