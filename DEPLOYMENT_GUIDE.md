@@ -10,6 +10,13 @@ This guide explains how to deploy the Trip Planning Platform to Render.com.
 4. Redis instance (provided by Render)
 5. Mapbox API key
 
+## Deployment Architecture
+
+- **API**: Deployed via render.yaml (Blueprint)
+- **Frontend**: Deployed separately as a Static Site from Render dashboard
+- **Database**: PostgreSQL managed by Render
+- **Cache**: Redis managed by Render
+
 ## Step-by-Step Deployment
 
 ### 1. Fork/Clone the Repository
@@ -30,9 +37,9 @@ Log in to [Render.com](https://render.com) and create the following services:
 
 1. Click "New +" → "PostgreSQL"
 2. Configure:
-   - Name: `trip-planner-db`
-   - Database: `trip_planner`
-   - User: `trip_planner_user`
+   - Name: `newMap-db`
+   - Database: `newMap`
+   - User: `newMap_user`
    - Region: Choose closest to your users
    - Plan: Starter ($7/month) or Free (for testing)
 3. Click "Create Database"
@@ -43,7 +50,7 @@ Log in to [Render.com](https://render.com) and create the following services:
 
 1. Click "New +" → "Redis"
 2. Configure:
-   - Name: `trip-planner-cache`
+   - Name: `newMap-cache`
    - Region: Same as database
    - Maxmemory Policy: `allkeys-lru`
    - Plan: Starter ($7/month) or Free (for testing)
@@ -55,7 +62,7 @@ Log in to [Render.com](https://render.com) and create the following services:
 1. Click "New +" → "Web Service"
 2. Connect your GitHub repository
 3. Configure:
-   - Name: `trip-planner-api`
+   - Name: `newMap-api`
    - Environment: Docker
    - Dockerfile Path: `./apps/api/Dockerfile.render`
    - Docker Context Directory: `.`
@@ -75,9 +82,9 @@ Log in to [Render.com](https://render.com) and create the following services:
    REDIS_URL=[Internal Redis URL]
    INTERNAL_REDIS_URL=[Internal Redis URL]
    JWT_SECRET=[Generate a secure random string]
-   JWT_ISSUER=trip-planner
+   JWT_ISSUER=newMap
    MEDIA_PATH=/data/media
-   CDN_URL=https://trip-planner-api.onrender.com
+   CDN_URL=https://newMap-api.onrender.com
    DB_MIGRATIONS_PATH=./migrations
    ENVIRONMENT=production
    RUN_MIGRATIONS=true
@@ -93,14 +100,14 @@ Log in to [Render.com](https://render.com) and create the following services:
 1. Click "New +" → "Static Site"
 2. Connect your GitHub repository
 3. Configure:
-   - Name: `trip-planner-web`
+   - Name: `newMap-web`
    - Build Command: `cd apps/web && npm install && npm run build`
    - Publish Directory: `apps/web/dist`
    - Branch: `main`
 4. Add environment variables:
    ```
-   VITE_API_URL=https://trip-planner-api.onrender.com/api/v1
-   VITE_WS_URL=wss://trip-planner-api.onrender.com
+   VITE_API_URL=https://newMap-api.onrender.com/api/v1
+   VITE_WS_URL=wss://newMap-api.onrender.com
    VITE_MAPBOX_TOKEN=[Your Mapbox API key]
    ```
 5. Click "Create Static Site"
@@ -140,8 +147,8 @@ After the API service is deployed:
 ### 6. Verify Deployment
 
 1. Check service logs in Render dashboard
-2. Visit your API health endpoint: `https://trip-planner-api.onrender.com/api/health`
-3. Visit your frontend: `https://trip-planner-web.onrender.com`
+2. Visit your API health endpoint: `https://newMap-api.onrender.com/api/health`
+3. Visit your frontend: `https://newMap-web.onrender.com`
 
 ## Environment-Specific Configuration
 
