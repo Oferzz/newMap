@@ -43,8 +43,8 @@ services:
         value: ./migrations
       - key: ENVIRONMENT
         value: production
-      # MAPBOX_ACCESS_TOKEN is loaded from /etc/secrets/tokens
-      # MONGODB_URI is loaded from /etc/secrets/tokens (if needed for migration)
+      - key: MAPBOX_API_KEY
+        sync: false # Set manually in Render dashboard
     disk:
       name: media-storage
       mountPath: /data
