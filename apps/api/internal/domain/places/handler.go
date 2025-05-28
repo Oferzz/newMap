@@ -234,7 +234,7 @@ func (h *Handler) GetByTripID(c *gin.Context) {
 		return
 	}
 
-	tripIDStr := c.Param("tripId")
+	tripIDStr := c.Param("id")
 	tripID := tripIDStr
 
 	places, err := h.service.GetTripPlaces(c.Request.Context(), userID, tripID)

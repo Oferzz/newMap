@@ -1,7 +1,6 @@
 package config
 
 import (
-	"bufio"
 	"log"
 	"os"
 	"strconv"
@@ -72,47 +71,9 @@ type MediaConfig struct {
 
 // loadRenderSecrets loads secrets from Render's secret file if it exists
 func loadRenderSecrets() {
-	secretsFile := "/etc/secrets/tokens"
-	
-	// Check if file exists
-	if _, err := os.Stat(secretsFile); os.IsNotExist(err) {
-		return
-	}
-	
-	file, err := os.Open(secretsFile)
-	if err != nil {
-		log.Printf("Failed to open Render secrets file: %v", err)
-		return
-	}
-	defer file.Close()
-	
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		// Skip empty lines and comments
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-		
-		// Split key=value
-		parts := strings.SplitN(line, "=", 2)
-		if len(parts) != 2 {
-			continue
-		}
-		
-		key := strings.TrimSpace(parts[0])
-		value := strings.TrimSpace(parts[1])
-		
-		// Set environment variable if not already set
-		if os.Getenv(key) == "" {
-			os.Setenv(key, value)
-			log.Printf("Loaded secret from Render: %s", key)
-		}
-	}
-	
-	if err := scanner.Err(); err != nil {
-		log.Printf("Error reading Render secrets file: %v", err)
-	}
+	// Render now provides environment variables directly, not through files
+	// This function is kept for backward compatibility but does nothing
+	return
 }
 
 func Load() (*Config, error) {

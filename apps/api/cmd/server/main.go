@@ -233,7 +233,7 @@ func setupRouter(cfg *config.Config, userHandler *users.Handler, tripHandler *tr
 		}
 
 		// Trip places routes (convenience endpoints)
-		tripRoutes.GET("/:tripId/places", authMiddleware.RequireAuth(), placeHandler.GetByTripID)
+		tripRoutes.GET("/:id/places", authMiddleware.RequireAuth(), placeHandler.GetByTripID)
 
 		// Media routes
 		mediaRoutes := v1.Group("/media")
