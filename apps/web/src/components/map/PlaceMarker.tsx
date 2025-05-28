@@ -1,5 +1,5 @@
 import mapboxgl from 'mapbox-gl';
-import { Place } from '../../store/slices/placesSlice';
+import { Place } from '../../types';
 
 interface PlaceMarkerOptions {
   place: Place;
@@ -8,12 +8,15 @@ interface PlaceMarkerOptions {
 }
 
 export class PlaceMarker {
-  private marker: mapboxgl.Marker;
+  private marker: mapboxgl.Marker | null = null;
 
   constructor(options: PlaceMarkerOptions) {
     const { place, map, onClick } = options;
 
-    if (!place.location) return;
+    if (!place.location) {
+      this.marker = null;
+      return;
+    }
 
     // Create a custom marker element
     const el = document.createElement('div');
@@ -45,6 +48,8 @@ export class PlaceMarker {
   }
 
   remove() {
-    this.marker.remove();
+    if (this.marker) {
+      this.marker.remove();
+    }
   }
 }

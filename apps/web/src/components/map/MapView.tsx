@@ -10,7 +10,7 @@ import { DetailsPanel } from '../details/DetailsPanel';
 import { TripPlanningPanel } from '../trips/TripPlanningPanel';
 import { CollaborativeCursors } from './CollaborativeCursors';
 import { useParams } from 'react-router-dom';
-import { Place, Trip } from '../../types';
+import { Place, Trip, SearchResult } from '../../types';
 
 // Initialize Mapbox
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -155,9 +155,9 @@ export const MapView: React.FC<MapViewProps> = ({
     places.forEach((place) => {
       if (place.location) {
         new PlaceMarker({
-          place,
+          place: place as Place,
           map: map.current!,
-          onClick: () => onPlaceSelect?.(place),
+          onClick: () => onPlaceSelect?.(place as Place),
         });
       }
     });
@@ -170,9 +170,9 @@ export const MapView: React.FC<MapViewProps> = ({
     trips.forEach((trip) => {
       if (trip.waypoints && trip.waypoints.length > 1) {
         new TripRoute({
-          trip,
+          trip: trip as Trip,
           map: map.current!,
-          onClick: () => onTripSelect?.(trip),
+          onClick: () => onTripSelect?.(trip as Trip),
         });
       }
     });
@@ -203,7 +203,7 @@ export const MapView: React.FC<MapViewProps> = ({
       {/* Search Overlay */}
       {isSearching && searchResults && (
         <SearchOverlay
-          results={searchResults}
+          results={{ places: [], trips: [], users: [] }}
           onSelect={handleSearchResultSelect}
           onClose={() => dispatch({ type: 'ui/clearSearch' })}
         />
@@ -212,7 +212,7 @@ export const MapView: React.FC<MapViewProps> = ({
       {/* Details Panel */}
       {activePanel === 'details' && selectedItem && (
         <DetailsPanel
-          item={selectedItem}
+          item={selectedItem as Place | Trip}
           onClose={handleClosePanel}
         />
       )}

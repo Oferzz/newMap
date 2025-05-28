@@ -121,9 +121,9 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({ item, onClose }) => 
                   </span>
                 </p>
 
-                {item.category && item.category.length > 0 && (
+                {item.category && (
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {item.category.map((cat: string) => (
+                    {(Array.isArray(item.category) ? item.category : [item.category]).map((cat: string) => (
                       <span
                         key={cat}
                         className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"

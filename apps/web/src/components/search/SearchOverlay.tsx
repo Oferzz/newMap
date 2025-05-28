@@ -87,7 +87,7 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
                     <button
                       key={place.id}
                       className="w-full px-4 py-3 hover:bg-gray-50 transition-colors text-left"
-                      onClick={() => onSelect(place)}
+                      onClick={() => onSelect({ ...place, type: 'place' as const })}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -99,9 +99,9 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
                             {place.city}
                             {place.country && `, ${place.country}`}
                           </p>
-                          {place.category && place.category.length > 0 && (
+                          {place.category && (
                             <div className="flex flex-wrap gap-1 mt-2">
-                              {place.category.slice(0, 3).map((cat) => (
+                              {(Array.isArray(place.category) ? place.category : [place.category]).slice(0, 3).map((cat: string) => (
                                 <span
                                   key={cat}
                                   className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded"
@@ -138,12 +138,12 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
                     <button
                       key={trip.id}
                       className="w-full px-4 py-3 hover:bg-gray-50 transition-colors text-left"
-                      onClick={() => onSelect(trip)}
+                      onClick={() => onSelect({ ...trip, type: 'trip' as const })}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <h4 className="font-medium text-gray-900">
-                            {trip.title}
+                            {trip.title || trip.name}
                           </h4>
                           {trip.description && (
                             <p className="text-sm text-gray-600 mt-1 line-clamp-2">
