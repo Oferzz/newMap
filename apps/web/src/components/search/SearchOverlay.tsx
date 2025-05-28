@@ -161,7 +161,7 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
                             </span>
                             <span className="flex items-center">
                               <Clock className="w-3 h-3 mr-1" />
-                              {formatDistanceToNow(trip.created_at)}
+                              {trip.created_at ? formatDistanceToNow(trip.created_at) : 'Unknown'}
                             </span>
                           </div>
                         </div>

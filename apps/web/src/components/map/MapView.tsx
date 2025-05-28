@@ -136,8 +136,11 @@ export const MapView: React.FC<MapViewProps> = ({
       // It's a trip - fit bounds to show all waypoints
       const bounds = new mapboxgl.LngLatBounds();
       selectedItem.waypoints.forEach((waypoint) => {
-        if (waypoint.place?.location) {
-          bounds.extend(waypoint.place.location.coordinates);
+        const place = waypoint.place;
+        if (place?.location) {
+          bounds.extend(place.location.coordinates);
+        } else if (place?.coordinates) {
+          bounds.extend([place.coordinates.lng, place.coordinates.lat]);
         }
       });
       
@@ -153,11 +156,19 @@ export const MapView: React.FC<MapViewProps> = ({
     if (!map.current) return;
 
     places.forEach((place) => {
-      if (place.location) {
+      if (place.location || (place as any).coordinates) {
+        // Transform place if it has coordinates instead of location
+        const transformedPlace = place.location ? place : {
+          ...place,
+          location: {
+            coordinates: [(place as any).coordinates.lng, (place as any).coordinates.lat]
+          }
+        };
+        
         new PlaceMarker({
-          place: place as Place,
+          place: transformedPlace as Place,
           map: map.current!,
-          onClick: () => onPlaceSelect?.(place as Place),
+          onClick: () => onPlaceSelect?.(transformedPlace as Place),
         });
       }
     });
@@ -170,9 +181,9 @@ export const MapView: React.FC<MapViewProps> = ({
     trips.forEach((trip) => {
       if (trip.waypoints && trip.waypoints.length > 1) {
         new TripRoute({
-          trip: trip as Trip,
+          trip: trip as unknown as Trip,
           map: map.current!,
-          onClick: () => onTripSelect?.(trip as Trip),
+          onClick: () => onTripSelect?.(trip as unknown as Trip),
         });
       }
     });

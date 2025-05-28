@@ -150,7 +150,7 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({ item, onClose }) => 
                   </span>
                   <span className="flex items-center">
                     <Clock className="w-4 h-4 mr-1" />
-                    {formatDate(item.created_at)}
+                    {item.created_at ? formatDate(item.created_at) : 'Unknown'}
                   </span>
                 </div>
 

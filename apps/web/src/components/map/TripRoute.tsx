@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import mapboxgl from 'mapbox-gl';
 import { Trip } from '../../types';
 
