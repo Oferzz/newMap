@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
@@ -10,6 +10,7 @@ import { DetailsPanel } from '../details/DetailsPanel';
 import { TripPlanningPanel } from '../trips/TripPlanningPanel';
 import { CollaborativeCursors } from './CollaborativeCursors';
 import { useParams } from 'react-router-dom';
+import { Place, Trip } from '../../types';
 
 // Initialize Mapbox
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;

@@ -93,7 +93,7 @@ export const deletePlaceThunk = createAsyncThunk(
 
 export const getUserPlacesThunk = createAsyncThunk(
   'places/getUserPlaces',
-  async (params?: { page?: number; limit?: number }, { dispatch }) => {
+  async (params: { page?: number; limit?: number } | undefined, { dispatch }) => {
     try {
       dispatch(setLoading(true));
       const response = await placesService.getUserPlaces(params);

@@ -1,6 +1,6 @@
 import React from 'react';
 import mapboxgl from 'mapbox-gl';
-import { Layers, Map as MapIcon } from 'lucide-react';
+import { Layers } from 'lucide-react';
 
 interface MapControlsProps {
   map: mapboxgl.Map | null;

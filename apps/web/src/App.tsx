@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { store } from './store';
@@ -7,7 +6,7 @@ import { MapView } from './components/map/MapView';
 import { LoginPage } from './pages/LoginPage';
 import { TripCreationPage } from './pages/TripCreationPage';
 import { PrivateRoute } from './components/auth/PrivateRoute';
-import { WebSocketProvider } from './components/WebSocketProvider';
+import { WebSocketProvider } from './providers/WebSocketProvider';
 import { Toaster } from 'react-hot-toast';
 import './App.css';
 

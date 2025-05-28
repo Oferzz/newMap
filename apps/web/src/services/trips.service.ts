@@ -208,7 +208,7 @@ class TripsService {
   }
 
   async export(tripId: string, format: 'json' | 'pdf' | 'ics'): Promise<Blob> {
-    const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/v1/trips/${tripId}/export?format=${format}`, {
+    const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/v1/trips/${tripId}/export?format=${format}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
       },

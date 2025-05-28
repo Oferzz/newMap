@@ -76,7 +76,7 @@ go test -v -tags=integration ./...
 # Start PostgreSQL locally
 docker run -d \
   --name trip-postgres \
-  -e POSTGRES_DB=trip_planner \
+  -e POSTGRES_DB=newMap \
   -e POSTGRES_USER=postgres \
   -e POSTGRES_PASSWORD=postgres \
   -p 5432:5432 \
@@ -89,7 +89,7 @@ docker run -d \
   redis:7-alpine
 
 # Run migrations
-export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/trip_planner?sslmode=disable"
+export DATABASE_URL="postgresql://postgres:postgres@localhost:5432/newMap?sslmode=disable"
 migrate -path ./migrations -database $DATABASE_URL up
 
 # Start the API

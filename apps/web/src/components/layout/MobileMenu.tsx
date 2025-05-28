@@ -67,12 +67,12 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
             <div className="p-4 border-b">
               <div className="flex items-center">
                 <img
-                  src={user.avatar_url || '/default-avatar.png'}
-                  alt={user.display_name}
+                  src={user.avatarUrl || '/default-avatar.png'}
+                  alt={user.displayName}
                   className="w-12 h-12 rounded-full mr-3"
                 />
                 <div>
-                  <div className="font-medium">{user.display_name}</div>
+                  <div className="font-medium">{user.displayName}</div>
                   <div className="text-sm text-gray-600">@{user.username}</div>
                 </div>
               </div>

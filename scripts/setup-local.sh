@@ -40,7 +40,7 @@ REDIS_URL=redis://localhost:6379
 
 # JWT
 JWT_SECRET=your-super-secret-jwt-key-change-in-production
-JWT_ISSUER=trip-planner-local
+JWT_ISSUER=newMap-local
 
 # Server
 PORT=8080
@@ -81,7 +81,7 @@ version: '3.8'
 services:
   postgres:
     image: postgis/postgis:16-3.4
-    container_name: trip-planner-postgres
+    container_name: newMap-postgres
     environment:
       POSTGRES_USER: tripuser
       POSTGRES_PASSWORD: trippass
@@ -93,7 +93,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: trip-planner-redis
+    container_name: newMap-redis
     ports:
       - "6379:6379"
     volumes:

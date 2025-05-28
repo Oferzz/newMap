@@ -9,7 +9,13 @@ export const loginThunk = createAsyncThunk(
     try {
       const response = await authService.login(input);
       dispatch(loginSuccess({
-        user: response.user,
+        user: {
+          id: response.user.id,
+          email: response.user.email,
+          username: response.user.username,
+          displayName: response.user.display_name,
+          avatarUrl: response.user.avatar_url,
+        },
         accessToken: response.access_token,
         refreshToken: response.refresh_token,
       }));
@@ -45,7 +51,13 @@ export const refreshTokenThunk = createAsyncThunk(
     try {
       const response = await authService.refreshToken(refreshToken);
       dispatch(loginSuccess({
-        user: response.user,
+        user: {
+          id: response.user.id,
+          email: response.user.email,
+          username: response.user.username,
+          displayName: response.user.display_name,
+          avatarUrl: response.user.avatar_url,
+        },
         accessToken: response.access_token,
         refreshToken: response.refresh_token,
       }));

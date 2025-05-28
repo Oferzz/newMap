@@ -36,8 +36,8 @@ A collaborative trip planning platform with real-time features, built with Go, R
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/trip-planner.git
-cd trip-planner
+git clone https://github.com/yourusername/newMap.git
+cd newMap
 ```
 
 ### 2. Set up environment variables
@@ -189,7 +189,7 @@ Key environment variables (see `.env.example` for full list):
 
 ```bash
 # Database
-DATABASE_URL=postgresql://user:pass@localhost:5432/trip_planner
+DATABASE_URL=postgresql://user:pass@localhost:5432/newMap
 
 # Redis
 REDIS_URL=redis://localhost:6379

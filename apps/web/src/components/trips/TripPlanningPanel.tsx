@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../../hooks/redux';
+import { useParams } from 'react-router-dom';
+import { useAppDispatch } from '../../hooks/redux';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import { 
   Calendar, 
@@ -15,7 +15,6 @@ import {
   Navigation,
   X,
   Search,
-  Loader2,
   Wifi,
   WifiOff
 } from 'lucide-react';
@@ -31,18 +30,16 @@ interface TripPlanningPanelProps {
 
 export const TripPlanningPanel: React.FC<TripPlanningPanelProps> = ({ isOpen, onClose }) => {
   const { id: tripId } = useParams();
-  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   
   const [activeTab, setActiveTab] = useState<'itinerary' | 'places' | 'collaborators'>('itinerary');
   const [selectedDay, setSelectedDay] = useState(0);
-  const [isAddingPlace, setIsAddingPlace] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeUsers, setActiveUsers] = useState<Array<{ id: string; name: string; avatar?: string }>>([]);
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
   
   // WebSocket integration
-  const { isConnected, on, emit } = useWebSocket({
+  const { isConnected, on } = useWebSocket({
     room: tripId ? `trip:${tripId}` : undefined,
   });
   
@@ -185,7 +182,6 @@ export const TripPlanningPanel: React.FC<TripPlanningPanelProps> = ({ isOpen, on
   };
 
   const handleAddPlace = () => {
-    setIsAddingPlace(true);
     // TODO: Open place search modal
   };
 

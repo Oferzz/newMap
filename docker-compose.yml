@@ -4,18 +4,18 @@ services:
   # PostgreSQL Database with PostGIS extension
   postgres:
     image: postgis/postgis:16-3.4
-    container_name: trip-planner-db
+    container_name: newMap-db
     environment:
-      POSTGRES_USER: trip_planner_user
-      POSTGRES_PASSWORD: trip_planner_pass
-      POSTGRES_DB: trip_planner
+      POSTGRES_USER: newMap_user
+      POSTGRES_PASSWORD: newMap_pass
+      POSTGRES_DB: newMap
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./apps/api/migrations:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U trip_planner_user -d trip_planner"]
+      test: ["CMD-SHELL", "pg_isready -U newMap_user -d newMap"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,7 +23,7 @@ services:
   # Redis Cache
   redis:
     image: redis:7-alpine
-    container_name: trip-planner-cache
+    container_name: newMap-cache
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
       - "6379:6379"
@@ -40,12 +40,12 @@ services:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
-    container_name: trip-planner-api
+    container_name: newMap-api
     ports:
       - "8080:8080"
     environment:
       # Database
-      DATABASE_URL: postgresql://trip_planner_user:trip_planner_pass@postgres:5432/trip_planner?sslmode=disable
+      DATABASE_URL: postgresql://newMap_user:newMap_pass@postgres:5432/newMap?sslmode=disable
       
       # Redis
       REDIS_URL: redis://redis:6379
@@ -57,7 +57,7 @@ services:
       
       # JWT
       JWT_SECRET: your-super-secret-jwt-key-change-in-production
-      JWT_ISSUER: trip-planner
+      JWT_ISSUER: newMap
       JWT_ACCESS_EXPIRY: 15m
       JWT_REFRESH_EXPIRY: 7d
       
@@ -99,7 +99,7 @@ services:
   # React Frontend (Development)
   web:
     image: node:20-alpine
-    container_name: trip-planner-web
+    container_name: newMap-web
     working_dir: /app
     ports:
       - "3000:3000"
@@ -124,7 +124,7 @@ services:
   # Nginx Reverse Proxy (Optional - for production-like setup)
   nginx:
     image: nginx:alpine
-    container_name: trip-planner-nginx
+    container_name: newMap-nginx
     ports:
       - "80:80"
     volumes:
@@ -145,4 +145,4 @@ volumes:
 
 networks:
   default:
-    name: trip-planner-network
+    name: newMap-network

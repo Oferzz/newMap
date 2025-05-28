@@ -1,12 +1,9 @@
 import React from 'react';
-import { Search, Plus, Bell, User, Menu } from 'lucide-react';
+import { Search, Plus, User, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { SearchBar } from '../search/SearchBar';
-import { UserMenu } from '../user/UserMenu';
-import { NotificationBell } from '../notifications/NotificationBell';
 import { MobileMenu } from './MobileMenu';
-import { Button } from '../ui/Button';
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -64,18 +61,23 @@ export const Header: React.FC = () => {
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center space-x-4">
-          <Button
+          <button
             onClick={handleCreateTrip}
-            variant="primary"
-            className="flex items-center"
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             <Plus className="w-4 h-4 mr-2" />
             New Trip
-          </Button>
+          </button>
           
-          {user && <NotificationBell />}
-          
-          <UserMenu />
+          {user && (
+            <button className="p-2">
+              <img 
+                src={user.avatarUrl || '/default-avatar.png'} 
+                alt={user.displayName}
+                className="w-8 h-8 rounded-full"
+              />
+            </button>
+          )}
         </div>
 
         {/* Mobile User Avatar */}
@@ -83,8 +85,8 @@ export const Header: React.FC = () => {
           {user ? (
             <button className="p-1">
               <img 
-                src={user.avatar_url || '/default-avatar.png'} 
-                alt={user.display_name}
+                src={user.avatarUrl || '/default-avatar.png'} 
+                alt={user.displayName}
                 className="w-8 h-8 rounded-full"
               />
             </button>

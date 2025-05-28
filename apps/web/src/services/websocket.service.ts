@@ -58,7 +58,6 @@ interface WebSocketEvents {
 
 class WebSocketService {
   private socket: Socket | null = null;
-  private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000;
   private listeners: Map<string, Set<EventCallback>> = new Map();
@@ -109,7 +108,6 @@ class WebSocketService {
     // Connection events
     this.socket.on('connect', () => {
       console.log('WebSocket connected');
-      this.reconnectAttempts = 0;
       
       store.dispatch(addNotification({
         type: 'success',

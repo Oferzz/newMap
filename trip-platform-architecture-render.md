@@ -502,11 +502,11 @@ func (p *ImageProcessor) GenerateThumbnails(inputPath string) (*Thumbnails, erro
 services:
   # Go API Service
   - type: web
-    name: trip-planner-api
+    name: newMap-api
     runtime: docker
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: .
-    repo: https://github.com/yourusername/trip-planner
+    repo: https://github.com/yourusername/newMap
     buildFilter:
       paths:
         - apps/api/**
@@ -516,23 +516,23 @@ services:
         value: 8080
       - key: DATABASE_URL
         fromDatabase:
-          name: trip-planner-db
+          name: newMap-db
           property: connectionString
       - key: REDIS_URL
         fromService:
-          name: trip-planner-cache
+          name: newMap-cache
           type: redis
           property: connectionString
       - key: INTERNAL_REDIS_URL
         fromService:
-          name: trip-planner-cache
+          name: newMap-cache
           type: redis
           property: internalConnectionString
       - key: MEDIA_PATH
         value: /data/media
       - key: CDN_URL
         fromService:
-          name: trip-planner-web
+          name: newMap-web
           type: web
           envVarKey: RENDER_EXTERNAL_URL
     disk:
@@ -549,7 +549,7 @@ services:
 
   # React Frontend
   - type: web
-    name: trip-planner-web
+    name: newMap-web
     runtime: static
     buildCommand: cd apps/web && npm install && npm run build
     staticPublishPath: apps/web/dist
@@ -567,21 +567,21 @@ services:
     routes:
       - type: rewrite
         source: /media/*
-        destination: https://trip-planner-api.onrender.com/media/*
+        destination: https://newMap-api.onrender.com/media/*
 
   # Redis Cache Service
   - type: redis
-    name: trip-planner-cache
+    name: newMap-cache
     plan: starter # or standard/pro based on needs
     maxmemoryPolicy: allkeys-lru
     ipAllowList: [] # Configure if using external access
 
 databases:
   # PostgreSQL Database
-  - name: trip-planner-db
+  - name: newMap-db
     plan: starter # or standard/pro
-    databaseName: trip_planner
-    user: trip_planner_user
+    databaseName: newMap
+    user: newMap_user
     postgresMajorVersion: 15
 ```
 
@@ -627,7 +627,7 @@ PORT=8080
 API_VERSION=v1
 
 # Database (from Render PostgreSQL)
-DATABASE_URL=postgresql://user:pass@host:5432/trip_planner?sslmode=require
+DATABASE_URL=postgresql://user:pass@host:5432/newMap?sslmode=require
 DB_MAX_CONNECTIONS=100
 DB_IDLE_CONNECTIONS=10
 
@@ -647,7 +647,7 @@ BCRYPT_COST=12
 MEDIA_PATH=/data/media
 MAX_UPLOAD_SIZE=52428800
 ALLOWED_MIME_TYPES=image/jpeg,image/png,image/webp,video/mp4
-CDN_URL=https://trip-planner-web.onrender.com
+CDN_URL=https://newMap-web.onrender.com
 THUMBNAIL_QUALITY=85
 
 # External Services
@@ -665,7 +665,7 @@ SENTRY_DSN=https://xxx@xxx.ingest.sentry.io/xxx
 LOG_LEVEL=info
 
 # Security
-CORS_ORIGINS=https://trip-planner-web.onrender.com,https://yourdomain.com
+CORS_ORIGINS=https://newMap-web.onrender.com,https://yourdomain.com
 RATE_LIMIT_REQUESTS=100
 RATE_LIMIT_WINDOW=1m
 SESSION_LIFETIME=86400
@@ -679,8 +679,8 @@ ENABLE_REAL_TIME=true
 ### Frontend Environment Variables
 ```env
 # apps/web/.env.production
-VITE_API_URL=https://trip-planner-api.onrender.com/api/v1
-VITE_WS_URL=wss://trip-planner-api.onrender.com
+VITE_API_URL=https://newMap-api.onrender.com/api/v1
+VITE_WS_URL=wss://newMap-api.onrender.com
 VITE_MAPBOX_TOKEN=pk.xxx
 VITE_SENTRY_DSN=https://xxx@xxx.ingest.sentry.io/xxx
 VITE_GA_ID=G-XXXXXXXXXX

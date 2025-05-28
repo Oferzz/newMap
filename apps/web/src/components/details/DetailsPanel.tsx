@@ -117,13 +117,13 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({ item, onClose }) => 
                     {item.street_address && `${item.street_address}, `}
                     {item.city}
                     {item.state && `, ${item.state}`}
-                    {item.country && `, ${item.country}`}
+                    {(item as any).country && `, ${(item as any).country}`}
                   </span>
                 </p>
 
                 {item.category && item.category.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {item.category.map((cat) => (
+                    {item.category.map((cat: string) => (
                       <span
                         key={cat}
                         className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
@@ -146,7 +146,7 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({ item, onClose }) => 
                   </span>
                   <span className="flex items-center">
                     <Users className="w-4 h-4 mr-1" />
-                    {item.collaborators?.length || 0} collaborators
+                    {(item as any).collaborators?.length || 0} collaborators
                   </span>
                   <span className="flex items-center">
                     <Clock className="w-4 h-4 mr-1" />
@@ -181,10 +181,7 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({ item, onClose }) => 
                     <div key={day} className="flex justify-between">
                       <span className="capitalize text-gray-600">{day}</span>
                       <span>
-                        {hours.length > 0 
-                          ? hours.map(h => `${h.open} - ${h.close}`).join(', ')
-                          : 'Closed'
-                        }
+                        {typeof hours === 'string' ? hours : 'Closed'}
                       </span>
                     </div>
                   ))}
@@ -197,7 +194,7 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({ item, onClose }) => 
               <div className="mb-6">
                 <h3 className="font-semibold mb-2">Itinerary</h3>
                 <div className="space-y-2">
-                  {item.waypoints.map((waypoint, index) => (
+                  {item.waypoints.map((waypoint: any, index: number) => (
                     <div key={waypoint.id} className="flex items-start">
                       <div className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-xs font-medium">
                         {index + 1}

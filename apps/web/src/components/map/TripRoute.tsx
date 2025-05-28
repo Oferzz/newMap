@@ -1,5 +1,5 @@
 import mapboxgl from 'mapbox-gl';
-import { Trip } from '../../store/slices/tripsSlice';
+import { Trip } from '../../types';
 
 interface TripRouteOptions {
   trip: Trip;
@@ -9,7 +9,6 @@ interface TripRouteOptions {
 
 export class TripRoute {
   private map: mapboxgl.Map;
-  private trip: Trip;
   private sourceId: string;
   private layerId: string;
 
@@ -17,7 +16,6 @@ export class TripRoute {
     const { trip, map, onClick } = options;
     
     this.map = map;
-    this.trip = trip;
     this.sourceId = `trip-route-${trip.id}`;
     this.layerId = `trip-route-layer-${trip.id}`;
 

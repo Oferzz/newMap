@@ -126,7 +126,7 @@ backup_database() {
     BACKUP_FILE="backup_${TIMESTAMP}.sql"
     
     print_info "Creating database backup: $BACKUP_FILE"
-    docker-compose -f $COMPOSE_FILE exec -T postgres pg_dump -U ${DB_USER:-trip_planner_user} ${DB_NAME:-trip_planner} > $BACKUP_FILE
+    docker-compose -f $COMPOSE_FILE exec -T postgres pg_dump -U ${DB_USER:-newMap_user} ${DB_NAME:-newMap} > $BACKUP_FILE
     print_info "Backup completed: $BACKUP_FILE"
 }
 
@@ -151,7 +151,7 @@ restore_database() {
     fi
     
     print_info "Restoring database from: $BACKUP_FILE"
-    docker-compose -f $COMPOSE_FILE exec -T postgres psql -U ${DB_USER:-trip_planner_user} ${DB_NAME:-trip_planner} < $BACKUP_FILE
+    docker-compose -f $COMPOSE_FILE exec -T postgres psql -U ${DB_USER:-newMap_user} ${DB_NAME:-newMap} < $BACKUP_FILE
     print_info "Restore completed"
 }
 

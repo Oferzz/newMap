@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Search, X, Filter, Loader2 } from 'lucide-react';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
-import { searchAll } from '../../store/slices/searchSlice';
+import { clearSearch } from '../../store/slices/searchSlice';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -29,20 +29,16 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   // Trigger search when debounced query changes
   useEffect(() => {
     if (debouncedQuery.trim()) {
-      dispatch(searchAll({ 
-        query: debouncedQuery, 
-        filters 
-      }));
       onSearch(debouncedQuery);
     } else {
-      dispatch({ type: 'search/clearResults' });
+      dispatch(clearSearch());
     }
   }, [debouncedQuery, filters, dispatch, onSearch]);
 
   const handleClear = () => {
     setQuery('');
     inputRef.current?.focus();
-    dispatch({ type: 'search/clearResults' });
+    dispatch(clearSearch());
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

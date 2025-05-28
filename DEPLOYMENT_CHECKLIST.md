@@ -5,12 +5,12 @@
 ### 1. Environment Variables Setup in Render Dashboard
 Before deploying, ensure these environment variables are set in the Render dashboard:
 
-#### API Service (trip-planner-api)
+#### API Service (newMap-api)
 - [ ] `MAPBOX_API_KEY` - Your Mapbox API key
 - [ ] `JWT_SECRET` - Will be auto-generated, but you can set a custom one
 - [ ] `SENTRY_DSN` - (Optional) For error tracking
 
-#### Web Service (trip-planner-web)
+#### Web Service (newMap-web)
 - [ ] `VITE_MAPBOX_TOKEN` - Your Mapbox public token
 
 ### 2. GitHub Repository Setup
@@ -55,7 +55,7 @@ Before deploying, ensure these environment variables are set in the Render dashb
    - [ ] Check connection from API service
 
 3. **API Service**
-   - [ ] Test health endpoint: `https://trip-planner-api.onrender.com/api/health`
+   - [ ] Test health endpoint: `https://newMap-api.onrender.com/api/health`
    - [ ] Verify JWT authentication is working
    - [ ] Test API endpoints with Postman/curl
 

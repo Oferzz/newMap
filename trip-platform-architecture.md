@@ -95,7 +95,7 @@ Infrastructure:
 
 ### Monorepo Structure
 ```
-trip-planner/
+newMap/
 ├── .github/
 │   └── workflows/
 │       ├── ci.yml
@@ -1000,7 +1000,7 @@ func (c *CacheStrategy) GetOrSet(
 services:
   # API Service
   - type: web
-    name: trip-planner-api
+    name: newMap-api
     env: docker
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: .
@@ -1009,11 +1009,11 @@ services:
         value: 8080
       - key: MONGODB_URI
         fromDatabase:
-          name: trip-planner-db
+          name: newMap-db
           property: connectionString
       - key: REDIS_URL
         fromService:
-          name: trip-planner-redis
+          name: newMap-redis
           type: pserv
           property: connectionString
     autoDeploy: true
@@ -1021,7 +1021,7 @@ services:
 
   # Web App
   - type: web
-    name: trip-planner-web
+    name: newMap-web
     env: static
     buildCommand: cd apps/web && npm install && npm run build
     staticPublishPath: ./apps/web/dist
@@ -1036,7 +1036,7 @@ services:
 
   # Redis Cache
   - type: pserv
-    name: trip-planner-redis
+    name: newMap-redis
     env: docker
     dockerfilePath: ./docker/redis.Dockerfile
     disk:
@@ -1045,9 +1045,9 @@ services:
       sizeGB: 10
 
 databases:
-  - name: trip-planner-db
-    databaseName: trip_planner
-    user: trip_planner_user
+  - name: newMap-db
+    databaseName: newMap
+    user: newMap_user
 ```
 
 ### Environment Variables
@@ -1066,11 +1066,11 @@ JWT_EXPIRY=7d
 REFRESH_TOKEN_EXPIRY=30d
 
 # Storage
-S3_BUCKET=trip-planner-media
+S3_BUCKET=newMap-media
 S3_REGION=us-east-1
 S3_ACCESS_KEY=...
 S3_SECRET_KEY=...
-CDN_URL=https://cdn.trip-planner.com
+CDN_URL=https://cdn.newMap.com
 
 # External APIs
 MAPBOX_API_KEY=...

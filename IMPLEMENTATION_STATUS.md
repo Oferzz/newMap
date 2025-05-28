@@ -81,7 +81,7 @@
 
 1. Install PostgreSQL 15+ with PostGIS extension
 2. Install Redis for caching
-3. Create database: `createdb trip_planner`
+3. Create database: `createdb newMap`
 4. Run migrations: `migrate -path ./migrations -database $DATABASE_URL up`
 5. Copy `.env.example` to `.env` and update values
 6. Run: `go run cmd/server/main.go`

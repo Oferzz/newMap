@@ -96,7 +96,7 @@ export const deleteTripThunk = createAsyncThunk(
 
 export const getUserTripsThunk = createAsyncThunk(
   'trips/getUserTrips',
-  async (params?: { page?: number; limit?: number; status?: string; privacy?: string }, { dispatch }) => {
+  async (params: { page?: number; limit?: number; status?: string; privacy?: string } | undefined, { dispatch }) => {
     try {
       dispatch(setLoading(true));
       const response = await tripsService.getUserTrips(params);

@@ -4,7 +4,6 @@ import { useAppDispatch } from '../hooks/redux';
 import { createTripThunk } from '../store/thunks/trips.thunks';
 import { setActivePanel } from '../store/slices/uiSlice';
 import { Calendar, MapPin, Lock, Globe, Users, Loader2, ChevronRight } from 'lucide-react';
-import toast from 'react-hot-toast';
 
 export const TripCreationPage: React.FC = () => {
   const navigate = useNavigate();
