@@ -183,7 +183,7 @@ export const Header: React.FC<HeaderProps> = ({ user, onSearch, onCreateTrip }) 
       <div className="flex items-center justify-between h-full px-4">
         {/* Logo */}
         <div className="flex items-center">
-          <img src="/logo.svg" alt="TripPlanner" className="h-8 w-auto" />
+          <img src="/logo.svg" alt="newMap" className="h-8 w-auto" />
         </div>
 
         {/* Search Bar */}

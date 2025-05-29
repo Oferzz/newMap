@@ -528,7 +528,7 @@ src/
 │   ├── trips/
 │   │   ├── TripList/
 │   │   ├── TripDetail/
-│   │   ├── TripPlanner/
+│   │   ├── newMap/
 │   │   └── TripShare/
 │   ├── places/
 │   │   ├── PlaceExplorer/

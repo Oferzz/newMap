@@ -37,11 +37,11 @@ export const Header: React.FC = () => {
           <a href="/" className="flex items-center">
             <img 
               src="/logo.svg" 
-              alt="TripPlanner" 
+              alt="newMap" 
               className="h-8 w-auto"
             />
             <span className="hidden sm:block ml-2 font-semibold text-lg text-trail-800">
-              TripPlanner
+              newMap
             </span>
           </a>
         </div>

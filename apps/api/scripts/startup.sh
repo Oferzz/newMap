@@ -4,7 +4,7 @@
 
 set -e
 
-echo "=== Trip Planner API Startup ==="
+echo "=== newMap API Startup ==="
 echo "Environment: ${ENVIRONMENT:-production}"
 
 # Verify critical environment variables

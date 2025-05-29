@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Trip Planner Platform Deployment Script
+# newMap Platform Deployment Script
 # This script helps deploy the application to various environments
 
 set -e
@@ -157,7 +157,7 @@ restore_database() {
 
 # Function to show help
 show_help() {
-    echo "Trip Planner Platform Deployment Script"
+    echo "newMap Platform Deployment Script"
     echo ""
     echo "Usage: ./deploy.sh [command] [options]"
     echo ""
