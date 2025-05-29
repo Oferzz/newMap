@@ -209,7 +209,9 @@ export const MapView: React.FC<MapViewProps> = ({
   return (
     <div className="absolute inset-0 top-16">
       {/* Map Container */}
-      <div ref={mapContainer} className="absolute inset-0" />
+      <div className="absolute inset-0">
+        <div ref={mapContainer} className="w-full h-full" />
+      </div>
 
       {/* Map Controls */}
       <MapControls map={map.current} />
