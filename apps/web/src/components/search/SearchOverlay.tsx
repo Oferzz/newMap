@@ -50,9 +50,9 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
       <div className="absolute top-20 left-1/2 transform -translate-x-1/2 w-full max-w-2xl">
         <div 
           ref={overlayRef}
-          className="bg-white rounded-lg shadow-lg p-8 text-center"
+          className="bg-terrain-50 rounded-lg shadow-lg p-8 text-center border border-terrain-300"
         >
-          <p className="text-gray-500">No results found</p>
+          <p className="text-trail-500">No results found</p>
         </div>
       </div>
     );
@@ -70,31 +70,31 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
       <div className="absolute top-20 left-1/2 transform -translate-x-1/2 w-full max-w-2xl z-50">
         <div 
           ref={overlayRef}
-          className="bg-white rounded-lg shadow-xl max-h-[calc(100vh-6rem)] overflow-hidden"
+          className="bg-terrain-50 rounded-lg shadow-xl max-h-[calc(100vh-6rem)] overflow-hidden border border-terrain-300"
         >
           <div className="overflow-y-auto max-h-[calc(100vh-6rem)]">
             {/* Places Section */}
             {results.places.length > 0 && (
-              <div className="border-b border-gray-200">
-                <div className="p-4 bg-gray-50">
-                  <h3 className="text-sm font-semibold text-gray-700 flex items-center">
+              <div className="border-b border-terrain-300">
+                <div className="p-4 bg-terrain-100">
+                  <h3 className="text-sm font-semibold text-trail-700 flex items-center">
                     <MapPin className="w-4 h-4 mr-2" />
                     Places ({results.places.length})
                   </h3>
                 </div>
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-terrain-200">
                   {results.places.map((place) => (
                     <button
                       key={place.id}
-                      className="w-full px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                      className="w-full px-4 py-3 hover:bg-terrain-100 transition-colors text-left"
                       onClick={() => onSelect({ ...place, type: 'place' as const })}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">
+                          <h4 className="font-medium text-trail-800">
                             {place.name}
                           </h4>
-                          <p className="text-sm text-gray-600 mt-1">
+                          <p className="text-sm text-trail-600 mt-1">
                             {place.street_address && `${place.street_address}, `}
                             {place.city}
                             {place.country && `, ${place.country}`}
@@ -104,7 +104,7 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
                               {(Array.isArray(place.category) ? place.category : [place.category]).slice(0, 3).map((cat: string) => (
                                 <span
                                   key={cat}
-                                  className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded"
+                                  className="px-2 py-1 text-xs bg-terrain-200 text-trail-600 rounded"
                                 >
                                   {cat}
                                 </span>
@@ -113,7 +113,7 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
                           )}
                         </div>
                         {place.average_rating && (
-                          <div className="ml-4 text-sm text-gray-500">
+                          <div className="ml-4 text-sm text-trail-500">
                             ⭐ {place.average_rating.toFixed(1)}
                           </div>
                         )}
@@ -126,31 +126,31 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
 
             {/* Trips Section */}
             {results.trips.length > 0 && (
-              <div className="border-b border-gray-200">
-                <div className="p-4 bg-gray-50">
-                  <h3 className="text-sm font-semibold text-gray-700 flex items-center">
+              <div className="border-b border-terrain-300">
+                <div className="p-4 bg-terrain-100">
+                  <h3 className="text-sm font-semibold text-trail-700 flex items-center">
                     <Route className="w-4 h-4 mr-2" />
                     Trips ({results.trips.length})
                   </h3>
                 </div>
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-terrain-200">
                   {results.trips.map((trip) => (
                     <button
                       key={trip.id}
-                      className="w-full px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                      className="w-full px-4 py-3 hover:bg-terrain-100 transition-colors text-left"
                       onClick={() => onSelect({ ...trip, type: 'trip' as const })}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">
+                          <h4 className="font-medium text-trail-800">
                             {trip.title || trip.name}
                           </h4>
                           {trip.description && (
-                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                            <p className="text-sm text-trail-600 mt-1 line-clamp-2">
                               {trip.description}
                             </p>
                           )}
-                          <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+                          <div className="flex items-center gap-4 mt-2 text-sm text-trail-500">
                             <span className="flex items-center">
                               <MapPin className="w-3 h-3 mr-1" />
                               {trip.waypoints?.length || 0} places
@@ -169,10 +169,10 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
                           <span className={`
                             px-2 py-1 text-xs rounded-full
                             ${trip.privacy === 'public' 
-                              ? 'bg-green-100 text-green-700' 
+                              ? 'bg-forest-100 text-forest-700' 
                               : trip.privacy === 'private'
-                              ? 'bg-gray-100 text-gray-700'
-                              : 'bg-blue-100 text-blue-700'
+                              ? 'bg-terrain-200 text-trail-700'
+                              : 'bg-water-100 text-water-700'
                             }
                           `}>
                             {trip.privacy}
@@ -188,17 +188,17 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
             {/* Users Section */}
             {results.users.length > 0 && (
               <div>
-                <div className="p-4 bg-gray-50">
-                  <h3 className="text-sm font-semibold text-gray-700 flex items-center">
+                <div className="p-4 bg-terrain-100">
+                  <h3 className="text-sm font-semibold text-trail-700 flex items-center">
                     <User className="w-4 h-4 mr-2" />
                     Users ({results.users.length})
                   </h3>
                 </div>
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-terrain-200">
                   {results.users.map((user) => (
                     <button
                       key={user.id}
-                      className="w-full px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                      className="w-full px-4 py-3 hover:bg-terrain-100 transition-colors text-left"
                       onClick={() => onSelect(user)}
                     >
                       <div className="flex items-center">
@@ -208,10 +208,10 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
                           className="w-10 h-10 rounded-full mr-3"
                         />
                         <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">
+                          <h4 className="font-medium text-trail-800">
                             {user.display_name}
                           </h4>
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-trail-600">
                             @{user.username}
                           </p>
                         </div>
