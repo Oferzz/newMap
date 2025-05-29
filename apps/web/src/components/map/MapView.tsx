@@ -50,7 +50,7 @@ export const MapView: React.FC<MapViewProps> = ({
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
-      style: mapViewState.style || 'mapbox://styles/mapbox/streets-v12',
+      style: mapViewState.style || 'mapbox://styles/mapbox/outdoors-v12',
       center: mapViewState.center || [-74.5, 40],
       zoom: mapViewState.zoom || 9,
       pitch: 0,

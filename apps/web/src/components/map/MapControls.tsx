@@ -17,7 +17,7 @@ export const MapControls: React.FC<MapControlsProps> = ({ map }) => {
   ];
 
   const [isStyleMenuOpen, setIsStyleMenuOpen] = React.useState(false);
-  const [currentStyle, setCurrentStyle] = React.useState('streets-v12');
+  const [currentStyle, setCurrentStyle] = React.useState('outdoors-v12');
 
   const handleStyleChange = (styleId: string) => {
     if (!map) return;

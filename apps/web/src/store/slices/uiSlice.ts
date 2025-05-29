@@ -33,7 +33,7 @@ const initialState: UIState = {
   mapView: {
     center: [-74.5, 40],
     zoom: 9,
-    style: 'mapbox://styles/mapbox/streets-v12',
+    style: 'mapbox://styles/mapbox/outdoors-v12',
   },
   searchResults: null,
   isSearching: false,
