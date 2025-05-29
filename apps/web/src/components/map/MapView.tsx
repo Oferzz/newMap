@@ -15,6 +15,12 @@ import { Place, Trip, SearchResult } from '../../types';
 // Initialize Mapbox
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
+// Disable Mapbox telemetry to prevent CORS errors
+(mapboxgl as any).config = {
+  ...(mapboxgl as any).config,
+  EVENTS_URL: ''
+};
+
 interface MapViewProps {
   onPlaceSelect?: (place: Place) => void;
   onTripSelect?: (trip: Trip) => void;
