@@ -53,9 +53,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         {/* Search Icon */}
         <div className="absolute left-3 pointer-events-none">
           {isSearching ? (
-            <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+            <Loader2 className="w-5 h-5 text-trail-500 animate-spin" />
           ) : (
-            <Search className="w-5 h-5 text-gray-400" />
+            <Search className="w-5 h-5 text-trail-500" />
           )}
         </div>
 
@@ -67,7 +67,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="w-full pl-10 pr-20 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full pl-10 pr-20 py-2 bg-terrain-50 border border-terrain-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent placeholder-trail-400"
         />
 
         {/* Action Buttons */}
@@ -75,30 +75,30 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           {query && (
             <button
               onClick={handleClear}
-              className="p-1 hover:bg-gray-100 rounded"
+              className="p-1 hover:bg-terrain-200 rounded transition-colors"
             >
-              <X className="w-4 h-4 text-gray-500" />
+              <X className="w-4 h-4 text-trail-600" />
             </button>
           )}
           
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`p-1 hover:bg-gray-100 rounded ${
-              showFilters ? 'bg-gray-100' : ''
+            className={`p-1 hover:bg-terrain-200 rounded transition-colors ${
+              showFilters ? 'bg-terrain-200' : ''
             }`}
           >
-            <Filter className="w-4 h-4 text-gray-500" />
+            <Filter className="w-4 h-4 text-trail-600" />
           </button>
         </div>
       </div>
 
       {/* Filter Dropdown */}
       {showFilters && (
-        <div className="absolute top-full mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 p-4 z-50">
+        <div className="absolute top-full mt-2 w-full bg-terrain-50 rounded-lg shadow-medium border border-terrain-300 p-4 z-50">
           <div className="space-y-4">
             {/* Search Type */}
             <div>
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-trail-700">
                 Search in
               </label>
               <div className="mt-2 grid grid-cols-4 gap-2">
@@ -108,8 +108,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     onClick={() => setFilters({ ...filters, type })}
                     className={`px-3 py-1 text-sm rounded-md capitalize ${
                       filters.type === type
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-forest-100 text-forest-700'
+                        : 'bg-terrain-200 text-trail-700 hover:bg-terrain-300'
                     }`}
                   >
                     {type}
@@ -121,7 +121,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             {/* Radius Filter (for places) */}
             {(filters.type === 'all' || filters.type === 'places') && (
               <div>
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-medium text-trail-700">
                   Search radius: {filters.radius} km
                 </label>
                 <input
@@ -146,11 +146,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 onChange={(e) => 
                   setFilters({ ...filters, onlyMine: e.target.checked })
                 }
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="h-4 w-4 text-forest-600 focus:ring-forest-500 border-terrain-300 rounded"
               />
               <label 
                 htmlFor="onlyMine" 
-                className="ml-2 text-sm text-gray-700"
+                className="ml-2 text-sm text-trail-700"
               >
                 Only show my content
               </label>

@@ -24,12 +24,12 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 z-50">
+    <header className="fixed top-0 left-0 right-0 h-16 bg-terrain-100 border-b border-terrain-300 z-50 shadow-soft">
       <div className="h-full px-4 flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center">
           <button
-            className="md:hidden p-2 mr-2"
+            className="md:hidden p-2 mr-2 text-trail-700 hover:text-trail-800"
             onClick={() => setIsMobileMenuOpen(true)}
           >
             <Menu className="w-5 h-5" />
@@ -40,7 +40,7 @@ export const Header: React.FC = () => {
               alt="TripPlanner" 
               className="h-8 w-auto"
             />
-            <span className="hidden sm:block ml-2 font-semibold text-lg">
+            <span className="hidden sm:block ml-2 font-semibold text-lg text-trail-800">
               TripPlanner
             </span>
           </a>
@@ -55,7 +55,7 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Mobile Search Icon */}
-        <button className="md:hidden p-2">
+        <button className="md:hidden p-2 text-trail-700 hover:text-trail-800">
           <Search className="w-5 h-5" />
         </button>
 
@@ -63,7 +63,7 @@ export const Header: React.FC = () => {
         <div className="hidden md:flex items-center space-x-4">
           <button
             onClick={handleCreateTrip}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="flex items-center px-4 py-2 bg-forest-600 text-white rounded-lg hover:bg-forest-700 transition-colors shadow-soft"
           >
             <Plus className="w-4 h-4 mr-2" />
             New Trip
