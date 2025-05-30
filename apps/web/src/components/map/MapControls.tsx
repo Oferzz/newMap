@@ -39,7 +39,9 @@ export const MapControls: React.FC<MapControlsProps> = ({ map }) => {
         </button>
 
         {isStyleMenuOpen && (
-          <div className="absolute bottom-full left-0 mb-2 bg-terrain-100 rounded-lg shadow-xl border border-terrain-300 py-2 min-w-[150px]">
+          <div 
+            className="absolute bottom-full left-0 mb-2 bg-terrain-100 rounded-lg shadow-xl border border-terrain-300 py-2 min-w-[150px]"
+            style={{ backgroundColor: '#faf8f5' }}>
             {mapStyles.map((style) => (
               <button
                 key={style.id}
