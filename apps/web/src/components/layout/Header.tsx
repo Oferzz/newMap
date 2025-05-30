@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { SearchBar } from '../search/SearchBar';
 import { MobileMenu } from './MobileMenu';
+import { searchAllThunk } from '../../store/thunks/search.thunks';
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -19,8 +20,8 @@ export const Header: React.FC = () => {
     navigate('/trips/new');
   };
 
-  const handleSearch = (query: string) => {
-    dispatch({ type: 'search/setQuery', payload: query });
+  const handleSearch = (query: string, filters?: any) => {
+    dispatch(searchAllThunk({ query, filters }));
   };
 
   return (

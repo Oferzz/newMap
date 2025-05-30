@@ -254,7 +254,7 @@ export const MapView: React.FC<MapViewProps> = ({
       {/* Search Overlay */}
       {isSearching && searchResults && (
         <SearchOverlay
-          results={{ places: [], trips: [], users: [] }}
+          results={searchResults}
           onSelect={handleSearchResultSelect}
           onClose={() => dispatch({ type: 'ui/clearSearch' })}
         />

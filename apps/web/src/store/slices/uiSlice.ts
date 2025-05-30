@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Trip } from './tripsSlice';
 import { Place } from './placesSlice';
+import { SearchResults } from '../../types';
 
 type SearchResult = Trip | Place;
 
@@ -14,7 +15,7 @@ interface UIState {
   activePanel: 'none' | 'details' | 'trip-planning' | 'place-creation';
   selectedItem: Trip | Place | null;
   mapView: MapViewState;
-  searchResults: SearchResult[] | null;
+  searchResults: SearchResults | null;
   isSearching: boolean;
   mapClickLocation: [number, number] | null;
   isMobileMenuOpen: boolean;
@@ -59,9 +60,12 @@ const uiSlice = createSlice({
     updateMapView: (state, action: PayloadAction<Partial<MapViewState>>) => {
       state.mapView = { ...state.mapView, ...action.payload };
     },
-    setSearchResults: (state, action: PayloadAction<SearchResult[]>) => {
+    setSearchResults: (state, action: PayloadAction<SearchResults>) => {
       state.searchResults = action.payload;
       state.isSearching = true;
+    },
+    setIsSearching: (state, action: PayloadAction<boolean>) => {
+      state.isSearching = action.payload;
     },
     clearSearch: (state) => {
       state.searchResults = null;
@@ -102,6 +106,7 @@ export const {
   clearSelectedItem,
   updateMapView,
   setSearchResults,
+  setIsSearching,
   clearSearch,
   setMapClickLocation,
   clearMapClickLocation,
