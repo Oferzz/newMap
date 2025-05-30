@@ -40,9 +40,6 @@ export const Header: React.FC = () => {
               alt="newMap" 
               className="h-8 w-auto"
             />
-            <span className="hidden sm:block ml-2 font-semibold text-lg text-trail-800">
-              newMap
-            </span>
           </a>
         </div>
 
