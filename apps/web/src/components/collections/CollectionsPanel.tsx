@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { 
-  createCollection, 
-  addLocationToCollection,
   selectCollection,
-  deleteCollection 
 } from '../../store/slices/collectionsSlice';
-import { addNotification } from '../../store/slices/uiSlice';
+import { 
+  createCollectionThunk,
+  getUserCollectionsThunk,
+  deleteCollectionThunk,
+  addLocationToCollectionThunk
+} from '../../store/thunks/collections.thunks';
 
 interface CollectionsPanelProps {
   isOpen: boolean;
@@ -21,51 +23,63 @@ export const CollectionsPanel: React.FC<CollectionsPanelProps> = ({
 }) => {
   const dispatch = useAppDispatch();
   const collections = useAppSelector((state) => state.collections.items);
+  const isLoading = useAppSelector((state) => state.collections.isLoading);
   const [isCreating, setIsCreating] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
   const [newCollectionDescription, setNewCollectionDescription] = useState('');
 
-  const handleCreateCollection = () => {
+  // Load collections when panel opens
+  useEffect(() => {
+    if (isOpen) {
+      dispatch(getUserCollectionsThunk());
+    }
+  }, [isOpen, dispatch]);
+
+  const handleCreateCollection = async () => {
     if (!newCollectionName.trim()) return;
 
-    dispatch(createCollection({
-      name: newCollectionName,
-      description: newCollectionDescription || undefined,
-    }));
+    try {
+      await dispatch(createCollectionThunk({
+        name: newCollectionName,
+        description: newCollectionDescription || undefined,
+      })).unwrap();
 
-    dispatch(addNotification({
-      type: 'success',
-      message: 'Collection created successfully!',
-    }));
-
-    setNewCollectionName('');
-    setNewCollectionDescription('');
-    setIsCreating(false);
+      setNewCollectionName('');
+      setNewCollectionDescription('');
+      setIsCreating(false);
+      
+      // Refresh collections list
+      dispatch(getUserCollectionsThunk());
+    } catch (error) {
+      // Error is handled in the thunk
+    }
   };
 
-  const handleAddToCollection = (collectionId: string) => {
+  const handleAddToCollection = async (collectionId: string) => {
     if (!locationToAdd) return;
 
-    dispatch(addLocationToCollection({
-      collectionId,
-      coordinates: locationToAdd,
-    }));
+    try {
+      await dispatch(addLocationToCollectionThunk({
+        collectionId,
+        location: {
+          latitude: locationToAdd[1],
+          longitude: locationToAdd[0],
+        },
+      })).unwrap();
 
-    dispatch(addNotification({
-      type: 'success',
-      message: 'Location added to collection!',
-    }));
-
-    onClose();
+      onClose();
+    } catch (error) {
+      // Error is handled in the thunk
+    }
   };
 
-  const handleDeleteCollection = (collectionId: string) => {
+  const handleDeleteCollection = async (collectionId: string) => {
     if (window.confirm('Are you sure you want to delete this collection?')) {
-      dispatch(deleteCollection(collectionId));
-      dispatch(addNotification({
-        type: 'success',
-        message: 'Collection deleted!',
-      }));
+      try {
+        await dispatch(deleteCollectionThunk(collectionId)).unwrap();
+      } catch (error) {
+        // Error is handled in the thunk
+      }
     }
   };
 
@@ -122,7 +136,7 @@ export const CollectionsPanel: React.FC<CollectionsPanelProps> = ({
             <div className="flex gap-2">
               <button
                 onClick={handleCreateCollection}
-                disabled={!newCollectionName.trim()}
+                disabled={!newCollectionName.trim() || isLoading}
                 className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
               >
                 Create

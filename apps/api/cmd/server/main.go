@@ -13,6 +13,7 @@ import (
 	"github.com/Oferzz/newMap/apps/api/internal/cache"
 	"github.com/Oferzz/newMap/apps/api/internal/config"
 	"github.com/Oferzz/newMap/apps/api/internal/database"
+	"github.com/Oferzz/newMap/apps/api/internal/domain/collections"
 	"github.com/Oferzz/newMap/apps/api/internal/domain/places"
 	"github.com/Oferzz/newMap/apps/api/internal/domain/trips"
 	"github.com/Oferzz/newMap/apps/api/internal/domain/users"
@@ -83,6 +84,7 @@ func main() {
 	userRepo := users.NewPostgresRepository(db.DB.DB)
 	tripRepo := trips.NewPostgresRepository(db.DB)
 	placeRepo := places.NewPostgresRepository(db.DB)
+	collectionRepo := collections.NewPostgresRepository(db.DB)
 
 	// Initialize services
 	userService := users.NewPostgreSQLService(userRepo)
@@ -98,12 +100,14 @@ func main() {
 	
 	placeService := places.NewServicePg(placeRepo, tripRepo, cfg.App.MapboxAPIKey)
 	mediaService := media.NewService(db.DB, mediaStorage)
+	collectionService := collections.NewService(collectionRepo)
 
 	// Initialize handlers
 	userHandler := users.NewHandler(userService)
 	tripHandler := trips.NewHandler(tripService)
 	placeHandler := places.NewHandler(placeService)
 	mediaHandler := media.NewHandler(mediaService)
+	collectionHandler := collections.NewHandler(collectionService)
 	healthHandler := health.NewHandler(db.DB, redisClient)
 
 	// Initialize middleware
@@ -111,7 +115,7 @@ func main() {
 	rbacMiddleware := middleware.NewRBACMiddleware(userRepo, tripRepo)
 
 	// Setup router
-	router := setupRouter(cfg, userHandler, tripHandler, placeHandler, mediaHandler, healthHandler, authMiddleware, rbacMiddleware, mediaStorage)
+	router := setupRouter(cfg, userHandler, tripHandler, placeHandler, mediaHandler, collectionHandler, healthHandler, authMiddleware, rbacMiddleware, mediaStorage)
 
 	// Create server
 	srv := &http.Server{
@@ -147,7 +151,7 @@ func main() {
 	log.Println("Server exited")
 }
 
-func setupRouter(cfg *config.Config, userHandler *users.Handler, tripHandler *trips.Handler, placeHandler *places.Handler, mediaHandler *media.Handler, healthHandler *health.Handler, authMiddleware *middleware.AuthMiddleware, rbacMiddleware *middleware.RBACMiddleware, mediaStorage media.Storage) *gin.Engine {
+func setupRouter(cfg *config.Config, userHandler *users.Handler, tripHandler *trips.Handler, placeHandler *places.Handler, mediaHandler *media.Handler, collectionHandler *collections.Handler, healthHandler *health.Handler, authMiddleware *middleware.AuthMiddleware, rbacMiddleware *middleware.RBACMiddleware, mediaStorage media.Storage) *gin.Engine {
 	if cfg.Server.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -243,6 +247,28 @@ func setupRouter(cfg *config.Config, userHandler *users.Handler, tripHandler *tr
 
 		// Trip places routes (convenience endpoints)
 		tripRoutes.GET("/:id/places", authMiddleware.RequireAuth(), placeHandler.GetByTripID)
+
+		// Collection routes
+		collectionRoutes := v1.Group("/collections")
+		{
+			collectionRoutes.Use(authMiddleware.RequireAuth())
+			{
+				// Collection CRUD
+				collectionRoutes.POST("", collectionHandler.CreateCollection)
+				collectionRoutes.GET("", collectionHandler.GetUserCollections)
+				collectionRoutes.GET("/:id", collectionHandler.GetCollection)
+				collectionRoutes.PUT("/:id", collectionHandler.UpdateCollection)
+				collectionRoutes.DELETE("/:id", collectionHandler.DeleteCollection)
+				
+				// Location management
+				collectionRoutes.POST("/:id/locations", collectionHandler.AddLocationToCollection)
+				collectionRoutes.DELETE("/:id/locations/:locationId", collectionHandler.RemoveLocationFromCollection)
+				
+				// Collaborator management
+				collectionRoutes.POST("/:id/collaborators", collectionHandler.AddCollaborator)
+				collectionRoutes.DELETE("/:id/collaborators/:userId", collectionHandler.RemoveCollaborator)
+			}
+		}
 
 		// Media routes
 		mediaRoutes := v1.Group("/media")
