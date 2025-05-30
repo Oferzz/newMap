@@ -4,16 +4,24 @@ A collaborative trip planning platform with real-time features, built with Go, R
 
 ## Features
 
+### Core Features (No Authentication Required)
 - 🗺️ Interactive map-based trip planning with Mapbox
+- 📍 Save locations and create routes (stored in browser cache)
+- 🔍 Place search and exploration
+- 🎯 Drag-and-drop itinerary planning
+- 📱 Responsive design for mobile and desktop
+- ⚡ Instant access - start planning immediately
+
+### Collaboration Features (Authentication Required)
 - 👥 Real-time collaboration with multiple users
 - 🔒 Role-based access control (Owner, Admin, Editor, Viewer)
-- 📍 Place management with geospatial search
-- 🎯 Drag-and-drop itinerary planning
 - 💬 Real-time suggestions and comments
-- 📱 Responsive design for mobile and desktop
-- 🚀 Fast performance with Redis caching
 - 🔄 WebSocket support for live updates
 - 📊 Trip statistics and analytics
+- ☁️ Cloud storage and sync across devices
+- 🚀 Fast performance with Redis caching
+
+> **Note**: Users can save locations, create routes, search, and explore the platform without authentication. All data is stored locally in browser cache. For sharing trips with others and real-time collaboration, authentication is required.
 
 ## Tech Stack
 
@@ -158,30 +166,40 @@ This application is configured for easy deployment to Render.com. See [DEPLOYMEN
 
 ## API Documentation
 
+### Public Endpoints (No Authentication Required)
+- `GET /api/v1/places/search` - Search places (Mapbox integration)
+- `GET /api/v1/health` - Health check
+
 ### Authentication Endpoints
 - `POST /api/v1/auth/register` - Register new user
 - `POST /api/v1/auth/login` - Login user
 - `POST /api/v1/auth/refresh` - Refresh access token
 - `POST /api/v1/auth/logout` - Logout user
 
-### Trip Management
+### Trip Management (Authentication Required)
 - `GET /api/v1/trips` - List user's trips
 - `POST /api/v1/trips` - Create new trip
 - `GET /api/v1/trips/:id` - Get trip details
 - `PUT /api/v1/trips/:id` - Update trip
 - `DELETE /api/v1/trips/:id` - Delete trip
 
-### Collaboration
+### Collections (Authentication Required)
+- `GET /api/v1/collections` - List user's collections
+- `POST /api/v1/collections` - Create new collection
+- `POST /api/v1/collections/:id/locations` - Add location to collection
+- `DELETE /api/v1/collections/:id` - Delete collection
+
+### Collaboration (Authentication Required)
 - `POST /api/v1/trips/:id/collaborators` - Add collaborator
 - `DELETE /api/v1/trips/:id/collaborators/:userId` - Remove collaborator
 - `PUT /api/v1/trips/:id/collaborators/:userId/role` - Update collaborator role
 
-### Places
-- `GET /api/v1/places` - Search places
-- `POST /api/v1/places` - Create custom place
-- `GET /api/v1/places/:id` - Get place details
-- `PUT /api/v1/places/:id` - Update place
-- `DELETE /api/v1/places/:id` - Delete place
+### Places (Mixed Access)
+- `GET /api/v1/places` - Search places (public)
+- `POST /api/v1/places` - Create custom place (requires auth)
+- `GET /api/v1/places/:id` - Get place details (public)
+- `PUT /api/v1/places/:id` - Update place (requires auth)
+- `DELETE /api/v1/places/:id` - Delete place (requires auth)
 
 ## Environment Variables
 

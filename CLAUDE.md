@@ -3,7 +3,7 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
-This is a collaborative trip planning platform with real-time features, role-based permissions, and map-based interactions. The architecture follows a microservices-ready monolith approach with a Go backend and React frontend.
+This is a collaborative trip planning platform with real-time features, role-based permissions, and map-based interactions. The platform follows a "freemium" model where core features (save locations, create routes, search) are available without authentication using browser cache storage, while collaboration features require authentication for cloud storage and sharing. The architecture follows a microservices-ready monolith approach with a Go backend and React frontend.
 
 ## Tech Stack
 - **Backend**: Go 1.23+ with Gin framework
@@ -95,6 +95,7 @@ The project uses a monorepo structure with apps (api, web) and shared packages. 
 ### Frontend Architecture
 - **Feature-Based Organization**: Components organized by feature (trips, places, suggestions)
 - **Redux Toolkit**: State management with async thunks
+- **Dual Storage Strategy**: Local storage for guest users, cloud storage for authenticated users
 - **Real-time Hooks**: Custom hooks for WebSocket connections
 - **Mapbox Integration**: Map-based interactions with performance optimizations
 
@@ -143,10 +144,12 @@ Redis cache keys follow the pattern: `resource:id:subresource`
 - E2E tests for critical user flows
 
 ## Security Considerations
-- JWT authentication with refresh tokens
-- Role-based access control on all endpoints
-- Input validation and sanitization
-- Rate limiting on API endpoints
+- JWT authentication with refresh tokens for authenticated users
+- Guest mode with secure local storage (no sensitive data)
+- Role-based access control on protected endpoints
+- Public endpoints for search and place discovery
+- Input validation and sanitization on all inputs
+- Rate limiting on both public and protected API endpoints
 - Secure media upload with virus scanning
 
 ## Performance Guidelines
@@ -198,8 +201,17 @@ npm test -- --watch
 - When adding new API endpoints, follow the domain-driven structure in `internal/domain/`
 - All API responses use the standardized response format via `pkg/response`
 - Frontend state management follows Redux Toolkit patterns with thunks in `store/thunks/`
+- Implement dual storage pattern: local storage for guest users, API calls for authenticated users
 - Real-time features use WebSocket connections managed by `useWebSocket` hook
+- Public endpoints should not require authentication (places search, health check)
+- Collections and trip sharing require authentication
 - If there is something you dont know, dont assume it, go read it in the render docs
+
+## Authentication Strategy
+- **Guest Mode**: Core features work without authentication using browser localStorage/IndexedDB
+- **Authenticated Mode**: Additional collaboration features with cloud storage and real-time sync
+- **Migration Path**: Seamless upgrade from guest to authenticated with local data migration
+- See `AUTHENTICATION_STRATEGY.md` for detailed implementation guidelines
 
 ## Puppeteer Memory
 - When using puppeteer, go to https://newmap-fe.onrender.com/ for the website url
