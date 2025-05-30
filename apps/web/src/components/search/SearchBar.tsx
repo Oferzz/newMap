@@ -94,7 +94,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
       {/* Filter Dropdown */}
       {showFilters && (
-        <div className="absolute top-full mt-2 w-full bg-terrain-100 rounded-lg shadow-xl border border-terrain-400 p-4 z-50 bg-terrain-100/20">
+        <div className="absolute top-full mt-2 w-full bg-terrain-100 rounded-lg shadow-xl border border-terrain-400 p-4 z-50">
           <div className="space-y-4">
             {/* Search Type */}
             <div>
