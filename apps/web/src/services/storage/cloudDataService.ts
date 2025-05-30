@@ -1,4 +1,5 @@
 import { Collection, Place, Trip } from '../../types';
+import { Waypoint } from '../../store/slices/tripsSlice';
 import { DataService } from './dataService.interface';
 import { collectionsService } from '../collections.service';
 import { placesService } from '../places.service';
@@ -79,6 +80,64 @@ export class CloudDataService implements DataService {
 
   async deleteTrip(id: string): Promise<void> {
     await tripsService.deleteTrip(id);
+  }
+  
+  async getTrip(id: string): Promise<Trip | null> {
+    try {
+      const response = await tripsService.getById(id);
+      return response.data as Trip;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  // Waypoints
+  async addWaypoint(tripId: string, waypoint: Omit<Waypoint, 'id'>): Promise<Waypoint> {
+    const response = await tripsService.addWaypoint(tripId, {
+      day: waypoint.day,
+      placeId: waypoint.placeId,
+      arrivalTime: waypoint.arrivalTime,
+      departureTime: waypoint.departureTime,
+      notes: waypoint.notes
+    });
+    
+    // Transform API response to match Waypoint type
+    return {
+      id: response.data.id,
+      day: response.data.day,
+      placeId: response.data.placeId,
+      place: waypoint.place, // This should be populated by the service
+      arrivalTime: response.data.arrivalTime,
+      departureTime: response.data.departureTime,
+      notes: response.data.notes
+    };
+  }
+
+  async updateWaypoint(tripId: string, waypointId: string, updates: Partial<Waypoint>): Promise<Waypoint> {
+    const response = await tripsService.updateWaypoint(tripId, waypointId, {
+      day: updates.day,
+      arrivalTime: updates.arrivalTime,
+      departureTime: updates.departureTime,
+      notes: updates.notes
+    });
+    
+    return {
+      id: response.data.id,
+      day: response.data.day,
+      placeId: response.data.placeId,
+      place: updates.place || response.data.place,
+      arrivalTime: response.data.arrivalTime,
+      departureTime: response.data.departureTime,
+      notes: response.data.notes
+    };
+  }
+
+  async removeWaypoint(tripId: string, waypointId: string): Promise<void> {
+    await tripsService.removeWaypoint(tripId, waypointId);
+  }
+
+  async reorderWaypoints(tripId: string, waypointIds: string[]): Promise<void> {
+    await tripsService.reorderWaypoints(tripId, waypointIds);
   }
 
   // Temporary Markers - Store in memory only for cloud service

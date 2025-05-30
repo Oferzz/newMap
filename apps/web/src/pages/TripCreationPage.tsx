@@ -30,11 +30,9 @@ export const TripCreationPage: React.FC = () => {
       const result = await dispatch(createTripThunk({
         title: formData.title,
         description: formData.description,
-        start_date: formData.startDate,
-        end_date: formData.endDate,
+        startDate: new Date(formData.startDate),
+        endDate: new Date(formData.endDate),
         privacy: formData.privacy,
-        tags: formData.tags,
-        cover_image: formData.coverImage,
       })).unwrap();
       
       // Navigate to the trip page and open planning panel

@@ -1,5 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { tripsService, CreateTripInput, UpdateTripInput, AddWaypointInput, UpdateWaypointInput } from '../../services/trips.service';
+import { getDataService } from '../../services/storage/dataServiceFactory';
+import { Trip, Waypoint } from '../slices/tripsSlice';
 import { 
   setTrips, 
   setCurrentTrip, 
@@ -13,21 +14,52 @@ import {
   setLoading,
   setError 
 } from '../slices/tripsSlice';
+import { addNotification } from '../slices/uiSlice';
+import { RootState } from '../index';
 import toast from 'react-hot-toast';
 
-export const createTripThunk = createAsyncThunk(
+export const createTripThunk = createAsyncThunk<
+  Trip,
+  { title: string; description?: string; startDate: Date; endDate: Date; privacy?: string },
+  { state: RootState }
+>(
   'trips/create',
-  async (input: CreateTripInput, { dispatch }) => {
+  async (input, { dispatch, getState }) => {
     try {
       dispatch(setLoading(true));
-      const trip = await tripsService.create(input);
-      dispatch(addTrip(trip as any)); // Type conversion for now
-      toast.success('Trip created successfully!');
+      const dataService = getDataService();
+      const isAuthenticated = getState().auth.isAuthenticated;
+      
+      const trip = await dataService.saveTrip({
+        title: input.title,
+        description: input.description || '',
+        startDate: input.startDate,
+        endDate: input.endDate,
+        coverImage: '',
+        status: 'planning',
+        privacy: input.privacy || 'private',
+        ownerID: isAuthenticated ? getState().auth.user?.id || '' : 'guest',
+        collaborators: [],
+        waypoints: [],
+        tags: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      
+      dispatch(addTrip(trip));
+      dispatch(addNotification({
+        type: 'success',
+        message: 'Trip created successfully!'
+      }));
+      
       return trip;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create trip';
       dispatch(setError(message));
-      toast.error(message);
+      dispatch(addNotification({
+        type: 'error',
+        message
+      }));
       throw error;
     } finally {
       dispatch(setLoading(false));
@@ -131,17 +163,30 @@ export const searchTripsThunk = createAsyncThunk(
 );
 
 // Waypoint thunks
-export const addWaypointThunk = createAsyncThunk(
+export const addWaypointThunk = createAsyncThunk<
+  Waypoint,
+  { tripId: string; waypoint: Omit<Waypoint, 'id'> },
+  { state: RootState }
+>(
   'trips/addWaypoint',
-  async ({ tripId, input }: { tripId: string; input: AddWaypointInput }, { dispatch }) => {
+  async ({ tripId, waypoint }, { dispatch }) => {
     try {
-      const waypoint = await tripsService.addWaypoint(tripId, input);
-      dispatch(addWaypoint({ tripId, waypoint: waypoint as any }));
-      toast.success('Place added to trip!');
-      return waypoint;
+      const dataService = getDataService();
+      const newWaypoint = await dataService.addWaypoint(tripId, waypoint);
+      
+      dispatch(addWaypoint({ tripId, waypoint: newWaypoint }));
+      dispatch(addNotification({
+        type: 'success',
+        message: 'Place added to trip!'
+      }));
+      
+      return newWaypoint;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to add place';
-      toast.error(message);
+      dispatch(addNotification({
+        type: 'error',
+        message
+      }));
       throw error;
     }
   }
@@ -179,18 +224,31 @@ export const removeWaypointThunk = createAsyncThunk(
   }
 );
 
-export const reorderWaypointsThunk = createAsyncThunk(
+export const reorderWaypointsThunk = createAsyncThunk<
+  { tripId: string; waypoints: Waypoint[] },
+  { tripId: string; waypoints: Waypoint[] },
+  { state: RootState }
+>(
   'trips/reorderWaypoints',
-  async ({ tripId, waypoints }: { tripId: string; waypoints: any[] }, { dispatch }) => {
+  async ({ tripId, waypoints }, { dispatch }) => {
     try {
+      const dataService = getDataService();
       const waypointIds = waypoints.map(w => w.id);
-      await tripsService.reorderWaypoints(tripId, waypointIds);
+      
+      await dataService.reorderWaypoints(tripId, waypointIds);
       dispatch(reorderWaypoints({ tripId, waypoints }));
-      toast.success('Itinerary reordered!');
+      dispatch(addNotification({
+        type: 'success',
+        message: 'Itinerary reordered!'
+      }));
+      
       return { tripId, waypoints };
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to reorder itinerary';
-      toast.error(message);
+      dispatch(addNotification({
+        type: 'error',
+        message
+      }));
       throw error;
     }
   }

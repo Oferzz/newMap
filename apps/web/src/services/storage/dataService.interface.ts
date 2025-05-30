@@ -1,4 +1,5 @@
 import { Collection, Place, Trip } from '../../types';
+import { Waypoint } from '../../store/slices/tripsSlice';
 
 export interface DataService {
   // Collections
@@ -16,9 +17,16 @@ export interface DataService {
 
   // Trips
   getTrips(): Promise<Trip[]>;
+  getTrip(id: string): Promise<Trip | null>;
   saveTrip(trip: Omit<Trip, 'id'>): Promise<Trip>;
   updateTrip(id: string, updates: Partial<Trip>): Promise<Trip>;
   deleteTrip(id: string): Promise<void>;
+  
+  // Waypoints
+  addWaypoint(tripId: string, waypoint: Omit<Waypoint, 'id'>): Promise<Waypoint>;
+  updateWaypoint(tripId: string, waypointId: string, updates: Partial<Waypoint>): Promise<Waypoint>;
+  removeWaypoint(tripId: string, waypointId: string): Promise<void>;
+  reorderWaypoints(tripId: string, waypointIds: string[]): Promise<void>;
 
   // Temporary Markers
   getTemporaryMarkers(): Promise<Array<{ id: string; coordinates: [number, number] }>>;

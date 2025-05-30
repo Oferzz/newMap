@@ -1,4 +1,5 @@
 import { Collection, Place, Trip } from '../../types';
+import { Waypoint } from '../../store/slices/tripsSlice';
 import { DataService } from './dataService.interface';
 import { localStorageService } from './localStorage.service';
 
@@ -134,6 +135,115 @@ export class LocalDataService implements DataService {
 
   async deleteTrip(id: string): Promise<void> {
     localStorageService.deleteTrip(id);
+    return Promise.resolve();
+  }
+  
+  async getTrip(id: string): Promise<Trip | null> {
+    const trips = localStorageService.getTrips();
+    const trip = trips.find(t => t.id === id);
+    return Promise.resolve(trip || null);
+  }
+
+  // Waypoints
+  async addWaypoint(tripId: string, waypoint: Omit<Waypoint, 'id'>): Promise<Waypoint> {
+    const trips = localStorageService.getTrips();
+    const trip = trips.find(t => t.id === tripId);
+    
+    if (!trip) {
+      throw new Error('Trip not found');
+    }
+    
+    const newWaypoint: Waypoint = {
+      ...waypoint,
+      id: `waypoint_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    };
+    
+    // Add waypoint to trip
+    const updatedTrip = {
+      ...trip,
+      waypoints: [...(trip.waypoints || []), newWaypoint],
+      updatedAt: new Date()
+    };
+    
+    localStorageService.saveTrip(updatedTrip);
+    return Promise.resolve(newWaypoint);
+  }
+
+  async updateWaypoint(tripId: string, waypointId: string, updates: Partial<Waypoint>): Promise<Waypoint> {
+    const trips = localStorageService.getTrips();
+    const trip = trips.find(t => t.id === tripId);
+    
+    if (!trip) {
+      throw new Error('Trip not found');
+    }
+    
+    const waypointIndex = trip.waypoints?.findIndex(w => w.id === waypointId) ?? -1;
+    if (waypointIndex === -1) {
+      throw new Error('Waypoint not found');
+    }
+    
+    const updatedWaypoint: Waypoint = {
+      ...trip.waypoints![waypointIndex],
+      ...updates,
+      id: waypointId
+    };
+    
+    const updatedTrip = {
+      ...trip,
+      waypoints: [
+        ...trip.waypoints!.slice(0, waypointIndex),
+        updatedWaypoint,
+        ...trip.waypoints!.slice(waypointIndex + 1)
+      ],
+      updatedAt: new Date()
+    };
+    
+    localStorageService.saveTrip(updatedTrip);
+    return Promise.resolve(updatedWaypoint);
+  }
+
+  async removeWaypoint(tripId: string, waypointId: string): Promise<void> {
+    const trips = localStorageService.getTrips();
+    const trip = trips.find(t => t.id === tripId);
+    
+    if (!trip) {
+      throw new Error('Trip not found');
+    }
+    
+    const updatedTrip = {
+      ...trip,
+      waypoints: trip.waypoints?.filter(w => w.id !== waypointId) || [],
+      updatedAt: new Date()
+    };
+    
+    localStorageService.saveTrip(updatedTrip);
+    return Promise.resolve();
+  }
+
+  async reorderWaypoints(tripId: string, waypointIds: string[]): Promise<void> {
+    const trips = localStorageService.getTrips();
+    const trip = trips.find(t => t.id === tripId);
+    
+    if (!trip) {
+      throw new Error('Trip not found');
+    }
+    
+    // Create a map of waypoints by ID
+    const waypointMap = new Map<string, Waypoint>();
+    trip.waypoints?.forEach(w => waypointMap.set(w.id, w));
+    
+    // Reorder waypoints based on the provided IDs
+    const reorderedWaypoints = waypointIds
+      .map(id => waypointMap.get(id))
+      .filter((w): w is Waypoint => w !== undefined);
+    
+    const updatedTrip = {
+      ...trip,
+      waypoints: reorderedWaypoints,
+      updatedAt: new Date()
+    };
+    
+    localStorageService.saveTrip(updatedTrip);
     return Promise.resolve();
   }
 

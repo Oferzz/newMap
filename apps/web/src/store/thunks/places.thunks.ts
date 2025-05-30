@@ -1,5 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { placesService, CreatePlaceInput, UpdatePlaceInput, SearchPlacesInput, NearbyPlacesInput } from '../../services/places.service';
+import { getDataService } from '../../services/storage/dataServiceFactory';
+import { Place } from '../../types';
 import {
   setPlaces,
   setSelectedPlace,
@@ -10,21 +11,63 @@ import {
   setLoading,
   setError
 } from '../slices/placesSlice';
+import { addNotification } from '../slices/uiSlice';
+import { RootState } from '../index';
 import toast from 'react-hot-toast';
 
-export const createPlaceThunk = createAsyncThunk(
+interface CreatePlaceInput {
+  name: string;
+  description?: string;
+  category: string;
+  latitude: number;
+  longitude: number;
+  address?: string;
+  website?: string;
+  phone?: string;
+  notes?: string;
+}
+
+export const createPlaceThunk = createAsyncThunk<
+  Place,
+  CreatePlaceInput,
+  { state: RootState }
+>(
   'places/create',
-  async (input: CreatePlaceInput, { dispatch }) => {
+  async (input, { dispatch, getState }) => {
     try {
       dispatch(setLoading(true));
-      const place = await placesService.create(input);
-      dispatch(addPlace(place as any));
-      toast.success('Place created successfully!');
+      const dataService = getDataService();
+      const isAuthenticated = getState().auth.isAuthenticated;
+      
+      const place = await dataService.savePlace({
+        name: input.name,
+        description: input.description || '',
+        category: input.category,
+        latitude: input.latitude,
+        longitude: input.longitude,
+        address: input.address || '',
+        website: input.website || null,
+        phone: input.phone || null,
+        notes: input.notes || null,
+        user_id: isAuthenticated ? getState().auth.user?.id || '' : 'guest',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+      
+      dispatch(addPlace(place));
+      dispatch(addNotification({
+        type: 'success',
+        message: 'Place created successfully!'
+      }));
+      
       return place;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create place';
       dispatch(setError(message));
-      toast.error(message);
+      dispatch(addNotification({
+        type: 'error',
+        message
+      }));
       throw error;
     } finally {
       dispatch(setLoading(false));
