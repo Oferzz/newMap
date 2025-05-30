@@ -3,7 +3,6 @@ import { getDataService } from '../../services/storage/dataServiceFactory';
 import { Collection } from '../../types';
 import {
   setCollections,
-  selectCollection,
   setLoading,
   setError,
   setStorageMode,
@@ -99,7 +98,7 @@ export const deleteCollectionThunk = createAsyncThunk<
   { state: RootState }
 >(
   'collections/delete',
-  async (id, { dispatch, getState }) => {
+  async (id, { dispatch }) => {
     try {
       dispatch(setLoading(true));
       const dataService = getDataService();
@@ -136,7 +135,7 @@ export const addLocationToCollectionThunk = createAsyncThunk<
   { state: RootState }
 >(
   'collections/addLocation',
-  async ({ collectionId, location }, { dispatch, getState }) => {
+  async ({ collectionId, location }, { dispatch }) => {
     try {
       const dataService = getDataService();
       
@@ -215,7 +214,7 @@ export const removeLocationFromCollectionThunk = createAsyncThunk<
       const collection = collections.find(c => c.id === collectionId);
       
       if (collection) {
-        collection.locations = collection.locations.filter(loc => loc.id !== locationId);
+        collection.locations = collection.locations.filter((loc: any) => loc.id !== locationId);
         await dataService.updateCollection(collectionId, collection);
       }
       

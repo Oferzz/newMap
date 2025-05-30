@@ -15,6 +15,26 @@ export interface SearchResults {
   users: any[];
 }
 
+export interface CollectionLocation {
+  id: string;
+  collection_id: string;
+  name: string | null;
+  latitude: number;
+  longitude: number;
+  added_at: string;
+}
+
+export interface Collection {
+  id: string;
+  name: string;
+  description: string | null;
+  user_id: string;
+  privacy: string;
+  locations: CollectionLocation[];
+  created_at: string;
+  updated_at: string;
+}
+
 // Union type to support both API and Redux slice formats
 export type Place = {
   id: string;

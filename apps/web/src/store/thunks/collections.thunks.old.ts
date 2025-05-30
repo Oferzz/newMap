@@ -11,8 +11,6 @@ import {
   selectCollection,
   setLoading,
   setError,
-  createCollection as createCollectionAction,
-  deleteCollection as deleteCollectionAction,
 } from '../slices/collectionsSlice';
 import { addNotification } from '../slices/uiSlice';
 
@@ -22,10 +20,9 @@ export const createCollectionThunk = createAsyncThunk(
     try {
       dispatch(setLoading(true));
       const collection = await collectionsService.createCollection(input);
-      dispatch(createCollectionAction({
-        name: collection.name,
-        description: collection.description,
-      }));
+      // Refresh collections list
+      const response = await collectionsService.getUserCollections();
+      dispatch(setCollections(response.data));
       dispatch(addNotification({
         type: 'success',
         message: 'Collection created successfully!',
@@ -120,7 +117,9 @@ export const deleteCollectionThunk = createAsyncThunk(
     try {
       dispatch(setLoading(true));
       await collectionsService.deleteCollection(id);
-      dispatch(deleteCollectionAction(id));
+      // Refresh collections list
+      const response = await collectionsService.getUserCollections();
+      dispatch(setCollections(response.data));
       dispatch(addNotification({
         type: 'success',
         message: 'Collection deleted successfully',

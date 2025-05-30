@@ -83,27 +83,37 @@ class DataMigrationService {
       if (localData.trips.length > 0) {
         for (const trip of localData.trips) {
           try {
-            await cloudService.saveTrip({
-              name: trip.name,
+            // Get the appropriate properties based on the trip format
+            const tripData: any = {
               description: trip.description,
-              start_date: trip.start_date,
-              end_date: trip.end_date,
-              visibility: trip.visibility,
-              status: trip.status,
-              tags: trip.tags,
-              settings: trip.settings,
               waypoints: trip.waypoints,
               collaborators: trip.collaborators,
-              suggestions: trip.suggestions,
-              places: trip.places,
-              activities: trip.activities,
-              media: trip.media,
               created_at: trip.created_at,
               updated_at: trip.updated_at,
-            });
+            };
+
+            // Handle API format
+            if ('title' in trip) {
+              tripData.title = trip.title;
+              tripData.owner_id = trip.owner_id;
+              tripData.cover_image = trip.cover_image;
+              tripData.privacy = trip.privacy;
+              tripData.status = trip.status;
+              tripData.start_date = trip.start_date;
+              tripData.end_date = trip.end_date;
+              tripData.timezone = trip.timezone;
+              tripData.tags = trip.tags;
+              tripData.view_count = trip.view_count;
+              tripData.share_count = trip.share_count;
+              tripData.suggestion_count = trip.suggestion_count;
+              tripData.visibility = trip.visibility;
+            }
+
+            await cloudService.saveTrip(tripData);
             result.migratedItems.trips++;
           } catch (error) {
-            result.errors.push(`Failed to migrate trip "${trip.name}": ${error}`);
+            const tripName = 'title' in trip ? trip.title : 'Unnamed trip';
+            result.errors.push(`Failed to migrate trip "${tripName}": ${error}`);
           }
         }
       }
