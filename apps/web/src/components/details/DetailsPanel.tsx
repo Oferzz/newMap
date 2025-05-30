@@ -3,6 +3,7 @@ import { X, MapPin, Clock, Users, Share2, Edit, Star, Navigation } from 'lucide-
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { Place, Trip } from '../../types';
 import { formatDate } from '../../utils/date';
+import { isPlace, isTrip, getNormalizedProperty } from '../../utils/typeHelpers';
 
 interface DetailsPanelProps {
   item: Place | Trip;
@@ -14,8 +15,9 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({ item, onClose }) => 
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   
-  const isPlace = 'location' in item;
-  const isOwner = user?.id === (isPlace ? item.created_by : item.owner_id);
+  const itemIsPlace = isPlace(item);
+  const itemIsTrip = isTrip(item);
+  const isOwner = user?.id === (itemIsPlace ? (item as any).created_by : getNormalizedProperty(item, 'owner_id'));
 
   // Handle escape key
   useEffect(() => {
@@ -33,13 +35,13 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({ item, onClose }) => 
     // Dispatch edit action
     dispatch({ 
       type: 'ui/setActivePanel', 
-      payload: isPlace ? 'place-edit' : 'trip-edit' 
+      payload: itemIsPlace ? 'place-edit' : 'trip-edit' 
     });
   };
 
   const handleShare = () => {
     // Copy link to clipboard
-    const url = `${window.location.origin}/${isPlace ? 'places' : 'trips'}/${item.id}`;
+    const url = `${window.location.origin}/${itemIsPlace ? 'places' : 'trips'}/${item.id}`;
     navigator.clipboard.writeText(url);
     
     // Show toast notification
@@ -50,8 +52,8 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({ item, onClose }) => 
   };
 
   const handleGetDirections = () => {
-    if (isPlace && item.location) {
-      const [lng, lat] = item.location.coordinates;
+    if (itemIsPlace && (item as any).location) {
+      const [lng, lat] = (item as any).location.coordinates;
       window.open(
         `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`,
         '_blank'
@@ -68,7 +70,7 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({ item, onClose }) => 
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-terrain-300 bg-terrain-50">
           <h2 className="text-lg font-semibold">
-            {isPlace ? 'Place Details' : 'Trip Details'}
+            {itemIsPlace ? 'Place Details' : 'Trip Details'}
           </h2>
           <button
             onClick={onClose}
@@ -84,10 +86,10 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({ item, onClose }) => 
         {/* Content */}
         <div className="flex-1 overflow-y-auto panel-content">
           {/* Cover Image */}
-          {(!isPlace && item.cover_image) && (
+          {(itemIsTrip && getNormalizedProperty(item, 'cover_image')) && (
             <img 
-              src={item.cover_image} 
-              alt={item.title}
+              src={getNormalizedProperty(item, 'cover_image')} 
+              alt={getNormalizedProperty(item, 'title') || 'Trip'}
               className="w-full h-48 object-cover"
             />
           )}
@@ -95,18 +97,18 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({ item, onClose }) => 
           {/* Main Info */}
           <div className="p-4">
             <h1 className="text-2xl font-bold mb-2">
-              {isPlace ? item.name : item.title}
+              {itemIsPlace ? (item as any).name : getNormalizedProperty(item, 'title')}
             </h1>
             
             {/* Place Info */}
-            {isPlace && (
+            {itemIsPlace && (
               <>
-                {item.average_rating && (
+                {(item as any).average_rating && (
                   <div className="flex items-center mb-2">
                     <Star className="w-4 h-4 text-road-primary mr-1" />
-                    <span className="font-medium">{item.average_rating.toFixed(1)}</span>
+                    <span className="font-medium">{(item as any).average_rating.toFixed(1)}</span>
                     <span className="text-trail-600 ml-1">
-                      ({item.rating_count} reviews)
+                      ({(item as any).rating_count || 0} reviews)
                     </span>
                   </div>
                 )}
@@ -114,16 +116,16 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({ item, onClose }) => 
                 <p className="text-trail-600 flex items-start mb-4">
                   <MapPin className="w-4 h-4 mr-2 mt-1 flex-shrink-0" />
                   <span>
-                    {item.street_address && `${item.street_address}, `}
-                    {item.city}
-                    {item.state && `, ${item.state}`}
+                    {getNormalizedProperty(item, 'street_address') && `${getNormalizedProperty(item, 'street_address')}, `}
+                    {(item as any).city}
+                    {(item as any).state && `, ${(item as any).state}`}
                     {(item as any).country && `, ${(item as any).country}`}
                   </span>
                 </p>
 
-                {item.category && (
+                {(item as any).category && (
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {(Array.isArray(item.category) ? item.category : [item.category]).map((cat: string) => (
+                    {(Array.isArray((item as any).category) ? (item as any).category : [(item as any).category]).map((cat: string) => (
                       <span
                         key={cat}
                         className="px-3 py-1 bg-terrain-200 text-trail-700 rounded-full text-sm"
@@ -137,12 +139,12 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({ item, onClose }) => 
             )}
 
             {/* Trip Info */}
-            {!isPlace && (
+            {itemIsTrip && (
               <>
                 <div className="flex items-center gap-4 text-sm text-trail-600 mb-4">
                   <span className="flex items-center">
                     <MapPin className="w-4 h-4 mr-1" />
-                    {item.waypoints?.length || 0} places
+                    {(item as any).waypoints?.length || 0} places
                   </span>
                   <span className="flex items-center">
                     <Users className="w-4 h-4 mr-1" />
@@ -150,13 +152,13 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({ item, onClose }) => 
                   </span>
                   <span className="flex items-center">
                     <Clock className="w-4 h-4 mr-1" />
-                    {item.created_at ? formatDate(item.created_at) : 'Unknown'}
+                    {(item as any).created_at ? formatDate((item as any).created_at) : 'Unknown'}
                   </span>
                 </div>
 
-                {item.start_date && item.end_date && (
+                {getNormalizedProperty(item, 'start_date') && getNormalizedProperty(item, 'end_date') && (
                   <p className="text-trail-600 mb-4">
-                    {formatDate(item.start_date)} - {formatDate(item.end_date)}
+                    {formatDate(getNormalizedProperty(item, 'start_date')!)} - {formatDate(getNormalizedProperty(item, 'end_date')!)}
                   </p>
                 )}
               </>
@@ -173,11 +175,11 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({ item, onClose }) => 
             )}
 
             {/* Opening Hours (Place only) */}
-            {isPlace && item.opening_hours && (
+            {itemIsPlace && (item as any).opening_hours && (
               <div className="mb-6">
                 <h3 className="font-semibold mb-2">Opening Hours</h3>
                 <div className="space-y-1 text-sm">
-                  {Object.entries(item.opening_hours).map(([day, hours]) => (
+                  {Object.entries((item as any).opening_hours).map(([day, hours]) => (
                     <div key={day} className="flex justify-between">
                       <span className="capitalize text-trail-600">{day}</span>
                       <span>
@@ -190,11 +192,11 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({ item, onClose }) => 
             )}
 
             {/* Trip Waypoints */}
-            {!isPlace && item.waypoints && item.waypoints.length > 0 && (
+            {itemIsTrip && (item as any).waypoints && (item as any).waypoints.length > 0 && (
               <div className="mb-6">
                 <h3 className="font-semibold mb-2">Itinerary</h3>
                 <div className="space-y-2">
-                  {item.waypoints.map((waypoint: any, index: number) => (
+                  {(item as any).waypoints.map((waypoint: any, index: number) => (
                     <div key={waypoint.id} className="flex items-start">
                       <div className="flex-shrink-0 w-6 h-6 bg-forest-600 text-white rounded-full flex items-center justify-center text-xs font-medium">
                         {index + 1}
@@ -217,7 +219,7 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({ item, onClose }) => 
 
         {/* Actions */}
         <div className="p-4 border-t border-terrain-300 bg-terrain-50 space-y-2">
-          {isPlace && (
+          {itemIsPlace && (
             <button
               onClick={handleGetDirections}
               className="w-full flex items-center justify-center px-4 py-2 bg-forest-600 text-white rounded-lg hover:bg-forest-700 transition-colors shadow-soft"

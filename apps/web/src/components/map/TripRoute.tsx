@@ -21,7 +21,7 @@ export class TripRoute {
     this.layerId = `trip-route-layer-${trip.id}`;
 
     // Extract coordinates from waypoints
-    const coordinates = trip.waypoints
+    const coordinates = (trip.waypoints || [])
       .filter(w => w.place?.coordinates)
       .map(w => [w.place.coordinates.lng, w.place.coordinates.lat]);
 

@@ -3,8 +3,6 @@ import { Trip } from './tripsSlice';
 import { Place } from './placesSlice';
 import { SearchResults } from '../../types';
 
-type SearchResult = Trip | Place;
-
 interface MapViewState {
   center: [number, number];
   zoom: number;

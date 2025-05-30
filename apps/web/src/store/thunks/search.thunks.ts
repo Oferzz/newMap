@@ -4,6 +4,7 @@ import { tripsService } from '../../services/trips.service';
 import { SearchResults } from '../../types';
 import { setLoading, setError } from '../slices/searchSlice';
 import { setSearchResults, setIsSearching } from '../slices/uiSlice';
+import { normalizeSearchResults } from '../../utils/typeHelpers';
 
 interface SearchParams {
   query: string;
@@ -21,10 +22,10 @@ export const searchAllThunk = createAsyncThunk(
       dispatch(setLoading(true));
       dispatch(setIsSearching(true));
       
-      const results: SearchResults = {
-        places: [],
-        trips: [],
-        users: []
+      const results = {
+        places: [] as any[],
+        trips: [] as any[],
+        users: [] as any[]
       };
 
       // Search based on filter type
@@ -58,7 +59,8 @@ export const searchAllThunk = createAsyncThunk(
         results.users = [];
       }
 
-      dispatch(setSearchResults(results));
+      const normalizedResults = normalizeSearchResults(results as any);
+      dispatch(setSearchResults(normalizedResults as SearchResults));
       dispatch(setIsSearching(true));
       
       return results;

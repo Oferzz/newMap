@@ -138,12 +138,12 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
                     <button
                       key={trip.id}
                       className="w-full px-4 py-3 hover:bg-terrain-100 transition-colors text-left"
-                      onClick={() => onSelect({ ...trip, type: 'trip' as const })}
+                      onClick={() => onSelect({ ...trip, name: trip.title || (trip as any).name || '', type: 'trip' as const })}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <h4 className="font-medium text-trail-800">
-                            {trip.title || trip.name}
+                            {trip.title || (trip as any).name}
                           </h4>
                           {trip.description && (
                             <p className="text-sm text-trail-600 mt-1 line-clamp-2">

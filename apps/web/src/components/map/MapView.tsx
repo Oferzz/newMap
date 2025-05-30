@@ -204,9 +204,9 @@ export const MapView: React.FC<MapViewProps> = ({
         };
         
         new PlaceMarker({
-          place: transformedPlace as Place,
+          place: transformedPlace as any,
           map: map.current!,
-          onClick: () => onPlaceSelect?.(transformedPlace as Place),
+          onClick: () => onPlaceSelect?.(transformedPlace as any),
         });
       }
     });
@@ -263,7 +263,7 @@ export const MapView: React.FC<MapViewProps> = ({
       {/* Details Panel */}
       {activePanel === 'details' && selectedItem && (
         <DetailsPanel
-          item={selectedItem as Place | Trip}
+          item={selectedItem as any}
           onClose={handleClosePanel}
         />
       )}

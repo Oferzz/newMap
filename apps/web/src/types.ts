@@ -15,44 +15,122 @@ export interface SearchResults {
   users: any[];
 }
 
-export interface Place {
+// Union type to support both API and Redux slice formats
+export type Place = {
   id: string;
   name: string;
-  address: string;
-  category: string | string[];
-  location: {
-    coordinates: [number, number];
-  };
+  description: string;
   created_by?: string;
-  description?: string;
-  rating?: number;
-  photos?: string[];
-  opening_hours?: {
-    [key: string]: string;
-  };
+  category: string[] | string;
   average_rating?: number;
   rating_count?: number;
-  street_address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-}
-
-export interface Trip {
-  id: string;
-  name: string;
-  title?: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  start_date?: string;
-  end_date?: string;
-  waypoints: any[];
-  owner_id?: string;
-  participants?: any[];
-  collaborators?: any[];
-  visibility?: string;
+  opening_hours?: any;
   privacy?: string;
   created_at?: string;
-  cover_image?: string;
-}
+  updated_at?: string;
+  media?: any[];
+  collaborators?: any[];
+  photos?: string[];
+  rating?: number;
+} & (
+  // API format
+  | {
+      type: string;
+      parent_id?: string;
+      location?: {
+        type: string;
+        coordinates: [number, number];
+      };
+      bounds?: any;
+      street_address: string;
+      city: string;
+      state: string;
+      country: string;
+      postal_code: string;
+      tags: string[];
+      contact_info?: any;
+      amenities: string[];
+      status: string;
+      address?: string;
+    }
+  // Redux slice format
+  | {
+      type: 'poi' | 'area' | 'region';
+      location?: {
+        type: string;
+        coordinates: [number, number];
+      };
+      address: string;
+      city: string;
+      state: string;
+      country: string;
+      postalCode: string;
+      tags: string[];
+      contactInfo?: {
+        phone?: string;
+        email?: string;
+        website?: string;
+      };
+      images: string[];
+      createdBy: string;
+      createdAt: Date;
+      updatedAt: Date;
+      street_address?: string;
+      postal_code?: string;
+      amenities?: string[];
+      status?: string;
+    }
+);
+
+// Union type to support both API and Redux slice formats  
+export type Trip = {
+  id: string;
+  description: string;
+  collaborators?: any[];
+  waypoints?: any[];
+  created_at?: string;
+  updated_at?: string;
+} & (
+  // API format
+  | {
+      title: string;
+      owner_id: string;
+      cover_image: string;
+      privacy: string;
+      status: string;
+      start_date?: string;
+      end_date?: string;
+      timezone: string;
+      tags: string[];
+      view_count: number;
+      share_count: number;
+      suggestion_count: number;
+      name?: string;
+      startDate?: string;
+      endDate?: string;
+      participants?: any[];
+      visibility?: string;
+    }
+  // Redux slice format
+  | {
+      title: string;
+      startDate: Date;
+      endDate: Date;
+      coverImage: string;
+      status: 'planning' | 'active' | 'completed';
+      privacy: 'public' | 'friends' | 'private';
+      ownerID: string;
+      tags: string[];
+      createdAt: Date;
+      updatedAt: Date;
+      name?: string;
+      owner_id?: string;
+      cover_image?: string;
+      start_date?: string;
+      end_date?: string;
+      timezone?: string;
+      view_count?: number;
+      share_count?: number;
+      suggestion_count?: number;
+    }
+);
