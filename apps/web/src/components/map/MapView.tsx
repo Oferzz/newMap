@@ -55,6 +55,38 @@ export const MapView: React.FC<MapViewProps> = ({
       zoom: mapViewState.zoom || 9,
       pitch: 0,
       bearing: 0,
+      maxPitch: 85,
+      projection: 'globe'
+    });
+
+    // Enable 3D terrain when map loads
+    map.current.on('load', () => {
+      if (!map.current) return;
+      
+      // Add terrain source
+      map.current.addSource('mapbox-dem', {
+        type: 'raster-dem',
+        url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+        tileSize: 512,
+        maxzoom: 14
+      });
+      
+      // Add the terrain layer
+      map.current.setTerrain({ 
+        source: 'mapbox-dem', 
+        exaggeration: 1.5 
+      });
+      
+      // Add sky layer for better 3D effect
+      map.current.addLayer({
+        id: 'sky',
+        type: 'sky',
+        paint: {
+          'sky-type': 'atmosphere',
+          'sky-atmosphere-sun': [0.0, 90.0],
+          'sky-atmosphere-sun-intensity': 15
+        }
+      });
     });
 
     // Add navigation controls
