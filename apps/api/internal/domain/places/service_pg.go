@@ -11,14 +11,21 @@ import (
 )
 
 type servicePg struct {
-	repo     Repository
-	tripRepo trips.Repository
+	repo          Repository
+	tripRepo      trips.Repository
+	mapboxService *MapboxService
 }
 
-func NewServicePg(repo Repository, tripRepo trips.Repository) Service {
+func NewServicePg(repo Repository, tripRepo trips.Repository, mapboxAPIKey string) Service {
+	var mapboxService *MapboxService
+	if mapboxAPIKey != "" {
+		mapboxService = NewMapboxService(mapboxAPIKey)
+	}
+	
 	return &servicePg{
-		repo:     repo,
-		tripRepo: tripRepo,
+		repo:          repo,
+		tripRepo:      tripRepo,
+		mapboxService: mapboxService,
 	}
 }
 
@@ -351,75 +358,35 @@ func (s *servicePg) List(ctx context.Context, userID string, filter *PlaceFilter
 }
 
 func (s *servicePg) handlePublicSearch(ctx context.Context, filter *PlaceFilter, limit, offset int) ([]*Place, int64, error) {
-	// For now, return mock data for common search terms to test the frontend
-	// TODO: Implement actual database search
-	
 	query := filter.SearchQuery
-	var mockPlaces []*Place
 	
-	// Create some mock places based on search query
-	if query == "tokyo" || query == "Tokyo" {
-		mockPlaces = []*Place{
-			{
-				ID:            "tokyo-1",
-				Name:          "Tokyo Station",
-				Description:   "Main railway station in Tokyo",
-				Type:          "poi",
-				StreetAddress: "1 Chome Marunouchi",
-				City:          "Tokyo",
-				Country:       "Japan",
-				Category:      []string{"transport"},
-				Privacy:       "public",
-				Status:        "active",
-				CreatedAt:     time.Now(),
-				UpdatedAt:     time.Now(),
-			},
-			{
-				ID:            "tokyo-2", 
-				Name:          "Tokyo Tower",
-				Description:   "Iconic tower in Tokyo",
-				Type:          "poi",
-				StreetAddress: "4 Chome-2-8 Shibakoen",
-				City:          "Tokyo",
-				Country:       "Japan",
-				Category:      []string{"attraction"},
-				Privacy:       "public",
-				Status:        "active",
-				CreatedAt:     time.Now(),
-				UpdatedAt:     time.Now(),
-			},
+	// First, try to search in our database for user-created public places
+	dbPlaces, total, err := s.searchDatabasePlaces(ctx, filter, limit, offset)
+	if err == nil && total > 0 {
+		return dbPlaces, total, nil
+	}
+	
+	// If no results from database and we have Mapbox service, search Mapbox
+	if s.mapboxService != nil && query != "" {
+		// For Mapbox, we ignore offset and just use limit
+		mapboxPlaces, err := s.mapboxService.SearchPlaces(ctx, query, limit)
+		if err != nil {
+			// Log error but don't fail - return empty results
+			// In production, you'd want proper logging here
+			return []*Place{}, 0, nil
 		}
-	} else if query == "new york" || query == "New York" {
-		mockPlaces = []*Place{
-			{
-				ID:            "ny-1",
-				Name:          "Central Park",
-				Description:   "Large public park in Manhattan",
-				Type:          "area",
-				StreetAddress: "Central Park",
-				City:          "New York",
-				State:         "NY",
-				Country:       "USA",
-				Category:      []string{"attraction"},
-				Privacy:       "public",
-				Status:        "active",
-				CreatedAt:     time.Now(),
-				UpdatedAt:     time.Now(),
-			},
-		}
+		
+		return mapboxPlaces, int64(len(mapboxPlaces)), nil
 	}
 	
-	// Apply pagination
-	start := offset
-	end := offset + limit
-	if start > len(mockPlaces) {
-		return []*Place{}, int64(len(mockPlaces)), nil
-	}
-	if end > len(mockPlaces) {
-		end = len(mockPlaces)
-	}
-	
-	return mockPlaces[start:end], int64(len(mockPlaces)), nil
+	// Fallback to empty results if no Mapbox service configured
+	return []*Place{}, 0, nil
+}
+
+func (s *servicePg) searchDatabasePlaces(ctx context.Context, filter *PlaceFilter, limit, offset int) ([]*Place, int64, error) {
+	// For now, return empty results since we don't have database search implemented
+	// TODO: Implement actual database search for public places
+	return []*Place{}, 0, nil
 }
 
 func (s *servicePg) GetTripPlaces(ctx context.Context, userID, tripID string) ([]*Place, error) {

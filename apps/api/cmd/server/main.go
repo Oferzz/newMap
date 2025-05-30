@@ -90,7 +90,7 @@ func main() {
 		tripService = baseTripService
 	}
 	
-	placeService := places.NewServicePg(placeRepo, tripRepo)
+	placeService := places.NewServicePg(placeRepo, tripRepo, cfg.App.MapboxAPIKey)
 	mediaService := media.NewService(db.DB, mediaStorage)
 
 	// Initialize handlers
