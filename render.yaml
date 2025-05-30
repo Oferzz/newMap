@@ -10,7 +10,6 @@ services:
     buildFilter:
       paths:
         - apps/api/**
-        - packages/**
     envVars:
       - key: PORT
         value: 8080
@@ -31,7 +30,7 @@ services:
       - key: MEDIA_PATH
         value: /data/media
       - key: CDN_URL
-        value: https://your-static-site-url.onrender.com # Update this with your static site URL
+        value: https://newmap-fe.onrender.com
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_ISSUER
@@ -56,6 +55,23 @@ services:
       maxInstances: 3
       targetMemoryPercent: 80
       targetCPUPercent: 70
+
+  # React Frontend (Static Site)
+  - type: web
+    name: newMap-fe
+    runtime: static
+    buildCommand: cd apps/web && npm install && npm run build
+    staticPublishPath: ./apps/web/dist
+    repo: https://github.com/Oferzz/newMap
+    branch: main
+    buildFilter:
+      paths:
+        - apps/web/**
+    envVars:
+      - key: VITE_API_URL
+        value: https://newmap-api.onrender.com/api/v1
+      - key: VITE_MAPBOX_TOKEN
+        sync: false # Set manually in Render dashboard
 
   # Redis Cache Service (Render Key-Value)
   - type: redis
