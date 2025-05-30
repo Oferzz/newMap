@@ -37,18 +37,24 @@ COPY --from=builder /build/apps/api/server .
 # Copy migrations
 COPY --from=builder /build/apps/api/migrations ./migrations
 
+# Copy health check script
+COPY healthcheck.sh .
+
 # Create directory for media storage
 RUN mkdir -p /data/media && chown -R appuser:appuser /data
+
+# Make health check script executable
+RUN chmod +x healthcheck.sh
 
 # Switch to non-root user
 USER appuser
 
-# Expose port
+# Expose port (Render will override this)
 EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/api/health || exit 1
+  CMD ./healthcheck.sh
 
 # Run the application
 CMD ["./server"]
