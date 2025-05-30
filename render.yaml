@@ -69,7 +69,7 @@ services:
         - apps/web/**
     envVars:
       - key: VITE_API_URL
-        value: https://newmap-api.onrender.com/api/v1
+        value: https://newmap-qojk.onrender.com/api/v1
       - key: VITE_MAPBOX_TOKEN
         sync: false # Set manually in Render dashboard
 
