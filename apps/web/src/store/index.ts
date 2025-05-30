@@ -4,6 +4,7 @@ import tripsReducer from './slices/tripsSlice';
 import placesReducer from './slices/placesSlice';
 import uiReducer from './slices/uiSlice';
 import searchReducer from './slices/searchSlice';
+import collectionsReducer from './slices/collectionsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     places: placesReducer,
     ui: uiReducer,
     search: searchReducer,
+    collections: collectionsReducer,
   },
 });
 
