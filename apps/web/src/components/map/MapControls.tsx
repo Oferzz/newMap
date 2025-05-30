@@ -32,14 +32,14 @@ export const MapControls: React.FC<MapControlsProps> = ({ map }) => {
       <div className="relative">
         <button
           onClick={() => setIsStyleMenuOpen(!isStyleMenuOpen)}
-          className="bg-terrain-50 p-3 rounded-map border border-terrain-300 shadow-map-control hover:shadow-medium transition-all hover:bg-terrain-100"
+          className="bg-terrain-100 p-3 rounded-map border border-terrain-300 shadow-map-control hover:shadow-medium transition-all hover:bg-terrain-200"
           title="Change map style"
         >
           <Layers className="w-5 h-5 text-trail-700" />
         </button>
 
         {isStyleMenuOpen && (
-          <div className="absolute bottom-full left-0 mb-2 bg-terrain-50 rounded-lg shadow-medium border border-terrain-300 py-2 min-w-[150px]">
+          <div className="absolute bottom-full left-0 mb-2 bg-terrain-100 rounded-lg shadow-xl border border-terrain-300 py-2 min-w-[150px]">
             {mapStyles.map((style) => (
               <button
                 key={style.id}
