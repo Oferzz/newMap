@@ -19,7 +19,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     type: 'places', // all, places, trips, users
-    radius: 10, // km
     onlyMine: false,
   });
 
@@ -120,24 +119,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               </div>
             </div>
 
-            {/* Radius Filter (for places) */}
-            {(filters.type === 'all' || filters.type === 'places') && (
-              <div>
-                <label className="text-sm font-medium text-trail-700">
-                  Search radius: {filters.radius} km
-                </label>
-                <input
-                  type="range"
-                  min="1"
-                  max="50"
-                  value={filters.radius}
-                  onChange={(e) => 
-                    setFilters({ ...filters, radius: parseInt(e.target.value) })
-                  }
-                  className="mt-2 w-full accent-forest-600"
-                />
-              </div>
-            )}
 
             {/* Only Mine Filter */}
             <div className="flex items-center">

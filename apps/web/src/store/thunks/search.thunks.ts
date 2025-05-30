@@ -10,7 +10,6 @@ interface SearchParams {
   query: string;
   filters?: {
     type: string;
-    radius?: number;
     onlyMine?: boolean;
   };
 }
