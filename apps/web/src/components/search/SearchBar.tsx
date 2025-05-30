@@ -18,7 +18,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const [query, setQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
-    type: 'all', // all, places, trips, users
+    type: 'places', // all, places, trips, users
     radius: 10, // km
     onlyMine: false,
   });
