@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -116,7 +117,7 @@ func Load() (*Config, error) {
 		App: AppConfig{
 			Name:            "Trip Planning Platform",
 			Version:         "1.0.0",
-			AllowedOrigins:  []string{"http://localhost:3000", "http://localhost:5173"},
+			AllowedOrigins:  getAllowedOrigins(),
 			MaxUploadSize:   getInt64Env("MAX_UPLOAD_SIZE", 10*1024*1024), // 10MB
 			RateLimitPerMin: getIntEnv("RATE_LIMIT_PER_MIN", 60),
 			MapboxAPIKey:    getEnv("MAPBOX_ACCESS_TOKEN", getEnv("MAPBOX_API_KEY", "")), // Support both naming conventions
@@ -175,4 +176,26 @@ func getDurationEnv(key string, defaultValue time.Duration) time.Duration {
 		}
 	}
 	return defaultValue
+}
+
+func getAllowedOrigins() []string {
+	// Check for environment variable first
+	if originsEnv := os.Getenv("ALLOWED_ORIGINS"); originsEnv != "" {
+		// Split by comma and trim spaces
+		origins := make([]string, 0)
+		for _, origin := range strings.Split(originsEnv, ",") {
+			trimmed := strings.TrimSpace(origin)
+			if trimmed != "" {
+				origins = append(origins, trimmed)
+			}
+		}
+		return origins
+	}
+	
+	// Default origins for development and production
+	return []string{
+		"http://localhost:3000",
+		"http://localhost:5173", 
+		"https://newmap-fe.onrender.com",
+	}
 }
