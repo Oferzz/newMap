@@ -1,9 +1,11 @@
 package places
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -75,8 +77,13 @@ func (s *MapboxService) SearchPlaces(ctx context.Context, query string, limit in
 	
 	// Log the URL without the API key
 	safeURL := u.String()
-	if idx := len("access_token="); idx < len(safeURL) {
-		safeURL = safeURL[:idx] + "***"
+	if tokenStart := bytes.Index([]byte(safeURL), []byte("access_token=")); tokenStart != -1 {
+		tokenEnd := bytes.IndexByte([]byte(safeURL[tokenStart:]), '&')
+		if tokenEnd == -1 {
+			safeURL = safeURL[:tokenStart+13] + "***"
+		} else {
+			safeURL = safeURL[:tokenStart+13] + "***" + safeURL[tokenStart+tokenEnd:]
+		}
 	}
 	log.Printf("[MapboxService] Making request to: %s", safeURL)
 
@@ -98,14 +105,24 @@ func (s *MapboxService) SearchPlaces(ctx context.Context, query string, limit in
 
 	log.Printf("[MapboxService] Response status: %d", resp.StatusCode)
 	
+	// Read the response body
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("[MapboxService] ERROR: Failed to read response body: %v", err)
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+	
+	// Log the full response for debugging
+	log.Printf("[MapboxService] Raw response body: %s", string(bodyBytes))
+	
 	if resp.StatusCode != http.StatusOK {
-		log.Printf("[MapboxService] ERROR: Mapbox API returned non-200 status: %d", resp.StatusCode)
+		log.Printf("[MapboxService] ERROR: Mapbox API returned non-200 status: %d, body: %s", resp.StatusCode, string(bodyBytes))
 		return nil, fmt.Errorf("mapbox API returned status %d", resp.StatusCode)
 	}
 
 	// Parse response
 	var mapboxResp MapboxResponse
-	if err := json.NewDecoder(resp.Body).Decode(&mapboxResp); err != nil {
+	if err := json.Unmarshal(bodyBytes, &mapboxResp); err != nil {
 		log.Printf("[MapboxService] ERROR: Failed to decode response: %v", err)
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
