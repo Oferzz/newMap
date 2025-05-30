@@ -1,6 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { authService, LoginInput, RegisterInput, UpdateProfileInput } from '../../services/auth.service';
 import { loginSuccess, loginFailure, updateUser } from '../slices/authSlice';
+import { dataMigrationService } from '../../services/storage/dataMigration.service';
 import toast from 'react-hot-toast';
 
 export const loginThunk = createAsyncThunk(
@@ -20,6 +21,13 @@ export const loginThunk = createAsyncThunk(
         refreshToken: response.refresh_token,
       }));
       toast.success('Welcome back!');
+      
+      // Check for local data and offer to migrate
+      const shouldMigrate = await dataMigrationService.promptForMigration();
+      if (shouldMigrate) {
+        await dataMigrationService.migrateLocalDataToCloud();
+      }
+      
       return response;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Login failed';
@@ -32,10 +40,35 @@ export const loginThunk = createAsyncThunk(
 
 export const registerThunk = createAsyncThunk(
   'auth/register',
-  async (input: RegisterInput) => {
+  async (input: RegisterInput, { dispatch }) => {
     try {
       const user = await authService.register(input);
-      toast.success('Account created successfully! Please login.');
+      toast.success('Account created successfully!');
+      
+      // Auto-login after registration
+      const loginResponse = await authService.login({
+        email: input.email,
+        password: input.password,
+      });
+      
+      dispatch(loginSuccess({
+        user: {
+          id: loginResponse.user.id,
+          email: loginResponse.user.email,
+          username: loginResponse.user.username,
+          displayName: loginResponse.user.display_name,
+          avatarUrl: loginResponse.user.avatar_url,
+        },
+        accessToken: loginResponse.access_token,
+        refreshToken: loginResponse.refresh_token,
+      }));
+      
+      // Check for local data and offer to migrate
+      const shouldMigrate = await dataMigrationService.promptForMigration();
+      if (shouldMigrate) {
+        await dataMigrationService.migrateLocalDataToCloud();
+      }
+      
       return user;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Registration failed';
