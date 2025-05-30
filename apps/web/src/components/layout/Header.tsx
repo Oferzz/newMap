@@ -38,7 +38,7 @@ export const Header: React.FC = () => {
             <img 
               src="/logo.svg" 
               alt="newMap" 
-              className="h-8 w-auto"
+              className="h-10 w-auto drop-shadow-md"
             />
           </a>
         </div>
