@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"time"
@@ -49,13 +50,20 @@ type MapboxResponse struct {
 }
 
 func (s *MapboxService) SearchPlaces(ctx context.Context, query string, limit int) ([]*Place, error) {
+	log.Printf("[MapboxService] SearchPlaces called with query: %s, limit: %d", query, limit)
+	
 	if s.apiKey == "" {
+		log.Printf("[MapboxService] ERROR: Mapbox API key not configured")
 		return nil, fmt.Errorf("mapbox API key not configured")
 	}
+	
+	// Log API key length for debugging (not the actual key)
+	log.Printf("[MapboxService] API key configured (length: %d)", len(s.apiKey))
 
 	// Build the request URL
 	u, err := url.Parse(fmt.Sprintf("%s/%s.json", mapboxGeocodingAPI, url.QueryEscape(query)))
 	if err != nil {
+		log.Printf("[MapboxService] ERROR: Failed to parse URL: %v", err)
 		return nil, fmt.Errorf("failed to parse URL: %w", err)
 	}
 
@@ -64,37 +72,55 @@ func (s *MapboxService) SearchPlaces(ctx context.Context, query string, limit in
 	q.Set("limit", fmt.Sprintf("%d", limit))
 	q.Set("types", "poi,address,place,locality,neighborhood")
 	u.RawQuery = q.Encode()
+	
+	// Log the URL without the API key
+	safeURL := u.String()
+	if idx := len("access_token="); idx < len(safeURL) {
+		safeURL = safeURL[:idx] + "***"
+	}
+	log.Printf("[MapboxService] Making request to: %s", safeURL)
 
 	// Create request
 	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
 	if err != nil {
+		log.Printf("[MapboxService] ERROR: Failed to create request: %v", err)
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	// Execute request
+	log.Printf("[MapboxService] Executing HTTP request...")
 	resp, err := s.httpClient.Do(req)
 	if err != nil {
+		log.Printf("[MapboxService] ERROR: Failed to execute request: %v", err)
 		return nil, fmt.Errorf("failed to execute request: %w", err)
 	}
 	defer resp.Body.Close()
 
+	log.Printf("[MapboxService] Response status: %d", resp.StatusCode)
+	
 	if resp.StatusCode != http.StatusOK {
+		log.Printf("[MapboxService] ERROR: Mapbox API returned non-200 status: %d", resp.StatusCode)
 		return nil, fmt.Errorf("mapbox API returned status %d", resp.StatusCode)
 	}
 
 	// Parse response
 	var mapboxResp MapboxResponse
 	if err := json.NewDecoder(resp.Body).Decode(&mapboxResp); err != nil {
+		log.Printf("[MapboxService] ERROR: Failed to decode response: %v", err)
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
+	
+	log.Printf("[MapboxService] Response parsed successfully. Found %d features", len(mapboxResp.Features))
 
 	// Convert Mapbox features to our Place model
 	places := make([]*Place, 0, len(mapboxResp.Features))
 	for _, feature := range mapboxResp.Features {
 		place := s.featureToPlace(feature)
 		places = append(places, place)
+		log.Printf("[MapboxService] Converted feature: %s (%s)", place.Name, place.Description)
 	}
 
+	log.Printf("[MapboxService] Returning %d places", len(places))
 	return places, nil
 }
 

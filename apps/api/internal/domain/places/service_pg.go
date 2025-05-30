@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,7 +20,10 @@ type servicePg struct {
 func NewServicePg(repo Repository, tripRepo trips.Repository, mapboxAPIKey string) Service {
 	var mapboxService *MapboxService
 	if mapboxAPIKey != "" {
+		log.Printf("[PlaceService] Initializing with Mapbox API key (length: %d)", len(mapboxAPIKey))
 		mapboxService = NewMapboxService(mapboxAPIKey)
+	} else {
+		log.Printf("[PlaceService] WARNING: No Mapbox API key provided. Mapbox search will not be available.")
 	}
 	
 	return &servicePg{
@@ -333,8 +337,11 @@ func (s *servicePg) UpdateCollaboratorRole(ctx context.Context, userID, placeID,
 
 // Implement missing interface methods with basic functionality
 func (s *servicePg) List(ctx context.Context, userID string, filter *PlaceFilter, limit, offset int) ([]*Place, int64, error) {
+	log.Printf("[PlaceService] List called with userID: %s, filter: %+v, limit: %d, offset: %d", userID, filter, limit, offset)
+	
 	// Handle public search (when userID is empty)
 	if userID == "" && filter != nil && filter.SearchQuery != "" {
+		log.Printf("[PlaceService] Public search detected (no userID, has search query)")
 		return s.handlePublicSearch(ctx, filter, limit, offset)
 	}
 	
@@ -359,27 +366,35 @@ func (s *servicePg) List(ctx context.Context, userID string, filter *PlaceFilter
 
 func (s *servicePg) handlePublicSearch(ctx context.Context, filter *PlaceFilter, limit, offset int) ([]*Place, int64, error) {
 	query := filter.SearchQuery
+	log.Printf("[PlaceService] handlePublicSearch called with query: %s, limit: %d, offset: %d", query, limit, offset)
 	
 	// First, try to search in our database for user-created public places
+	log.Printf("[PlaceService] Searching database for public places...")
 	dbPlaces, total, err := s.searchDatabasePlaces(ctx, filter, limit, offset)
 	if err == nil && total > 0 {
+		log.Printf("[PlaceService] Found %d places in database", total)
 		return dbPlaces, total, nil
 	}
 	
+	log.Printf("[PlaceService] No database results. Mapbox service configured: %v", s.mapboxService != nil)
+	
 	// If no results from database and we have Mapbox service, search Mapbox
 	if s.mapboxService != nil && query != "" {
+		log.Printf("[PlaceService] Searching Mapbox for query: %s", query)
 		// For Mapbox, we ignore offset and just use limit
 		mapboxPlaces, err := s.mapboxService.SearchPlaces(ctx, query, limit)
 		if err != nil {
+			log.Printf("[PlaceService] ERROR: Mapbox search failed: %v", err)
 			// Log error but don't fail - return empty results
-			// In production, you'd want proper logging here
 			return []*Place{}, 0, nil
 		}
 		
+		log.Printf("[PlaceService] Mapbox returned %d places", len(mapboxPlaces))
 		return mapboxPlaces, int64(len(mapboxPlaces)), nil
 	}
 	
 	// Fallback to empty results if no Mapbox service configured
+	log.Printf("[PlaceService] No Mapbox service configured or empty query. Returning empty results.")
 	return []*Place{}, 0, nil
 }
 

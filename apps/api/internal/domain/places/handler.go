@@ -2,6 +2,7 @@ package places
 
 import (
 	"errors"
+	"log"
 	"strconv"
 
 	"github.com/Oferzz/newMap/apps/api/internal/middleware"
@@ -252,6 +253,8 @@ func (h *Handler) GetByTripID(c *gin.Context) {
 }
 
 func (h *Handler) Search(c *gin.Context) {
+	log.Printf("[PlaceHandler] Search endpoint called")
+	
 	// Parse query parameters
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
@@ -268,7 +271,10 @@ func (h *Handler) Search(c *gin.Context) {
 
 	// Search query is required for public search
 	searchQuery := c.Query("q")
+	log.Printf("[PlaceHandler] Search query: %s, page: %d, limit: %d", searchQuery, page, limit)
+	
 	if searchQuery == "" {
+		log.Printf("[PlaceHandler] ERROR: Empty search query")
 		response.BadRequest(c, "Search query 'q' is required")
 		return
 	}
@@ -280,13 +286,17 @@ func (h *Handler) Search(c *gin.Context) {
 	// Calculate offset from page
 	offset := (page - 1) * limit
 
+	log.Printf("[PlaceHandler] Calling service.List with empty userID for public search")
+	
 	// Use empty userID for public search
 	places, total, err := h.service.List(c.Request.Context(), "", &filter, limit, offset)
 	if err != nil {
+		log.Printf("[PlaceHandler] ERROR: Service returned error: %v", err)
 		response.InternalServerError(c, "Failed to search places")
 		return
 	}
 
+	log.Printf("[PlaceHandler] Service returned %d places (total: %d)", len(places), total)
 	response.SuccessWithMeta(c, places, response.NewMeta(page, limit, total))
 }
 
