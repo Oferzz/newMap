@@ -50,7 +50,8 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
       <div className="absolute top-20 left-1/2 transform -translate-x-1/2 w-full max-w-2xl">
         <div 
           ref={overlayRef}
-          className="bg-terrain-50 rounded-lg shadow-lg p-8 text-center border border-terrain-300"
+          className="bg-terrain-100 rounded-lg shadow-xl p-8 text-center border border-terrain-300"
+          style={{ backgroundColor: '#faf8f5' }}
         >
           <p className="text-trail-500">No results found</p>
         </div>
@@ -70,7 +71,8 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
       <div className="absolute top-20 left-1/2 transform -translate-x-1/2 w-full max-w-2xl z-50">
         <div 
           ref={overlayRef}
-          className="bg-terrain-50 rounded-lg shadow-xl max-h-[calc(100vh-6rem)] overflow-hidden border border-terrain-300"
+          className="bg-terrain-100 rounded-lg shadow-xl max-h-[calc(100vh-6rem)] overflow-hidden border border-terrain-300"
+          style={{ backgroundColor: '#faf8f5' }}
         >
           <div className="overflow-y-auto max-h-[calc(100vh-6rem)]">
             {/* Places Section */}
