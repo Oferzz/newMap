@@ -17,6 +17,7 @@ export class TemporaryMarker {
     // Create marker element
     const el = document.createElement('div');
     el.className = 'temporary-marker';
+    el.setAttribute('data-testid', 'temporary-marker');
     
     // Create marker content
     const root = ReactDOM.createRoot(el);

@@ -15,6 +15,7 @@ import { CollaborativeCursors } from './CollaborativeCursors';
 import { TemporaryMarker } from './TemporaryMarker';
 import { MapContextMenu } from './MapContextMenu';
 import { RouteCreationOverlay } from './RouteCreationOverlay';
+import { StorageModeIndicator } from '../common/StorageModeIndicator';
 import { useParams } from 'react-router-dom';
 import { Place, Trip, SearchResult } from '../../types';
 import { 
@@ -199,9 +200,13 @@ export const MapView: React.FC<MapViewProps> = ({
   useEffect(() => {
     if (!mapClickLocation) return;
 
+    console.log('Map clicked at:', mapClickLocation);
+    console.log('Route creation mode active:', routeCreationMode.isActive);
+
     if (routeCreationMode.isActive) {
       dispatch(addRouteWaypoint({ coordinates: mapClickLocation }));
     } else {
+      console.log('Adding temporary marker at:', mapClickLocation);
       dispatch(addTemporaryMarker({ coordinates: mapClickLocation }));
     }
 
@@ -280,6 +285,8 @@ export const MapView: React.FC<MapViewProps> = ({
   useEffect(() => {
     if (!map.current) return;
 
+    console.log('Temporary markers state:', temporaryMarkers);
+
     // Remove markers that no longer exist
     temporaryMarkersRef.current.forEach((marker, id) => {
       if (!temporaryMarkers.find(m => m.id === id)) {
@@ -291,6 +298,7 @@ export const MapView: React.FC<MapViewProps> = ({
     // Add new markers
     temporaryMarkers.forEach((markerData) => {
       if (!temporaryMarkersRef.current.has(markerData.id)) {
+        console.log('Creating temporary marker:', markerData);
         const marker = new TemporaryMarker({
           coordinates: markerData.coordinates,
           map: map.current!,
@@ -394,6 +402,9 @@ export const MapView: React.FC<MapViewProps> = ({
   const handleSaveLocation = useCallback(() => {
     if (!contextMenuState.coordinates) return;
     
+    // Save coordinates to a temporary marker before opening panel
+    dispatch(addTemporaryMarker({ coordinates: contextMenuState.coordinates }));
+    
     // Open place creation panel
     dispatch(setActivePanel('place-creation'));
   }, [contextMenuState.coordinates, dispatch]);
@@ -428,6 +439,9 @@ export const MapView: React.FC<MapViewProps> = ({
 
       {/* Map Controls */}
       <MapControls map={map.current} />
+
+      {/* Storage Mode Indicator */}
+      <StorageModeIndicator />
 
       {/* Route Creation Overlay */}
       <RouteCreationOverlay />

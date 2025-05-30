@@ -1,24 +1,12 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-export interface LocationCollection {
-  id: string;
-  name: string;
-  description?: string;
-  locations: Array<{
-    id: string;
-    coordinates: [number, number];
-    name?: string;
-    addedAt: number;
-  }>;
-  createdAt: number;
-  updatedAt: number;
-}
+import { Collection } from '../../types';
 
 interface CollectionsState {
-  items: LocationCollection[];
-  selectedCollection: LocationCollection | null;
+  items: Collection[];
+  selectedCollection: Collection | null;
   isLoading: boolean;
   error: string | null;
+  isLocalStorage: boolean; // Track if data is from local storage
 }
 
 const initialState: CollectionsState = {
@@ -26,56 +14,15 @@ const initialState: CollectionsState = {
   selectedCollection: null,
   isLoading: false,
   error: null,
+  isLocalStorage: false,
 };
 
 const collectionsSlice = createSlice({
   name: 'collections',
   initialState,
   reducers: {
-    createCollection: (state, action: PayloadAction<{ name: string; description?: string }>) => {
-      const newCollection: LocationCollection = {
-        id: Date.now().toString(),
-        name: action.payload.name,
-        description: action.payload.description,
-        locations: [],
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      };
-      state.items.push(newCollection);
-    },
-    addLocationToCollection: (state, action: PayloadAction<{ 
-      collectionId: string; 
-      coordinates: [number, number];
-      name?: string;
-    }>) => {
-      const collection = state.items.find(c => c.id === action.payload.collectionId);
-      if (collection) {
-        collection.locations.push({
-          id: Date.now().toString(),
-          coordinates: action.payload.coordinates,
-          name: action.payload.name,
-          addedAt: Date.now(),
-        });
-        collection.updatedAt = Date.now();
-      }
-    },
-    removeLocationFromCollection: (state, action: PayloadAction<{ 
-      collectionId: string; 
-      locationId: string;
-    }>) => {
-      const collection = state.items.find(c => c.id === action.payload.collectionId);
-      if (collection) {
-        collection.locations = collection.locations.filter(
-          loc => loc.id !== action.payload.locationId
-        );
-        collection.updatedAt = Date.now();
-      }
-    },
-    deleteCollection: (state, action: PayloadAction<string>) => {
-      state.items = state.items.filter(c => c.id !== action.payload);
-      if (state.selectedCollection?.id === action.payload) {
-        state.selectedCollection = null;
-      }
+    setStorageMode: (state, action: PayloadAction<boolean>) => {
+      state.isLocalStorage = action.payload;
     },
     selectCollection: (state, action: PayloadAction<string | null>) => {
       if (action.payload === null) {
@@ -84,7 +31,7 @@ const collectionsSlice = createSlice({
         state.selectedCollection = state.items.find(c => c.id === action.payload) || null;
       }
     },
-    setCollections: (state, action: PayloadAction<LocationCollection[]>) => {
+    setCollections: (state, action: PayloadAction<Collection[]>) => {
       state.items = action.payload;
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
@@ -97,10 +44,7 @@ const collectionsSlice = createSlice({
 });
 
 export const {
-  createCollection,
-  addLocationToCollection,
-  removeLocationFromCollection,
-  deleteCollection,
+  setStorageMode,
   selectCollection,
   setCollections,
   setLoading,
