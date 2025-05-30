@@ -94,7 +94,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
       {/* Filter Dropdown */}
       {showFilters && (
-        <div className="absolute top-full mt-2 w-full bg-terrain-50 rounded-lg shadow-medium border border-terrain-300 p-4 z-50">
+        <div className="absolute top-full mt-2 w-full bg-terrain-100 rounded-lg shadow-xl border border-terrain-400 p-4 z-50 backdrop-blur-sm">
           <div className="space-y-4">
             {/* Search Type */}
             <div>
@@ -108,8 +108,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     onClick={() => setFilters({ ...filters, type })}
                     className={`px-3 py-1 text-sm rounded-md capitalize ${
                       filters.type === type
-                        ? 'bg-forest-100 text-forest-700'
-                        : 'bg-terrain-200 text-trail-700 hover:bg-terrain-300'
+                        ? 'bg-forest-200 text-forest-800 border border-forest-300'
+                        : 'bg-terrain-50 text-trail-700 hover:bg-terrain-200 border border-terrain-300'
                     }`}
                   >
                     {type}
@@ -132,7 +132,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                   onChange={(e) => 
                     setFilters({ ...filters, radius: parseInt(e.target.value) })
                   }
-                  className="mt-2 w-full"
+                  className="mt-2 w-full accent-forest-600"
                 />
               </div>
             )}
