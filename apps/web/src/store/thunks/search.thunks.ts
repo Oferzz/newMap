@@ -33,7 +33,6 @@ export const searchAllThunk = createAsyncThunk(
         try {
           const placesResponse = await placesService.search({
             q: query,
-            radius: filters?.radius,
             limit: 10
           });
           results.places = placesResponse.data || [];
