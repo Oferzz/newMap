@@ -5,6 +5,7 @@ import { LoginPage } from './pages/LoginPage';
 import { TripCreationPage } from './pages/TripCreationPage';
 import { PrivateRoute } from './components/auth/PrivateRoute';
 import { WebSocketProvider } from './providers/WebSocketProvider';
+import { Notifications } from './components/layout/Notifications';
 import { Toaster } from 'react-hot-toast';
 import './App.css';
 
@@ -23,6 +24,9 @@ function App() {
               },
             }}
           />
+          
+          {/* Custom Notifications */}
+          <Notifications />
 
           <Routes>
             {/* Auth Routes - No Header */}

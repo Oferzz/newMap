@@ -9,13 +9,33 @@ interface MapViewState {
   style?: string;
 }
 
+interface TemporaryMarker {
+  id: string;
+  coordinates: [number, number];
+  timestamp: number;
+}
+
 interface UIState {
-  activePanel: 'none' | 'details' | 'trip-planning' | 'place-creation';
+  activePanel: 'none' | 'details' | 'trip-planning' | 'place-creation' | 'collections';
   selectedItem: Trip | Place | null;
   mapView: MapViewState;
   searchResults: SearchResults | null;
   isSearching: boolean;
   mapClickLocation: [number, number] | null;
+  temporaryMarkers: TemporaryMarker[];
+  contextMenuState: {
+    isOpen: boolean;
+    coordinates: [number, number] | null;
+    position: { x: number; y: number } | null;
+  };
+  routeCreationMode: {
+    isActive: boolean;
+    waypoints: Array<{ id: string; coordinates: [number, number] }>;
+  };
+  collectionsMode: {
+    isAddingLocation: boolean;
+    locationToAdd: [number, number] | null;
+  };
   isMobileMenuOpen: boolean;
   isLoading: boolean;
   notifications: Array<{
@@ -37,6 +57,20 @@ const initialState: UIState = {
   searchResults: null,
   isSearching: false,
   mapClickLocation: null,
+  temporaryMarkers: [],
+  contextMenuState: {
+    isOpen: false,
+    coordinates: null,
+    position: null,
+  },
+  routeCreationMode: {
+    isActive: false,
+    waypoints: [],
+  },
+  collectionsMode: {
+    isAddingLocation: false,
+    locationToAdd: null,
+  },
   isMobileMenuOpen: false,
   isLoading: false,
   notifications: [],
@@ -95,6 +129,76 @@ const uiSlice = createSlice({
     removeNotification: (state, action: PayloadAction<string>) => {
       state.notifications = state.notifications.filter(n => n.id !== action.payload);
     },
+    addTemporaryMarker: (state, action: PayloadAction<{ coordinates: [number, number] }>) => {
+      state.temporaryMarkers.push({
+        id: Date.now().toString(),
+        coordinates: action.payload.coordinates,
+        timestamp: Date.now(),
+      });
+    },
+    removeTemporaryMarker: (state, action: PayloadAction<string>) => {
+      state.temporaryMarkers = state.temporaryMarkers.filter(m => m.id !== action.payload);
+    },
+    clearTemporaryMarkers: (state) => {
+      state.temporaryMarkers = [];
+    },
+    openContextMenu: (state, action: PayloadAction<{ coordinates: [number, number]; position: { x: number; y: number } }>) => {
+      state.contextMenuState = {
+        isOpen: true,
+        coordinates: action.payload.coordinates,
+        position: action.payload.position,
+      };
+    },
+    closeContextMenu: (state) => {
+      state.contextMenuState = {
+        isOpen: false,
+        coordinates: null,
+        position: null,
+      };
+    },
+    startRouteCreation: (state, action: PayloadAction<{ coordinates: [number, number] }>) => {
+      state.routeCreationMode = {
+        isActive: true,
+        waypoints: [{
+          id: Date.now().toString(),
+          coordinates: action.payload.coordinates,
+        }],
+      };
+    },
+    addRouteWaypoint: (state, action: PayloadAction<{ coordinates: [number, number] }>) => {
+      if (state.routeCreationMode.isActive) {
+        state.routeCreationMode.waypoints.push({
+          id: Date.now().toString(),
+          coordinates: action.payload.coordinates,
+        });
+      }
+    },
+    cancelRouteCreation: (state) => {
+      state.routeCreationMode = {
+        isActive: false,
+        waypoints: [],
+      };
+    },
+    finishRouteCreation: (state) => {
+      state.routeCreationMode = {
+        isActive: false,
+        waypoints: [],
+      };
+      state.activePanel = 'trip-planning';
+    },
+    startAddToCollection: (state, action: PayloadAction<{ coordinates: [number, number] }>) => {
+      state.collectionsMode = {
+        isAddingLocation: true,
+        locationToAdd: action.payload.coordinates,
+      };
+      state.activePanel = 'collections';
+    },
+    cancelAddToCollection: (state) => {
+      state.collectionsMode = {
+        isAddingLocation: false,
+        locationToAdd: null,
+      };
+    },
   },
 });
 
@@ -112,6 +216,17 @@ export const {
   setLoading,
   addNotification,
   removeNotification,
+  addTemporaryMarker,
+  removeTemporaryMarker,
+  clearTemporaryMarkers,
+  openContextMenu,
+  closeContextMenu,
+  startRouteCreation,
+  addRouteWaypoint,
+  cancelRouteCreation,
+  finishRouteCreation,
+  startAddToCollection,
+  cancelAddToCollection,
 } = uiSlice.actions;
 
 export default uiSlice.reducer;

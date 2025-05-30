@@ -1,0 +1,15 @@
+.temporary-marker {
+  cursor: pointer;
+}
+
+.temporary-marker:hover .marker-dot {
+  transform: scale(1.1);
+}
+
+.mapboxgl-canvas {
+  cursor: crosshair !important;
+}
+
+.mapboxgl-canvas-container.mapboxgl-interactive {
+  cursor: crosshair !important;
+}

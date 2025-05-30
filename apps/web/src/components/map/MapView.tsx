@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import './map.css';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { PlaceMarker } from './PlaceMarker';
 import { TripRoute } from './TripRoute';
@@ -8,9 +9,27 @@ import { MapControls } from './MapControls';
 import { SearchOverlay } from '../search/SearchOverlay';
 import { DetailsPanel } from '../details/DetailsPanel';
 import { TripPlanningPanel } from '../trips/TripPlanningPanel';
+import { PlaceCreationPanel } from '../places/PlaceCreationPanel';
+import { CollectionsPanel } from '../collections/CollectionsPanel';
 import { CollaborativeCursors } from './CollaborativeCursors';
+import { TemporaryMarker } from './TemporaryMarker';
+import { MapContextMenu } from './MapContextMenu';
+import { RouteCreationOverlay } from './RouteCreationOverlay';
 import { useParams } from 'react-router-dom';
 import { Place, Trip, SearchResult } from '../../types';
+import { 
+  addTemporaryMarker, 
+  removeTemporaryMarker, 
+  openContextMenu, 
+  closeContextMenu,
+  addNotification,
+  setActivePanel,
+  startRouteCreation,
+  addRouteWaypoint,
+  clearMapClickLocation,
+  startAddToCollection,
+  cancelAddToCollection
+} from '../../store/slices/uiSlice';
 
 // Initialize Mapbox
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
@@ -32,6 +51,7 @@ export const MapView: React.FC<MapViewProps> = ({
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const temporaryMarkersRef = useRef<Map<string, TemporaryMarker>>(new Map());
   const dispatch = useAppDispatch();
   const { id: tripId } = useParams();
 
@@ -43,6 +63,11 @@ export const MapView: React.FC<MapViewProps> = ({
   const mapViewState = useAppSelector((state) => state.ui.mapView);
   const searchResults = useAppSelector((state) => state.ui.searchResults);
   const isSearching = useAppSelector((state) => state.ui.isSearching);
+  const temporaryMarkers = useAppSelector((state) => state.ui.temporaryMarkers);
+  const contextMenuState = useAppSelector((state) => state.ui.contextMenuState);
+  const routeCreationMode = useAppSelector((state) => state.ui.routeCreationMode);
+  const mapClickLocation = useAppSelector((state) => state.ui.mapClickLocation);
+  const collectionsMode = useAppSelector((state) => state.ui.collectionsMode);
 
   // Initialize map
   useEffect(() => {
@@ -133,18 +158,29 @@ export const MapView: React.FC<MapViewProps> = ({
       });
     });
 
-    // Click handler for adding new places
+    // Left click handler for adding temporary markers
     map.current.on('click', (e) => {
       // Only handle clicks on the map itself, not on markers
       const features = map.current?.queryRenderedFeatures(e.point);
       if (features && features.length > 0) return;
 
-      dispatch({
-        type: 'ui/setMapClickLocation',
-        payload: {
-          coordinates: [e.lngLat.lng, e.lngLat.lat],
+      const coordinates: [number, number] = [e.lngLat.lng, e.lngLat.lat];
+
+      // Store coordinates for later use in click handler effect
+      dispatch({ type: 'ui/setMapClickLocation', payload: { coordinates } });
+    });
+
+    // Right click handler for context menu
+    map.current.on('contextmenu', (e) => {
+      e.preventDefault();
+      
+      dispatch(openContextMenu({
+        coordinates: [e.lngLat.lng, e.lngLat.lat],
+        position: {
+          x: e.point.x,
+          y: e.point.y,
         },
-      });
+      }));
     });
 
     return () => {
@@ -158,6 +194,19 @@ export const MapView: React.FC<MapViewProps> = ({
       map.current.setStyle(mapViewState.style);
     }
   }, [mapViewState.style]);
+
+  // Handle map clicks based on current mode
+  useEffect(() => {
+    if (!mapClickLocation) return;
+
+    if (routeCreationMode.isActive) {
+      dispatch(addRouteWaypoint({ coordinates: mapClickLocation }));
+    } else {
+      dispatch(addTemporaryMarker({ coordinates: mapClickLocation }));
+    }
+
+    dispatch(clearMapClickLocation());
+  }, [mapClickLocation, routeCreationMode.isActive, dispatch]);
 
   // Handle selected item
   useEffect(() => {
@@ -227,6 +276,110 @@ export const MapView: React.FC<MapViewProps> = ({
     });
   }, [trips, onTripSelect]);
 
+  // Render temporary markers
+  useEffect(() => {
+    if (!map.current) return;
+
+    // Remove markers that no longer exist
+    temporaryMarkersRef.current.forEach((marker, id) => {
+      if (!temporaryMarkers.find(m => m.id === id)) {
+        marker.remove();
+        temporaryMarkersRef.current.delete(id);
+      }
+    });
+
+    // Add new markers
+    temporaryMarkers.forEach((markerData) => {
+      if (!temporaryMarkersRef.current.has(markerData.id)) {
+        const marker = new TemporaryMarker({
+          coordinates: markerData.coordinates,
+          map: map.current!,
+          onRemove: () => {
+            dispatch(removeTemporaryMarker(markerData.id));
+          },
+        });
+        temporaryMarkersRef.current.set(markerData.id, marker);
+      }
+    });
+  }, [temporaryMarkers, dispatch]);
+
+  // Render route waypoints
+  useEffect(() => {
+    if (!map.current || !routeCreationMode.isActive) return;
+
+    // Clear existing route markers when not in route mode
+    if (!routeCreationMode.isActive) {
+      return;
+    }
+
+    // Add markers for each waypoint
+    routeCreationMode.waypoints.forEach((waypoint, index) => {
+      const el = document.createElement('div');
+      el.className = 'route-waypoint-marker';
+      el.innerHTML = `
+        <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
+          ${index + 1}
+        </div>
+      `;
+
+      new mapboxgl.Marker(el)
+        .setLngLat(waypoint.coordinates)
+        .addTo(map.current!);
+    });
+
+    // Draw line between waypoints if more than one
+    if (routeCreationMode.waypoints.length > 1) {
+      const coordinates = routeCreationMode.waypoints.map(wp => wp.coordinates);
+      
+      // Add or update the route line
+      if (map.current.getSource('route-preview')) {
+        (map.current.getSource('route-preview') as mapboxgl.GeoJSONSource).setData({
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: coordinates,
+          },
+        });
+      } else {
+        map.current.addSource('route-preview', {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            properties: {},
+            geometry: {
+              type: 'LineString',
+              coordinates: coordinates,
+            },
+          },
+        });
+
+        map.current.addLayer({
+          id: 'route-preview',
+          type: 'line',
+          source: 'route-preview',
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round',
+          },
+          paint: {
+            'line-color': '#10b981',
+            'line-width': 4,
+            'line-dasharray': [2, 2],
+          },
+        });
+      }
+    }
+
+    return () => {
+      // Cleanup on unmount or when route mode changes
+      if (map.current?.getLayer('route-preview')) {
+        map.current.removeLayer('route-preview');
+        map.current.removeSource('route-preview');
+      }
+    };
+  }, [routeCreationMode, dispatch]);
+
   const handleSearchResultSelect = useCallback((result: SearchResult) => {
     dispatch({ type: 'ui/selectItem', payload: result });
     dispatch({ type: 'ui/setActivePanel', payload: 'details' });
@@ -238,6 +391,34 @@ export const MapView: React.FC<MapViewProps> = ({
     dispatch({ type: 'ui/clearSelectedItem' });
   }, [dispatch]);
 
+  const handleSaveLocation = useCallback(() => {
+    if (!contextMenuState.coordinates) return;
+    
+    // Open place creation panel
+    dispatch(setActivePanel('place-creation'));
+  }, [contextMenuState.coordinates, dispatch]);
+
+  const handleCreateRoute = useCallback(() => {
+    if (!contextMenuState.coordinates) return;
+    
+    dispatch(startRouteCreation({ 
+      coordinates: contextMenuState.coordinates 
+    }));
+    
+    dispatch(addNotification({
+      type: 'info',
+      message: 'Click on the map to add waypoints to your route',
+    }));
+  }, [contextMenuState.coordinates, dispatch]);
+
+  const handleAddToCollection = useCallback(() => {
+    if (!contextMenuState.coordinates) return;
+    
+    dispatch(startAddToCollection({ 
+      coordinates: contextMenuState.coordinates 
+    }));
+  }, [contextMenuState.coordinates, dispatch]);
+
   return (
     <div className="absolute inset-0 top-16">
       {/* Map Container */}
@@ -247,6 +428,9 @@ export const MapView: React.FC<MapViewProps> = ({
 
       {/* Map Controls */}
       <MapControls map={map.current} />
+
+      {/* Route Creation Overlay */}
+      <RouteCreationOverlay />
 
       {/* Collaborative Cursors for trips */}
       {tripId && <CollaborativeCursors map={map.current} tripId={tripId} />}
@@ -273,6 +457,34 @@ export const MapView: React.FC<MapViewProps> = ({
         isOpen={activePanel === 'trip-planning'}
         onClose={handleClosePanel}
       />
+
+      {/* Place Creation Panel */}
+      <PlaceCreationPanel
+        isOpen={activePanel === 'place-creation'}
+        onClose={handleClosePanel}
+      />
+
+      {/* Collections Panel */}
+      <CollectionsPanel
+        isOpen={activePanel === 'collections'}
+        onClose={() => {
+          handleClosePanel();
+          dispatch(cancelAddToCollection());
+        }}
+        locationToAdd={collectionsMode.locationToAdd || undefined}
+      />
+
+      {/* Context Menu */}
+      {contextMenuState.isOpen && contextMenuState.coordinates && contextMenuState.position && (
+        <MapContextMenu
+          coordinates={contextMenuState.coordinates}
+          position={contextMenuState.position}
+          onClose={() => dispatch(closeContextMenu())}
+          onSaveLocation={handleSaveLocation}
+          onCreateRoute={handleCreateRoute}
+          onAddToCollection={handleAddToCollection}
+        />
+      )}
     </div>
   );
 };
