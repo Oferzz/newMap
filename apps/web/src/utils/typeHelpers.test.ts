@@ -62,7 +62,7 @@ describe('typeHelpers', () => {
       expect(normalized.name).toBe('Test Trip');
       expect(normalized.startDate).toBe('2023-06-01');
       expect(normalized.endDate).toBe('2023-06-10');
-      expect(normalized.visibility).toBe('public');
+      expect(normalized.privacy).toBe('public');
     });
   });
 
