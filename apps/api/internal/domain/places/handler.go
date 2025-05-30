@@ -251,6 +251,45 @@ func (h *Handler) GetByTripID(c *gin.Context) {
 	response.Success(c, places)
 }
 
+func (h *Handler) Search(c *gin.Context) {
+	// Parse query parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+
+	// Build filter for public search
+	filter := PlaceFilter{}
+
+	// Search query is required for public search
+	searchQuery := c.Query("q")
+	if searchQuery == "" {
+		response.BadRequest(c, "Search query 'q' is required")
+		return
+	}
+	filter.SearchQuery = searchQuery
+
+	// Only allow searching for public places in public search
+	// Note: Privacy filtering will be handled in the service layer
+
+	// Calculate offset from page
+	offset := (page - 1) * limit
+
+	// Use empty userID for public search
+	places, total, err := h.service.List(c.Request.Context(), "", &filter, limit, offset)
+	if err != nil {
+		response.InternalServerError(c, "Failed to search places")
+		return
+	}
+
+	response.SuccessWithMeta(c, places, response.NewMeta(page, limit, total))
+}
+
 func (h *Handler) MarkAsVisited(c *gin.Context) {
 	userID, exists := middleware.GetUserID(c)
 	if !exists {

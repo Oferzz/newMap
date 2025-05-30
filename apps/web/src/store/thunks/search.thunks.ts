@@ -59,7 +59,6 @@ export const searchAllThunk = createAsyncThunk(
 
       const normalizedResults = normalizeSearchResults(results as any);
       dispatch(setSearchResults(normalizedResults as SearchResults));
-      dispatch(setIsSearching(true));
       
       return results;
     } catch (error: any) {

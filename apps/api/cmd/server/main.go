@@ -212,7 +212,10 @@ func setupRouter(cfg *config.Config, userHandler *users.Handler, tripHandler *tr
 		// Place routes
 		placeRoutes := v1.Group("/places")
 		{
-			// All place routes require authentication
+			// Public place routes (no authentication required)
+			placeRoutes.GET("/search", placeHandler.Search) // Public search endpoint
+			
+			// All other place routes require authentication
 			placeRoutes.Use(authMiddleware.RequireAuth())
 			{
 				// List places (with filters)

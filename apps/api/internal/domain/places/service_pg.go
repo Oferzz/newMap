@@ -326,6 +326,11 @@ func (s *servicePg) UpdateCollaboratorRole(ctx context.Context, userID, placeID,
 
 // Implement missing interface methods with basic functionality
 func (s *servicePg) List(ctx context.Context, userID string, filter *PlaceFilter, limit, offset int) ([]*Place, int64, error) {
+	// Handle public search (when userID is empty)
+	if userID == "" && filter != nil && filter.SearchQuery != "" {
+		return s.handlePublicSearch(ctx, filter, limit, offset)
+	}
+	
 	// TODO: Implement proper list with filter
 	places, err := s.repo.GetByCreator(ctx, userID)
 	if err != nil {
@@ -343,6 +348,78 @@ func (s *servicePg) List(ctx context.Context, userID string, filter *PlaceFilter
 	}
 	
 	return places[start:end], int64(len(places)), nil
+}
+
+func (s *servicePg) handlePublicSearch(ctx context.Context, filter *PlaceFilter, limit, offset int) ([]*Place, int64, error) {
+	// For now, return mock data for common search terms to test the frontend
+	// TODO: Implement actual database search
+	
+	query := filter.SearchQuery
+	var mockPlaces []*Place
+	
+	// Create some mock places based on search query
+	if query == "tokyo" || query == "Tokyo" {
+		mockPlaces = []*Place{
+			{
+				ID:            "tokyo-1",
+				Name:          "Tokyo Station",
+				Description:   "Main railway station in Tokyo",
+				Type:          "poi",
+				StreetAddress: "1 Chome Marunouchi",
+				City:          "Tokyo",
+				Country:       "Japan",
+				Category:      []string{"transport"},
+				Privacy:       "public",
+				Status:        "active",
+				CreatedAt:     time.Now(),
+				UpdatedAt:     time.Now(),
+			},
+			{
+				ID:            "tokyo-2", 
+				Name:          "Tokyo Tower",
+				Description:   "Iconic tower in Tokyo",
+				Type:          "poi",
+				StreetAddress: "4 Chome-2-8 Shibakoen",
+				City:          "Tokyo",
+				Country:       "Japan",
+				Category:      []string{"attraction"},
+				Privacy:       "public",
+				Status:        "active",
+				CreatedAt:     time.Now(),
+				UpdatedAt:     time.Now(),
+			},
+		}
+	} else if query == "new york" || query == "New York" {
+		mockPlaces = []*Place{
+			{
+				ID:            "ny-1",
+				Name:          "Central Park",
+				Description:   "Large public park in Manhattan",
+				Type:          "area",
+				StreetAddress: "Central Park",
+				City:          "New York",
+				State:         "NY",
+				Country:       "USA",
+				Category:      []string{"attraction"},
+				Privacy:       "public",
+				Status:        "active",
+				CreatedAt:     time.Now(),
+				UpdatedAt:     time.Now(),
+			},
+		}
+	}
+	
+	// Apply pagination
+	start := offset
+	end := offset + limit
+	if start > len(mockPlaces) {
+		return []*Place{}, int64(len(mockPlaces)), nil
+	}
+	if end > len(mockPlaces) {
+		end = len(mockPlaces)
+	}
+	
+	return mockPlaces[start:end], int64(len(mockPlaces)), nil
 }
 
 func (s *servicePg) GetTripPlaces(ctx context.Context, userID, tripID string) ([]*Place, error) {

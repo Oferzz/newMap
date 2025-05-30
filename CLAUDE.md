@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is a collaborative trip planning platform with real-time features, role-based permissions, and map-based interactions. The architecture follows a microservices-ready monolith approach with a Go backend and React frontend.
 
 ## Tech Stack
-- **Backend**: Go 1.21+ with Gin framework
+- **Backend**: Go 1.23+ with Gin framework
 - **Frontend**: React 18+ with TypeScript, Redux Toolkit, Mapbox GL JS
-- **Database**: MongoDB Atlas (primary), Redis (caching)
+- **Database**: PostgreSQL with PostGIS (primary), MongoDB (legacy), Redis (caching)
 - **Real-time**: Socket.io
 - **Deployment**: Render.com with Cloudflare CDN
 
@@ -46,7 +46,8 @@ npm run dev
 
 # Run tests
 npm test
-npm run test:ci  # For CI environment
+npm run test:coverage  # With coverage report
+npm run test:ui  # UI for tests
 
 # Build for production
 npm run build
@@ -54,7 +55,7 @@ npm run build
 # Run linting
 npm run lint
 
-# Run type checking (if configured)
+# Run type checking
 npm run typecheck
 ```
 
@@ -63,8 +64,18 @@ npm run typecheck
 # Run full stack locally
 docker-compose up
 
+# Run in production mode
+docker-compose -f docker-compose.prod.yml up
+
 # Rebuild containers
 docker-compose build
+
+# Use deployment script for convenience
+./deploy.sh start    # Start services
+./deploy.sh stop     # Stop services
+./deploy.sh logs     # View logs
+./deploy.sh migrate  # Run database migrations
+./deploy.sh backup   # Create database backup
 ```
 
 ## Architecture Overview
@@ -88,8 +99,9 @@ The project uses a monorepo structure with apps (api, web) and shared packages. 
 - **Mapbox Integration**: Map-based interactions with performance optimizations
 
 ### Database Design
-- **MongoDB Collections**: Users, Trips, Places, Suggestions, Media
-- **Geospatial Indexes**: For location-based queries
+- **PostgreSQL Tables**: Users, Trips, Places, Suggestions, Media with PostGIS for geospatial data
+- **MongoDB Collections**: Legacy support for existing data
+- **Geospatial Indexes**: For location-based queries using PostGIS
 - **Text Search**: Full-text search on trips and places
 - **Hierarchical Data**: Places can have parent-child relationships
 
@@ -126,7 +138,7 @@ Redis cache keys follow the pattern: `resource:id:subresource`
 ## Testing Requirements
 - All new features must have comprehensive tests
 - Backend: Use Go's built-in testing with coverage reports
-- Frontend: Jest/React Testing Library for component tests
+- Frontend: Vitest for unit tests, React Testing Library for component tests
 - Integration tests for API endpoints
 - E2E tests for critical user flows
 
@@ -151,5 +163,43 @@ Redis cache keys follow the pattern: `resource:id:subresource`
 - Environment-specific configurations
 - Database migrations handled separately
 
+## Local Environment Setup
+
+### Required Environment Variables
+```bash
+# Backend (.env in apps/api/)
+DATABASE_URL=postgresql://user:pass@localhost:5432/newMap
+REDIS_URL=redis://localhost:6379
+JWT_SECRET=your-secure-secret-key
+MAPBOX_API_KEY=your-mapbox-api-key
+
+# Frontend (.env in apps/web/)
+VITE_API_URL=http://localhost:8080/api/v1
+VITE_WS_URL=ws://localhost:8080
+VITE_MAPBOX_TOKEN=your-mapbox-api-key
+```
+
+### Single Test Execution
+```bash
+# Backend - run specific test
+cd apps/api
+go test -v ./internal/domain/trips -run TestCreateTrip
+
+# Frontend - run specific test file
+cd apps/web
+npm test -- SearchBar.test.tsx
+
+# Frontend - run tests in watch mode
+npm test -- --watch
+```
+
 ## Additional Guidelines
+- Database migrations are in `apps/api/migrations/` - use `./deploy.sh migrate` or `go run cmd/server/main.go migrate`
+- When adding new API endpoints, follow the domain-driven structure in `internal/domain/`
+- All API responses use the standardized response format via `pkg/response`
+- Frontend state management follows Redux Toolkit patterns with thunks in `store/thunks/`
+- Real-time features use WebSocket connections managed by `useWebSocket` hook
 - If there is something you dont know, dont assume it, go read it in the render docs
+
+## Puppeteer Memory
+- When using puppeteer, go to https://newmap-fe.onrender.com/ for the website url
