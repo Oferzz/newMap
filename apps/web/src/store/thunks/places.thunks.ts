@@ -27,6 +27,28 @@ interface CreatePlaceInput {
   notes?: string;
 }
 
+interface UpdatePlaceInput {
+  name?: string;
+  description?: string;
+  category?: string;
+  address?: string;
+  website?: string;
+  phone?: string;
+  notes?: string;
+}
+
+interface SearchPlacesInput {
+  query: string;
+  page?: number;
+  limit?: number;
+}
+
+interface NearbyPlacesInput {
+  latitude: number;
+  longitude: number;
+  radius?: number;
+}
+
 export const createPlaceThunk = createAsyncThunk<
   Place,
   CreatePlaceInput,
@@ -39,28 +61,62 @@ export const createPlaceThunk = createAsyncThunk<
       const dataService = getDataService();
       const isAuthenticated = getState().auth.isAuthenticated;
       
-      const place = await dataService.savePlace({
+      const placeData: any = {
         name: input.name,
         description: input.description || '',
         category: input.category,
-        latitude: input.latitude,
-        longitude: input.longitude,
+        location: {
+          type: 'Point',
+          coordinates: [input.longitude, input.latitude]
+        },
         address: input.address || '',
+        street_address: input.address || '',
+        city: '',
+        state: '',
+        country: '',
+        postal_code: '',
+        postalCode: '',
         website: input.website || null,
         phone: input.phone || null,
         notes: input.notes || null,
+        tags: [],
+        images: [],
         user_id: isAuthenticated ? getState().auth.user?.id || '' : 'guest',
+        createdBy: isAuthenticated ? getState().auth.user?.id || '' : 'guest',
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      });
+        updated_at: new Date().toISOString(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
       
-      dispatch(addPlace(place));
+      const place = await dataService.savePlace(placeData);
+      
+      // Convert to Redux format
+      const reduxPlace: any = {
+        ...place,
+        id: place.id,
+        name: place.name,
+        description: place.description,
+        category: place.category,
+        location: place.location || {
+          type: 'Point',
+          coordinates: [input.longitude, input.latitude]
+        },
+        address: place.address || input.address || '',
+        postalCode: place.postal_code || place.postalCode || '',
+        images: place.images || [],
+        createdBy: place.created_by || place.createdBy || 'guest',
+        createdAt: new Date(place.created_at || place.createdAt || Date.now()),
+        updatedAt: new Date(place.updated_at || place.updatedAt || Date.now())
+      };
+      
+      dispatch(addPlace(reduxPlace));
       dispatch(addNotification({
         type: 'success',
         message: 'Place created successfully!'
       }));
       
-      return place;
+      return reduxPlace;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create place';
       dispatch(setError(message));
@@ -75,169 +131,66 @@ export const createPlaceThunk = createAsyncThunk<
   }
 );
 
-export const getPlaceByIdThunk = createAsyncThunk(
-  'places/getById',
-  async (id: string, { dispatch }) => {
-    try {
-      dispatch(setLoading(true));
-      const place = await placesService.getById(id);
-      dispatch(setSelectedPlace(place as any));
-      return place;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to load place';
-      dispatch(setError(message));
-      toast.error(message);
-      throw error;
-    } finally {
-      dispatch(setLoading(false));
-    }
-  }
-);
+// TODO: Implement with data service
+// export const getPlaceByIdThunk = createAsyncThunk(
+//   'places/getById',
+//   async (id: string, { dispatch }) => {
+//     try {
+//       dispatch(setLoading(true));
+//       const place = await placesService.getById(id);
+//       dispatch(setSelectedPlace(place as any));
+//       return place;
+//     } catch (error) {
+//       const message = error instanceof Error ? error.message : 'Failed to load place';
+//       dispatch(setError(message));
+//       toast.error(message);
+//       throw error;
+//     } finally {
+//       dispatch(setLoading(false));
+//     }
+//   }
+// );
 
-export const updatePlaceThunk = createAsyncThunk(
-  'places/update',
-  async ({ id, input }: { id: string; input: UpdatePlaceInput }, { dispatch }) => {
-    try {
-      dispatch(setLoading(true));
-      const place = await placesService.update(id, input);
-      dispatch(updatePlace(place as any));
-      toast.success('Place updated successfully!');
-      return place;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to update place';
-      dispatch(setError(message));
-      toast.error(message);
-      throw error;
-    } finally {
-      dispatch(setLoading(false));
-    }
-  }
-);
+// TODO: Implement with data service
+// export const updatePlaceThunk = createAsyncThunk(
+//   'places/update',
+//   async ({ id, input }: { id: string; input: UpdatePlaceInput }, { dispatch }) => {
+//     try {
+//       dispatch(setLoading(true));
+//       const place = await placesService.update(id, input);
+//       dispatch(updatePlace(place as any));
+//       toast.success('Place updated successfully!');
+//       return place;
+//     } catch (error) {
+//       const message = error instanceof Error ? error.message : 'Failed to update place';
+//       dispatch(setError(message));
+//       toast.error(message);
+//       throw error;
+//     } finally {
+//       dispatch(setLoading(false));
+//     }
+//   }
+// );
 
-export const deletePlaceThunk = createAsyncThunk(
-  'places/delete',
-  async (id: string, { dispatch }) => {
-    try {
-      dispatch(setLoading(true));
-      await placesService.delete(id);
-      dispatch(deletePlaceAction(id));
-      toast.success('Place deleted successfully');
-      return id;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to delete place';
-      dispatch(setError(message));
-      toast.error(message);
-      throw error;
-    } finally {
-      dispatch(setLoading(false));
-    }
-  }
-);
+// TODO: Implement with data service
+// export const deletePlaceThunk = createAsyncThunk(
+//   'places/delete',
+//   async (id: string, { dispatch }) => {
+//     try {
+//       dispatch(setLoading(true));
+//       await placesService.delete(id);
+//       dispatch(deletePlaceAction(id));
+//       toast.success('Place deleted successfully');
+//       return id;
+//     } catch (error) {
+//       const message = error instanceof Error ? error.message : 'Failed to delete place';
+//       dispatch(setError(message));
+//       toast.error(message);
+//       throw error;
+//     } finally {
+//       dispatch(setLoading(false));
+//     }
+//   }
+// );
 
-export const getUserPlacesThunk = createAsyncThunk(
-  'places/getUserPlaces',
-  async (params: { page?: number; limit?: number } | undefined, { dispatch }) => {
-    try {
-      dispatch(setLoading(true));
-      const response = await placesService.getUserPlaces(params);
-      dispatch(setPlaces(response.data as any));
-      return response;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to load places';
-      dispatch(setError(message));
-      toast.error(message);
-      throw error;
-    } finally {
-      dispatch(setLoading(false));
-    }
-  }
-);
-
-export const searchPlacesThunk = createAsyncThunk(
-  'places/search',
-  async (input: SearchPlacesInput, { dispatch }) => {
-    try {
-      dispatch(setLoading(true));
-      const response = await placesService.search(input);
-      return response;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Search failed';
-      dispatch(setError(message));
-      throw error;
-    } finally {
-      dispatch(setLoading(false));
-    }
-  }
-);
-
-export const getNearbyPlacesThunk = createAsyncThunk(
-  'places/getNearby',
-  async (input: NearbyPlacesInput, { dispatch }) => {
-    try {
-      dispatch(setLoading(true));
-      const places = await placesService.getNearby(input);
-      dispatch(setNearbyPlaces(places as any));
-      return places;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to load nearby places';
-      dispatch(setError(message));
-      toast.error(message);
-      throw error;
-    } finally {
-      dispatch(setLoading(false));
-    }
-  }
-);
-
-export const getChildPlacesThunk = createAsyncThunk(
-  'places/getChildren',
-  async (parentId: string, { dispatch }) => {
-    try {
-      dispatch(setLoading(true));
-      const places = await placesService.getChildPlaces(parentId);
-      return places;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to load child places';
-      dispatch(setError(message));
-      toast.error(message);
-      throw error;
-    } finally {
-      dispatch(setLoading(false));
-    }
-  }
-);
-
-// Media thunks
-export const uploadMediaThunk = createAsyncThunk(
-  'places/uploadMedia',
-  async ({ placeId, file, caption }: { placeId: string; file: File; caption?: string }, { dispatch }) => {
-    try {
-      const media = await placesService.uploadMedia(placeId, file, caption);
-      toast.success('Photo uploaded successfully!');
-      // Refresh place to get updated media
-      dispatch(getPlaceByIdThunk(placeId));
-      return media;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to upload photo';
-      toast.error(message);
-      throw error;
-    }
-  }
-);
-
-export const removeMediaThunk = createAsyncThunk(
-  'places/removeMedia',
-  async ({ placeId, mediaId }: { placeId: string; mediaId: string }, { dispatch }) => {
-    try {
-      await placesService.removeMedia(placeId, mediaId);
-      toast.success('Photo removed');
-      // Refresh place to get updated media
-      dispatch(getPlaceByIdThunk(placeId));
-      return { placeId, mediaId };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to remove photo';
-      toast.error(message);
-      throw error;
-    }
-  }
-);
+// TODO: Implement remaining thunks with data service

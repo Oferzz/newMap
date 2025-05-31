@@ -61,17 +61,17 @@ export const createTripThunk = createAsyncThunk<
         id: trip.id,
         title: trip.title,
         description: trip.description,
-        startDate: new Date(trip.start_date || trip.startDate),
-        endDate: new Date(trip.end_date || trip.endDate),
+        startDate: new Date(trip.start_date || trip.startDate || Date.now()),
+        endDate: new Date(trip.end_date || trip.endDate || Date.now()),
         coverImage: trip.cover_image || trip.coverImage || '',
-        status: trip.status || 'planning',
-        privacy: trip.privacy || 'private',
+        status: (trip.status || 'planning') as 'planning' | 'active' | 'completed',
+        privacy: (trip.privacy || 'private') as 'public' | 'friends' | 'private',
         ownerID: trip.owner_id || trip.ownerID || 'guest',
         collaborators: trip.collaborators || [],
         waypoints: trip.waypoints || [],
         tags: trip.tags || [],
-        createdAt: new Date(trip.created_at || trip.createdAt),
-        updatedAt: new Date(trip.updated_at || trip.updatedAt)
+        createdAt: new Date(trip.created_at || trip.createdAt || Date.now()),
+        updatedAt: new Date(trip.updated_at || trip.updatedAt || Date.now())
       };
       
       dispatch(addTrip(reduxTrip));
@@ -176,8 +176,8 @@ export const getUserTripsThunk = createAsyncThunk<
         startDate: new Date(trip.start_date || trip.startDate || trip.created_at),
         endDate: new Date(trip.end_date || trip.endDate || trip.created_at),
         coverImage: trip.cover_image || trip.coverImage || '',
-        status: trip.status || 'planning',
-        privacy: trip.privacy || 'private',
+        status: (trip.status || 'planning') as 'planning' | 'active' | 'completed',
+        privacy: (trip.privacy || 'private') as 'public' | 'friends' | 'private',
         ownerID: trip.owner_id || trip.ownerID || 'guest',
         collaborators: trip.collaborators || [],
         waypoints: trip.waypoints || [],
