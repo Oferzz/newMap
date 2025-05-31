@@ -157,88 +157,42 @@ export const MapView: React.FC<MapViewProps> = ({
       });
     });
 
-    // Right click hold handler for adding places
+    // Left click hold handler for adding places
     let holdTimer: number | null = null;
-    let holdStartTime: number = 0;
     let holdCoordinates: [number, number] | null = null;
-    let holdPosition: { x: number; y: number } | null = null;
-    let holdIndicator: mapboxgl.Marker | null = null;
 
     map.current.on('mousedown', (e) => {
-      // Only handle right mouse button
-      if (e.originalEvent.button !== 2) return;
+      // Only handle left mouse button
+      if (e.originalEvent.button !== 0) return;
       
       // Only handle clicks on the map itself, not on markers
       const features = map.current?.queryRenderedFeatures(e.point);
       if (features && features.length > 0) return;
 
-      holdStartTime = Date.now();
       holdCoordinates = [e.lngLat.lng, e.lngLat.lat];
-      holdPosition = { x: e.point.x, y: e.point.y };
 
-      // Create hold indicator
-      const indicatorElement = document.createElement('div');
-      indicatorElement.innerHTML = `
-        <div class="hold-indicator">
-          <div class="hold-progress"></div>
-          <div class="hold-text">Hold to add place</div>
-        </div>
-      `;
-      
-      holdIndicator = new mapboxgl.Marker(indicatorElement)
-        .setLngLat(holdCoordinates)
-        .addTo(map.current!);
-
-      // Start hold timer
+      // Start hold timer for 0.2 seconds
       holdTimer = setTimeout(() => {
         if (holdCoordinates) {
-          // Remove hold indicator
-          holdIndicator?.remove();
-          holdIndicator = null;
-          
-          // Add temporary marker after 1 second hold
+          // Add temporary marker after 0.2 second hold
           dispatch({ type: 'ui/setMapClickLocation', payload: { coordinates: holdCoordinates } });
-          
-          // Show success indication
-          dispatch(addNotification({
-            type: 'success',
-            message: 'Location marked! Click to add details.',
-          }));
         }
         holdTimer = null;
-      }, 1000);
+      }, 200);
     });
 
     map.current.on('mouseup', (e) => {
-      // Only handle right mouse button
-      if (e.originalEvent.button !== 2) return;
+      // Only handle left mouse button
+      if (e.originalEvent.button !== 0) return;
 
-      const holdDuration = Date.now() - holdStartTime;
-      
-      // Clear the hold timer
+      // Clear the hold timer if still active
       if (holdTimer) {
         clearTimeout(holdTimer);
         holdTimer = null;
       }
 
-      // Remove hold indicator
-      if (holdIndicator) {
-        holdIndicator.remove();
-        holdIndicator = null;
-      }
-
-      // If held for less than 1 second, show context menu instead
-      if (holdDuration < 1000 && holdCoordinates && holdPosition) {
-        dispatch(openContextMenu({
-          coordinates: holdCoordinates,
-          position: holdPosition,
-        }));
-      }
-
       // Reset hold state
       holdCoordinates = null;
-      holdPosition = null;
-      holdStartTime = 0;
     });
 
     // Handle mouse leave to cancel hold
@@ -248,20 +202,20 @@ export const MapView: React.FC<MapViewProps> = ({
         holdTimer = null;
       }
       
-      // Remove hold indicator
-      if (holdIndicator) {
-        holdIndicator.remove();
-        holdIndicator = null;
-      }
-      
       holdCoordinates = null;
-      holdPosition = null;
-      holdStartTime = 0;
     });
 
-    // Prevent default context menu
+    // Right click handler for context menu
     map.current.on('contextmenu', (e) => {
       e.preventDefault();
+      
+      dispatch(openContextMenu({
+        coordinates: [e.lngLat.lng, e.lngLat.lat],
+        position: {
+          x: e.point.x,
+          y: e.point.y,
+        },
+      }));
     });
 
     return () => {
