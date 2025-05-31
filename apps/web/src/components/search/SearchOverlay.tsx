@@ -83,35 +83,9 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
                       className="w-full px-4 py-3 hover:bg-terrain-100 transition-colors text-left"
                       onClick={() => onSelect({ ...place, type: 'place' as const })}
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-trail-800">
-                            {place.name}
-                          </h4>
-                          <p className="text-sm text-trail-600 mt-1">
-                            {place.street_address && `${place.street_address}, `}
-                            {place.city}
-                            {place.country && `, ${place.country}`}
-                          </p>
-                          {place.category && (
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {(Array.isArray(place.category) ? place.category : [place.category]).slice(0, 3).map((cat: string) => (
-                                <span
-                                  key={cat}
-                                  className="px-2 py-1 text-xs bg-terrain-200 text-trail-600 rounded"
-                                >
-                                  {cat}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        {place.average_rating && (
-                          <div className="ml-4 text-sm text-trail-500">
-                            ⭐ {place.average_rating.toFixed(1)}
-                          </div>
-                        )}
-                      </div>
+                      <h4 className="font-medium text-trail-800">
+                        {place.name}
+                      </h4>
                     </button>
                   ))}
                 </div>
