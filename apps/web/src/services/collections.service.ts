@@ -1,5 +1,5 @@
 import { api, ApiResponse, PaginatedResponse } from './api';
-import { LocationCollection } from '../store/slices/collectionsSlice';
+import { Collection } from '../types';
 
 export interface CreateCollectionInput {
   name: string;
@@ -25,30 +25,30 @@ export interface GetCollectionsParams {
 }
 
 class CollectionsService {
-  async createCollection(input: CreateCollectionInput): Promise<LocationCollection> {
-    const response = await api.post<ApiResponse<LocationCollection>>('/collections', {
+  async createCollection(input: CreateCollectionInput): Promise<Collection> {
+    const response = await api.post<ApiResponse<Collection>>('/collections', {
       ...input,
       privacy: input.privacy || 'private',
     });
     return response.data;
   }
 
-  async getCollection(id: string): Promise<LocationCollection> {
-    const response = await api.get<ApiResponse<LocationCollection>>(`/collections/${id}`);
+  async getCollection(id: string): Promise<Collection> {
+    const response = await api.get<ApiResponse<Collection>>(`/collections/${id}`);
     return response.data;
   }
 
-  async getUserCollections(params?: GetCollectionsParams): Promise<PaginatedResponse<LocationCollection>> {
+  async getUserCollections(params?: GetCollectionsParams): Promise<PaginatedResponse<Collection>> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
 
     const query = queryParams.toString();
-    return api.get<PaginatedResponse<LocationCollection>>(`/collections${query ? `?${query}` : ''}`);
+    return api.get<PaginatedResponse<Collection>>(`/collections${query ? `?${query}` : ''}`);
   }
 
-  async updateCollection(id: string, input: UpdateCollectionInput): Promise<LocationCollection> {
-    const response = await api.put<ApiResponse<LocationCollection>>(`/collections/${id}`, input);
+  async updateCollection(id: string, input: UpdateCollectionInput): Promise<Collection> {
+    const response = await api.put<ApiResponse<Collection>>(`/collections/${id}`, input);
     return response.data;
   }
 

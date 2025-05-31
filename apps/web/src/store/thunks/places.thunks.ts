@@ -2,18 +2,12 @@ import { createAsyncThunk } from '@reduxjs/toolkit';
 import { getDataService } from '../../services/storage/dataServiceFactory';
 import { Place } from '../../types';
 import {
-  setPlaces,
-  setSelectedPlace,
-  setNearbyPlaces,
   addPlace,
-  updatePlace,
-  deletePlace as deletePlaceAction,
   setLoading,
   setError
 } from '../slices/placesSlice';
 import { addNotification } from '../slices/uiSlice';
 import { RootState } from '../index';
-import toast from 'react-hot-toast';
 
 interface CreatePlaceInput {
   name: string;
@@ -27,27 +21,6 @@ interface CreatePlaceInput {
   notes?: string;
 }
 
-interface UpdatePlaceInput {
-  name?: string;
-  description?: string;
-  category?: string;
-  address?: string;
-  website?: string;
-  phone?: string;
-  notes?: string;
-}
-
-interface SearchPlacesInput {
-  query: string;
-  page?: number;
-  limit?: number;
-}
-
-interface NearbyPlacesInput {
-  latitude: number;
-  longitude: number;
-  radius?: number;
-}
 
 export const createPlaceThunk = createAsyncThunk<
   Place,
@@ -92,23 +65,23 @@ export const createPlaceThunk = createAsyncThunk<
       const place = await dataService.savePlace(placeData);
       
       // Convert to Redux format
-      const reduxPlace: any = {
+      const reduxPlace: Place = {
         ...place,
         id: place.id,
         name: place.name,
         description: place.description,
         category: place.category,
-        location: place.location || {
+        location: (place as any).location || {
           type: 'Point',
           coordinates: [input.longitude, input.latitude]
         },
         address: place.address || input.address || '',
-        postalCode: place.postal_code || place.postalCode || '',
-        images: place.images || [],
-        createdBy: place.created_by || place.createdBy || 'guest',
-        createdAt: new Date(place.created_at || place.createdAt || Date.now()),
-        updatedAt: new Date(place.updated_at || place.updatedAt || Date.now())
-      };
+        postalCode: (place as any).postal_code || (place as any).postalCode || '',
+        images: (place as any).images || [],
+        createdBy: place.created_by || (place as any).createdBy || 'guest',
+        createdAt: new Date(place.created_at || (place as any).createdAt || Date.now()),
+        updatedAt: new Date(place.updated_at || (place as any).updatedAt || Date.now())
+      } as any;
       
       dispatch(addPlace(reduxPlace));
       dispatch(addNotification({

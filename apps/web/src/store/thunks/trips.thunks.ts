@@ -61,18 +61,18 @@ export const createTripThunk = createAsyncThunk<
         id: trip.id,
         title: trip.title,
         description: trip.description,
-        startDate: new Date(trip.start_date || trip.startDate || Date.now()),
-        endDate: new Date(trip.end_date || trip.endDate || Date.now()),
-        coverImage: trip.cover_image || trip.coverImage || '',
+        startDate: new Date((trip as any).start_date || (trip as any).startDate || Date.now()),
+        endDate: new Date((trip as any).end_date || (trip as any).endDate || Date.now()),
+        coverImage: (trip as any).cover_image || (trip as any).coverImage || '',
         status: (trip.status || 'planning') as 'planning' | 'active' | 'completed',
         privacy: (trip.privacy || 'private') as 'public' | 'friends' | 'private',
-        ownerID: trip.owner_id || trip.ownerID || 'guest',
+        ownerID: (trip as any).owner_id || (trip as any).ownerID || 'guest',
         collaborators: trip.collaborators || [],
         waypoints: trip.waypoints || [],
-        tags: trip.tags || [],
-        createdAt: new Date(trip.created_at || trip.createdAt || Date.now()),
-        updatedAt: new Date(trip.updated_at || trip.updatedAt || Date.now())
-      };
+        tags: (trip as any).tags || [],
+        createdAt: new Date(trip.created_at || (trip as any).createdAt || Date.now()),
+        updatedAt: new Date(trip.updated_at || (trip as any).updatedAt || Date.now())
+      } as any;
       
       dispatch(addTrip(reduxTrip));
       dispatch(addNotification({

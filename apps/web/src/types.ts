@@ -62,15 +62,15 @@ export type Place = {
         coordinates: [number, number];
       };
       bounds?: any;
-      street_address: string;
-      city: string;
-      state: string;
-      country: string;
-      postal_code: string;
-      tags: string[];
+      street_address?: string;
+      city?: string;
+      state?: string;
+      country?: string;
+      postal_code?: string;
+      tags?: string[];
       contact_info?: any;
-      amenities: string[];
-      status: string;
+      amenities?: string[];
+      status?: string;
       address?: string;
     }
   // Redux slice format
@@ -110,6 +110,7 @@ export type Trip = {
   waypoints?: any[];
   created_at?: string;
   updated_at?: string;
+  media?: any[];
 } & (
   // API format
   | {

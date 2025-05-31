@@ -60,19 +60,10 @@ export const PlaceCreationPanel: React.FC<PlaceCreationPanelProps> = ({ isOpen, 
       await dispatch(createPlaceThunk({
         name: formData.name,
         description: formData.description,
-        type: formData.category as 'poi' | 'area' | 'region',
-        location: {
-          latitude: coordinates[1],
-          longitude: coordinates[0],
-        },
-        category: [formData.category],
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-        street_address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        country: formData.country,
-        postal_code: formData.postalCode,
-        privacy: 'public',
+        latitude: coordinates[1],
+        longitude: coordinates[0],
+        category: formData.category,
+        address: formData.address,
       }) as any).unwrap();
 
       dispatch(addNotification({

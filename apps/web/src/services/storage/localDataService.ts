@@ -61,8 +61,16 @@ export class LocalDataService implements DataService {
       ...place,
       id: `place_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+      updated_at: new Date().toISOString(),
+      // Ensure required fields have defaults
+      type: (place as any).type || 'poi',
+      tags: (place as any).tags || [],
+      street_address: (place as any).street_address || '',
+      city: (place as any).city || '',
+      state: (place as any).state || '',
+      country: (place as any).country || '',
+      postal_code: (place as any).postal_code || ''
+    } as Place;
     
     localStorageService.savePlace(newPlace);
     return Promise.resolve(newPlace);
@@ -81,7 +89,7 @@ export class LocalDataService implements DataService {
       ...updates,
       id: place.id,
       updated_at: new Date().toISOString()
-    };
+    } as Place;
     
     localStorageService.savePlace(updatedPlace);
     return Promise.resolve(updatedPlace);
@@ -124,7 +132,7 @@ export class LocalDataService implements DataService {
       ...updates,
       id: trip.id,
       updated_at: new Date().toISOString()
-    };
+    } as Trip;
     
     localStorageService.saveTrip(updatedTrip);
     return Promise.resolve(updatedTrip);

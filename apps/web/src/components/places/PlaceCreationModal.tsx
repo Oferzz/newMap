@@ -120,7 +120,7 @@ export const PlaceCreationModal: React.FC<PlaceCreationModalProps> = ({
               id: place.id,
               name: place.name,
               address: place.address || '',
-              category: place.category,
+              category: Array.isArray(place.category) ? place.category[0] : place.category,
               coordinates: { lat: placeCoordinates[1], lng: placeCoordinates[0] }
             },
             arrivalTime: waypointTime.arrivalTime,

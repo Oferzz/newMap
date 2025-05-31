@@ -1,4 +1,4 @@
-import { localStorageService, LocalStorageData } from './localStorage.service';
+import { localStorageService } from './localStorage.service';
 import { CloudDataService } from './cloudDataService';
 import { store } from '../../store';
 import { addNotification } from '../../store/slices/uiSlice';
@@ -65,13 +65,13 @@ class DataMigrationService {
             await cloudService.savePlace({
               name: place.name,
               description: place.description,
-              location: place.location,
+              location: (place as any).location,
               category: place.category,
-              tags: place.tags,
-              is_private: place.is_private,
+              tags: (place as any).tags || [],
+              privacy: (place as any).is_private ? 'private' : 'public',
               created_at: place.created_at,
               updated_at: place.updated_at,
-            });
+            } as any);
             result.migratedItems.places++;
           } catch (error) {
             result.errors.push(`Failed to migrate place "${place.name}": ${error}`);
@@ -84,23 +84,19 @@ class DataMigrationService {
         for (const trip of localData.trips) {
           try {
             await cloudService.saveTrip({
-              name: trip.name,
+              title: (trip as any).name || (trip as any).title,
               description: trip.description,
-              start_date: trip.start_date,
-              end_date: trip.end_date,
-              visibility: trip.visibility,
-              status: trip.status,
-              tags: trip.tags,
-              settings: trip.settings,
-              waypoints: trip.waypoints,
-              collaborators: trip.collaborators,
-              suggestions: trip.suggestions,
-              places: trip.places,
-              activities: trip.activities,
-              media: trip.media,
+              start_date: (trip as any).start_date,
+              end_date: (trip as any).end_date,
+              privacy: (trip as any).visibility || 'private',
+              status: (trip as any).status || 'planning',
+              tags: (trip as any).tags || [],
+              waypoints: trip.waypoints || [],
+              collaborators: trip.collaborators || [],
+              media: trip.media || [],
               created_at: trip.created_at,
               updated_at: trip.updated_at,
-            });
+            } as any);
             result.migratedItems.trips++;
           } catch (error) {
             result.errors.push(`Failed to migrate trip "${trip.name}": ${error}`);

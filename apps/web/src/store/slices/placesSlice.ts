@@ -1,34 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
-export interface Place {
-  id: string;
-  name: string;
-  description: string;
-  type: 'poi' | 'area' | 'region';
-  location?: {
-    type: string;
-    coordinates: [number, number]; // [lng, lat]
-  };
-  address: string;
-  city: string;
-  state: string;
-  country: string;
-  postalCode: string;
-  category: string[];
-  tags: string[];
-  rating?: number;
-  openingHours?: any;
-  contactInfo?: {
-    phone?: string;
-    email?: string;
-    website?: string;
-  };
-  images: string[];
-  privacy: 'public' | 'friends' | 'private';
-  createdBy: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { Place } from '../../types';
 
 interface PlacesState {
   items: Place[];

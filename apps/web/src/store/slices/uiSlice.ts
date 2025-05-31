@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Trip } from './tripsSlice';
-import { Place } from './placesSlice';
+import { Place } from '../../types';
 import { SearchResults } from '../../types';
 
 interface MapViewState {
