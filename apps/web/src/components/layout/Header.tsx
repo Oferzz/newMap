@@ -1,10 +1,11 @@
 import React from 'react';
-import { Search, Plus, User, Menu } from 'lucide-react';
+import { Search, Plus, User, Menu, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { SearchBar } from '../search/SearchBar';
 import { MobileMenu } from './MobileMenu';
 import { searchAllThunk } from '../../store/thunks/search.thunks';
+import { setActivePanel } from '../../store/slices/uiSlice';
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -13,11 +14,12 @@ export const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   const handleCreateTrip = () => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
+    // Allow trip creation in guest mode with local storage
     navigate('/trips/new');
+  };
+
+  const handleOpenTrips = () => {
+    dispatch(setActivePanel('trips'));
   };
 
   const handleSearch = (query: string, filters?: any) => {
@@ -59,7 +61,15 @@ export const Header: React.FC = () => {
         </button>
 
         {/* Desktop Actions */}
-        <div className="hidden md:flex items-center space-x-4">
+        <div className="hidden md:flex items-center space-x-3">
+          <button
+            onClick={handleOpenTrips}
+            className="flex items-center px-3 py-2 text-trail-700 hover:text-trail-800 hover:bg-terrain-200 rounded-lg transition-colors"
+          >
+            <MapPin className="w-4 h-4 mr-2" />
+            My Trips
+          </button>
+          
           <button
             onClick={handleCreateTrip}
             className="flex items-center px-4 py-2 bg-forest-600 text-white rounded-lg hover:bg-forest-700 transition-colors shadow-soft"

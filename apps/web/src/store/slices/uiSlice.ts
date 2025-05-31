@@ -16,7 +16,7 @@ interface TemporaryMarker {
 }
 
 interface UIState {
-  activePanel: 'none' | 'details' | 'trip-planning' | 'place-creation' | 'collections';
+  activePanel: 'none' | 'details' | 'trip-planning' | 'place-creation' | 'collections' | 'trips';
   selectedItem: Trip | Place | null;
   mapView: MapViewState;
   searchResults: SearchResults | null;

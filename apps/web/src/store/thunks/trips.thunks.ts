@@ -17,6 +17,7 @@ import {
 import { addNotification } from '../slices/uiSlice';
 import { RootState } from '../index';
 import toast from 'react-hot-toast';
+import { tripsService, UpdateTripInput, UpdateWaypointInput } from '../../services/trips.service';
 
 export const createTripThunk = createAsyncThunk<
   Trip,
@@ -126,18 +127,37 @@ export const deleteTripThunk = createAsyncThunk(
   }
 );
 
-export const getUserTripsThunk = createAsyncThunk(
+export const getUserTripsThunk = createAsyncThunk<
+  Trip[],
+  { page?: number; limit?: number; status?: string; privacy?: string } | undefined,
+  { state: RootState }
+>(
   'trips/getUserTrips',
-  async (params: { page?: number; limit?: number; status?: string; privacy?: string } | undefined, { dispatch }) => {
+  async (params, { dispatch, getState }) => {
     try {
       dispatch(setLoading(true));
-      const response = await tripsService.getUserTrips(params);
-      dispatch(setTrips(response.data as any));
-      return response;
+      const dataService = getDataService();
+      const isAuthenticated = getState().auth.isAuthenticated;
+      
+      const trips = await dataService.getTrips();
+      dispatch(setTrips(trips));
+      
+      // Set storage mode indicator in trips state
+      if (!isAuthenticated) {
+        dispatch(addNotification({
+          type: 'info',
+          message: 'Trips are saved locally. Sign in to sync across devices.'
+        }));
+      }
+      
+      return trips;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load trips';
       dispatch(setError(message));
-      toast.error(message);
+      dispatch(addNotification({
+        type: 'error',
+        message
+      }));
       throw error;
     } finally {
       dispatch(setLoading(false));

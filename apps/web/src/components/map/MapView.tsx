@@ -9,7 +9,8 @@ import { MapControls } from './MapControls';
 import { SearchOverlay } from '../search/SearchOverlay';
 import { DetailsPanel } from '../details/DetailsPanel';
 import { TripPlanningPanel } from '../trips/TripPlanningPanel';
-import { PlaceCreationPanel } from '../places/PlaceCreationPanel';
+import { TripsPanel } from '../trips/TripsPanel';
+import { PlaceCreationModal } from '../places/PlaceCreationModal';
 import { CollectionsPanel } from '../collections/CollectionsPanel';
 import { CollaborativeCursors } from './CollaborativeCursors';
 import { TemporaryMarker } from './TemporaryMarker';
@@ -472,10 +473,17 @@ export const MapView: React.FC<MapViewProps> = ({
         onClose={handleClosePanel}
       />
 
-      {/* Place Creation Panel */}
-      <PlaceCreationPanel
+      {/* Trips Panel */}
+      <TripsPanel
+        isOpen={activePanel === 'trips'}
+        onClose={handleClosePanel}
+      />
+
+      {/* Place Creation Modal */}
+      <PlaceCreationModal
         isOpen={activePanel === 'place-creation'}
         onClose={handleClosePanel}
+        coordinates={contextMenuState.coordinates}
       />
 
       {/* Collections Panel */}
