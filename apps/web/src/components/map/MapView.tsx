@@ -157,9 +157,11 @@ export const MapView: React.FC<MapViewProps> = ({
       });
     });
 
-    // Left click hold handler for adding places
+    // Left click hold handler for adding places (only when mouse is stationary)
     let holdTimer: number | null = null;
     let holdCoordinates: [number, number] | null = null;
+    let initialMousePosition: { x: number; y: number } | null = null;
+    let hasMoved = false;
 
     map.current.on('mousedown', (e) => {
       // Only handle left mouse button
@@ -170,15 +172,33 @@ export const MapView: React.FC<MapViewProps> = ({
       if (features && features.length > 0) return;
 
       holdCoordinates = [e.lngLat.lng, e.lngLat.lat];
+      initialMousePosition = { x: e.point.x, y: e.point.y };
+      hasMoved = false;
 
       // Start hold timer for 0.2 seconds
       holdTimer = setTimeout(() => {
-        if (holdCoordinates) {
-          // Add temporary marker after 0.2 second hold
+        // Only add place if mouse hasn't moved significantly
+        if (holdCoordinates && !hasMoved) {
           dispatch({ type: 'ui/setMapClickLocation', payload: { coordinates: holdCoordinates } });
         }
         holdTimer = null;
       }, 200);
+    });
+
+    map.current.on('mousemove', (e) => {
+      // If we're tracking a potential place addition, check for movement
+      if (holdTimer && initialMousePosition) {
+        const deltaX = Math.abs(e.point.x - initialMousePosition.x);
+        const deltaY = Math.abs(e.point.y - initialMousePosition.y);
+        
+        // If mouse moved more than 5 pixels, consider it as dragging
+        if (deltaX > 5 || deltaY > 5) {
+          hasMoved = true;
+          // Cancel the hold timer since user is dragging
+          clearTimeout(holdTimer);
+          holdTimer = null;
+        }
+      }
     });
 
     map.current.on('mouseup', (e) => {
@@ -193,6 +213,8 @@ export const MapView: React.FC<MapViewProps> = ({
 
       // Reset hold state
       holdCoordinates = null;
+      initialMousePosition = null;
+      hasMoved = false;
     });
 
     // Handle mouse leave to cancel hold
@@ -203,6 +225,8 @@ export const MapView: React.FC<MapViewProps> = ({
       }
       
       holdCoordinates = null;
+      initialMousePosition = null;
+      hasMoved = false;
     });
 
     // Right click handler for context menu
