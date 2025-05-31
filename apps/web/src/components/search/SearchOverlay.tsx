@@ -47,7 +47,7 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
 
   if (!hasResults) {
     return (
-      <div className="fixed top-[4.5rem] left-1/2 transform -translate-x-1/2 w-full max-w-2xl z-50 px-4">
+      <div className="absolute top-full mt-1 left-0 right-0 z-50">
         <div 
           ref={overlayRef}
           className="bg-terrain-100 rounded-lg shadow-xl p-8 text-center border border-terrain-300 animate-slideDown"
@@ -60,7 +60,7 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
   }
 
   return (
-    <div className="fixed top-[4.5rem] left-1/2 transform -translate-x-1/2 w-full max-w-2xl z-50 px-4">
+    <div className="absolute top-full mt-1 left-0 right-0 z-50">
       <div 
         ref={overlayRef}
         className="bg-terrain-100 rounded-lg shadow-xl max-h-[calc(100vh-10rem)] overflow-hidden border border-terrain-300 animate-slideDown"
