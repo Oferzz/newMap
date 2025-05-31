@@ -28,7 +28,7 @@ const collectionsSlice = createSlice({
       if (action.payload === null) {
         state.selectedCollection = null;
       } else {
-        state.selectedCollection = state.items.find(c => c.id === action.payload) || null;
+        state.selectedCollection = state.items.find((c: Collection) => c.id === action.payload) || null;
       }
     },
     setCollections: (state, action: PayloadAction<Collection[]>) => {

@@ -62,7 +62,11 @@ class LocalStorageService {
     if (trips.length > 10) {
       // Keep only the 10 most recent trips
       const recentTrips = trips
-        .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+        .sort((a, b) => {
+          const bDate = b.updatedAt || b.updated_at || 0;
+          const aDate = a.updatedAt || a.updated_at || 0;
+          return new Date(bDate).getTime() - new Date(aDate).getTime();
+        })
         .slice(0, 10);
       this.setItem(STORAGE_KEYS.TRIPS, recentTrips);
     }

@@ -31,29 +31,56 @@ export const createTripThunk = createAsyncThunk<
       const dataService = getDataService();
       const isAuthenticated = getState().auth.isAuthenticated;
       
-      const trip = await dataService.saveTrip({
+      const tripData: any = {
         title: input.title,
         description: input.description || '',
         startDate: input.startDate,
         endDate: input.endDate,
+        start_date: input.startDate.toISOString(),
+        end_date: input.endDate.toISOString(),
         coverImage: '',
+        cover_image: '',
         status: 'planning',
         privacy: input.privacy || 'private',
         ownerID: isAuthenticated ? getState().auth.user?.id || '' : 'guest',
+        owner_id: isAuthenticated ? getState().auth.user?.id || '' : 'guest',
         collaborators: [],
         waypoints: [],
         tags: [],
         createdAt: new Date(),
-        updatedAt: new Date()
-      });
+        updatedAt: new Date(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
       
-      dispatch(addTrip(trip));
+      const trip = await dataService.saveTrip(tripData);
+      
+      // Convert to Redux format
+      const reduxTrip: Trip = {
+        ...trip,
+        id: trip.id,
+        title: trip.title,
+        description: trip.description,
+        startDate: new Date(trip.start_date || trip.startDate),
+        endDate: new Date(trip.end_date || trip.endDate),
+        coverImage: trip.cover_image || trip.coverImage || '',
+        status: trip.status || 'planning',
+        privacy: trip.privacy || 'private',
+        ownerID: trip.owner_id || trip.ownerID || 'guest',
+        collaborators: trip.collaborators || [],
+        waypoints: trip.waypoints || [],
+        tags: trip.tags || [],
+        createdAt: new Date(trip.created_at || trip.createdAt),
+        updatedAt: new Date(trip.updated_at || trip.updatedAt)
+      };
+      
+      dispatch(addTrip(reduxTrip));
       dispatch(addNotification({
         type: 'success',
         message: 'Trip created successfully!'
       }));
       
-      return trip;
+      return reduxTrip;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create trip';
       dispatch(setError(message));
@@ -133,14 +160,33 @@ export const getUserTripsThunk = createAsyncThunk<
   { state: RootState }
 >(
   'trips/getUserTrips',
-  async (params, { dispatch, getState }) => {
+  async (_params, { dispatch, getState }) => {
     try {
       dispatch(setLoading(true));
       const dataService = getDataService();
       const isAuthenticated = getState().auth.isAuthenticated;
       
       const trips = await dataService.getTrips();
-      dispatch(setTrips(trips));
+      
+      // Convert to Redux format
+      const reduxTrips: Trip[] = trips.map((trip: any) => ({
+        id: trip.id,
+        title: trip.title,
+        description: trip.description,
+        startDate: new Date(trip.start_date || trip.startDate || trip.created_at),
+        endDate: new Date(trip.end_date || trip.endDate || trip.created_at),
+        coverImage: trip.cover_image || trip.coverImage || '',
+        status: trip.status || 'planning',
+        privacy: trip.privacy || 'private',
+        ownerID: trip.owner_id || trip.ownerID || 'guest',
+        collaborators: trip.collaborators || [],
+        waypoints: trip.waypoints || [],
+        tags: trip.tags || [],
+        createdAt: new Date(trip.created_at || trip.createdAt || Date.now()),
+        updatedAt: new Date(trip.updated_at || trip.updatedAt || Date.now())
+      }));
+      
+      dispatch(setTrips(reduxTrips));
       
       // Set storage mode indicator in trips state
       if (!isAuthenticated) {
@@ -150,7 +196,7 @@ export const getUserTripsThunk = createAsyncThunk<
         }));
       }
       
-      return trips;
+      return reduxTrips;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load trips';
       dispatch(setError(message));

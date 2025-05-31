@@ -98,20 +98,17 @@ export class LocalDataService implements DataService {
   }
 
   async saveTrip(trip: Omit<Trip, 'id'>): Promise<Trip> {
-    const newTrip: Trip = {
+    const newTrip: any = {
       ...trip,
       id: `trip_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      collaborators: [],
-      suggestions: [],
-      places: [],
-      activities: [],
-      media: [],
+      collaborators: trip.collaborators || [],
+      waypoints: trip.waypoints || [],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
     
     localStorageService.saveTrip(newTrip);
-    return Promise.resolve(newTrip);
+    return Promise.resolve(newTrip as Trip);
   }
 
   async updateTrip(id: string, updates: Partial<Trip>): Promise<Trip> {
