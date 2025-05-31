@@ -47,10 +47,10 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
 
   if (!hasResults) {
     return (
-      <div className="absolute top-20 left-1/2 transform -translate-x-1/2 w-full max-w-2xl">
+      <div className="fixed top-[4.5rem] left-1/2 transform -translate-x-1/2 w-full max-w-2xl z-50 px-4">
         <div 
           ref={overlayRef}
-          className="bg-terrain-100 rounded-lg shadow-xl p-8 text-center border border-terrain-300"
+          className="bg-terrain-100 rounded-lg shadow-xl p-8 text-center border border-terrain-300 animate-slideDown"
           style={{ backgroundColor: '#faf8f5' }}
         >
           <p className="text-trail-500">No results found</p>
@@ -60,20 +60,12 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
   }
 
   return (
-    <>
-      {/* Semi-transparent backdrop */}
+    <div className="fixed top-[4.5rem] left-1/2 transform -translate-x-1/2 w-full max-w-2xl z-50 px-4">
       <div 
-        className="fixed inset-0 bg-black bg-opacity-10 z-40"
-        onClick={onClose}
-      />
-      
-      {/* Results Panel */}
-      <div className="absolute top-20 left-1/2 transform -translate-x-1/2 w-full max-w-2xl z-50">
-        <div 
-          ref={overlayRef}
-          className="bg-terrain-100 rounded-lg shadow-xl max-h-[calc(100vh-6rem)] overflow-hidden border border-terrain-300"
-          style={{ backgroundColor: '#faf8f5' }}
-        >
+        ref={overlayRef}
+        className="bg-terrain-100 rounded-lg shadow-xl max-h-[calc(100vh-10rem)] overflow-hidden border border-terrain-300 animate-slideDown"
+        style={{ backgroundColor: '#faf8f5' }}
+      >
           <div className="overflow-y-auto max-h-[calc(100vh-6rem)]">
             {/* Places Section */}
             {results.places.length > 0 && (
@@ -225,7 +217,6 @@ export const SearchOverlay: React.FC<SearchOverlayProps> = ({
             )}
           </div>
         </div>
-      </div>
-    </>
+    </div>
   );
 };

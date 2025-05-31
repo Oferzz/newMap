@@ -6,6 +6,7 @@ import { SearchBar } from '../search/SearchBar';
 import { MobileMenu } from './MobileMenu';
 import { searchAllThunk } from '../../store/thunks/search.thunks';
 import { setActivePanel } from '../../store/slices/uiSlice';
+import { SearchResult } from '../../types';
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +25,11 @@ export const Header: React.FC = () => {
 
   const handleSearch = (query: string, filters?: any) => {
     dispatch(searchAllThunk({ query, filters }));
+  };
+
+  const handleSearchResultSelect = (result: SearchResult) => {
+    dispatch({ type: 'ui/selectItem', payload: result });
+    dispatch({ type: 'ui/setActivePanel', payload: 'details' });
   };
 
   return (
@@ -52,6 +58,7 @@ export const Header: React.FC = () => {
           <SearchBar 
             onSearch={handleSearch}
             placeholder="Search places, trips, or users..."
+            onResultSelect={handleSearchResultSelect}
           />
         </div>
 

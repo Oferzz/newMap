@@ -3,15 +3,19 @@ import { Search, X, Filter, Loader2 } from 'lucide-react';
 import { useDebounce } from '../../hooks/useDebounce';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { clearSearch } from '../../store/slices/uiSlice';
+import { SearchOverlay } from './SearchOverlay';
+import { SearchResult } from '../../types';
 
 interface SearchBarProps {
   onSearch: (query: string, filters?: any) => void;
   placeholder?: string;
+  onResultSelect?: (result: SearchResult) => void;
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({ 
   onSearch, 
-  placeholder = "Search places, trips, or users..." 
+  placeholder = "Search places, trips, or users...",
+  onResultSelect
 }) => {
   const dispatch = useAppDispatch();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -23,6 +27,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   });
 
   const isSearching = useAppSelector((state) => state.search.isLoading);
+  const searchResults = useAppSelector((state) => state.ui.searchResults);
+  const isSearchActive = useAppSelector((state) => state.ui.isSearching);
   const debouncedQuery = useDebounce(query, 300);
 
   // Trigger search when debounced query changes
@@ -37,6 +43,16 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const handleClear = () => {
     setQuery('');
     inputRef.current?.focus();
+    dispatch(clearSearch());
+  };
+
+  const handleResultSelect = (result: SearchResult) => {
+    setQuery('');
+    dispatch(clearSearch());
+    onResultSelect?.(result);
+  };
+
+  const handleCloseResults = () => {
     dispatch(clearSearch());
   };
 
@@ -140,6 +156,15 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Search Results Overlay */}
+      {isSearchActive && searchResults && query.trim() && (
+        <SearchOverlay
+          results={searchResults}
+          onSelect={handleResultSelect}
+          onClose={handleCloseResults}
+        />
       )}
     </div>
   );

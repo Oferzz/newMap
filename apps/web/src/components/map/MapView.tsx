@@ -6,7 +6,6 @@ import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { PlaceMarker } from './PlaceMarker';
 import { TripRoute } from './TripRoute';
 import { MapControls } from './MapControls';
-import { SearchOverlay } from '../search/SearchOverlay';
 import { DetailsPanel } from '../details/DetailsPanel';
 import { TripPlanningPanel } from '../trips/TripPlanningPanel';
 import { TripsPanel } from '../trips/TripsPanel';
@@ -18,7 +17,7 @@ import { MapContextMenu } from './MapContextMenu';
 import { RouteCreationOverlay } from './RouteCreationOverlay';
 import { StorageModeIndicator } from '../common/StorageModeIndicator';
 import { useParams } from 'react-router-dom';
-import { Place, Trip, SearchResult } from '../../types';
+import { Place, Trip } from '../../types';
 import { 
   addTemporaryMarker, 
   removeTemporaryMarker, 
@@ -63,8 +62,6 @@ export const MapView: React.FC<MapViewProps> = ({
   const selectedItem = useAppSelector((state) => state.ui.selectedItem);
   const activePanel = useAppSelector((state) => state.ui.activePanel);
   const mapViewState = useAppSelector((state) => state.ui.mapView);
-  const searchResults = useAppSelector((state) => state.ui.searchResults);
-  const isSearching = useAppSelector((state) => state.ui.isSearching);
   const temporaryMarkers = useAppSelector((state) => state.ui.temporaryMarkers);
   const contextMenuState = useAppSelector((state) => state.ui.contextMenuState);
   const routeCreationMode = useAppSelector((state) => state.ui.routeCreationMode);
@@ -389,11 +386,6 @@ export const MapView: React.FC<MapViewProps> = ({
     };
   }, [routeCreationMode, dispatch]);
 
-  const handleSearchResultSelect = useCallback((result: SearchResult) => {
-    dispatch({ type: 'ui/selectItem', payload: result });
-    dispatch({ type: 'ui/setActivePanel', payload: 'details' });
-    dispatch({ type: 'ui/clearSearch' });
-  }, [dispatch]);
 
   const handleClosePanel = useCallback(() => {
     dispatch({ type: 'ui/setActivePanel', payload: 'none' });
@@ -450,14 +442,6 @@ export const MapView: React.FC<MapViewProps> = ({
       {/* Collaborative Cursors for trips */}
       {tripId && <CollaborativeCursors map={map.current} tripId={tripId} />}
 
-      {/* Search Overlay */}
-      {isSearching && searchResults && (
-        <SearchOverlay
-          results={searchResults}
-          onSelect={handleSearchResultSelect}
-          onClose={() => dispatch({ type: 'ui/clearSearch' })}
-        />
-      )}
 
       {/* Details Panel */}
       {activePanel === 'details' && selectedItem && (
