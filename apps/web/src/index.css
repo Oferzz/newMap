@@ -16,6 +16,43 @@
   -webkit-text-size-adjust: 100%;
 }
 
+/* Location Pin Styles */
+.custom-marker {
+  transition: transform 0.2s ease-in-out;
+}
+
+.custom-marker:hover {
+  transform: scale(1.1) !important;
+}
+
+.location-pin {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  transition: filter 0.2s ease;
+}
+
+.location-pin:hover {
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4));
+}
+
+/* Animation for when marker is placed */
+.location-pin-enter {
+  animation: pinDrop 0.4s ease-out;
+}
+
+@keyframes pinDrop {
+  0% {
+    transform: translateY(-20px) scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: translateY(2px) scale(1.1);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
