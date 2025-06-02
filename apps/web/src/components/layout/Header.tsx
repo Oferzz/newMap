@@ -1,6 +1,6 @@
 import React from 'react';
 import { Search, Plus, User, Menu, MapPin, LogIn, LogOut, Compass } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { SearchBar } from '../search/SearchBar';
 import { MobileMenu } from './MobileMenu';
@@ -9,25 +9,14 @@ import { setActivePanel } from '../../store/slices/uiSlice';
 import { SearchResult } from '../../types';
 import { logout } from '../../store/slices/authSlice';
 
-type ContentType = 'all' | 'trips' | 'places';
-
-interface HeaderProps {
-  contentType?: ContentType;
-  onContentTypeChange?: (type: ContentType) => void;
-}
-
-export const Header: React.FC<HeaderProps> = ({ contentType, onContentTypeChange }) => {
+export const Header: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const location = useLocation();
   const user = useAppSelector((state) => state.auth.user);
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [showProfileMenu, setShowProfileMenu] = React.useState(false);
   const profileMenuRef = React.useRef<HTMLDivElement>(null);
-  
-  // Check if we're on the explore page
-  const isExplorePage = location.pathname === '/explore';
 
   // Close profile menu when clicking outside
   React.useEffect(() => {
@@ -109,25 +98,6 @@ export const Header: React.FC<HeaderProps> = ({ contentType, onContentTypeChange
             <Compass className="w-4 h-4 mr-2" />
             Explore
           </button>
-          
-          {/* Content Type Toggles - Only show on explore page */}
-          {isExplorePage && (
-            <div className="flex items-center space-x-1">
-              {(['all', 'trips', 'places'] as ContentType[]).map((type) => (
-                <button
-                  key={type}
-                  onClick={() => onContentTypeChange?.(type)}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors capitalize ${
-                    contentType === type
-                      ? 'text-trail-800 bg-terrain-200'
-                      : 'text-trail-700 hover:text-trail-800 hover:bg-terrain-200'
-                  }`}
-                >
-                  {type}
-                </button>
-              ))}
-            </div>
-          )}
           
           {isAuthenticated ? (
             <>
