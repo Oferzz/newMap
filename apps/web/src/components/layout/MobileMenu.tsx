@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { X, Plus, MapPin, Route, User, Settings, LogOut, LogIn } from 'lucide-react';
+import { X, Plus, MapPin, User, Settings, LogOut, LogIn, Compass } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { logout } from '../../store/slices/authSlice';
@@ -115,13 +115,13 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
                 </>
               )}
 
-              {/* Explore Places */}
+              {/* Explore */}
               <button
-                onClick={() => handleNavigation('/places')}
+                onClick={() => handleNavigation('/explore')}
                 className="w-full flex items-center px-4 py-3 text-left hover:bg-terrain-200 rounded-lg"
               >
-                <Route className="w-5 h-5 mr-3 text-trail-600" />
-                <span className="text-trail-700">Explore Places</span>
+                <Compass className="w-5 h-5 mr-3 text-trail-600" />
+                <span className="text-trail-700">Explore</span>
               </button>
 
               {/* Profile */}
