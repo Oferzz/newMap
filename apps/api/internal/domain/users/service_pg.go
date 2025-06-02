@@ -9,6 +9,7 @@ import (
 	"github.com/Oferzz/newMap/apps/api/internal/config"
 	"github.com/Oferzz/newMap/apps/api/internal/utils"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 // postgresService implements the service layer for PostgreSQL
@@ -250,7 +251,7 @@ func (s *postgresService) Create(ctx context.Context, input *CreateUserInput) (*
 		Email:                   input.Email,
 		PasswordHash:            hashedPassword,
 		DisplayName:             input.DisplayName,
-		Roles:                   []string{"user"},
+		Roles:                   pq.StringArray{"user"},
 		ProfileVisibility:       "public",
 		LocationSharing:         false,
 		TripDefaultPrivacy:      "private",
