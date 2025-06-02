@@ -54,7 +54,6 @@ func (s *postgresService) Register(ctx context.Context, username, email, passwor
 		Password:   hashedPassword,
 		Role:       "user",
 		IsVerified: false,
-		Friends:    []string{},
 		Profile:    Profile{},
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),
@@ -135,12 +134,7 @@ func (s *postgresService) AddFriend(ctx context.Context, userID, friendID string
 		return fmt.Errorf("friend not found: %w", err)
 	}
 
-	// Check if already friends
-	for _, fID := range user.Friends {
-		if fID == friendID {
-			return errors.New("already friends")
-		}
-	}
+	// Note: Friend check is now handled by database constraint in repository layer
 
 	// Add friend relationship (bidirectional)
 	if err := s.repo.AddFriend(ctx, userID, friendID); err != nil {
@@ -167,18 +161,7 @@ func (s *postgresService) RemoveFriend(ctx context.Context, userID, friendID str
 		return fmt.Errorf("friend not found: %w", err)
 	}
 
-	// Check if they are friends
-	isFriend := false
-	for _, fID := range user.Friends {
-		if fID == friendID {
-			isFriend = true
-			break
-		}
-	}
-
-	if !isFriend {
-		return errors.New("not friends")
-	}
+	// Note: Friend relationship check is now handled by database operations
 
 	// Remove friend relationship (bidirectional)
 	if err := s.repo.RemoveFriend(ctx, userID, friendID); err != nil {

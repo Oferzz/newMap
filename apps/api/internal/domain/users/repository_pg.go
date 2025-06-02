@@ -25,27 +25,36 @@ func NewPostgresRepository(db *sql.DB) Repository {
 func (r *postgresRepository) Create(ctx context.Context, user *User) error {
 	query := `
 		INSERT INTO users (
-			id, username, email, password_hash, profile_name, profile_bio,
-			profile_avatar, profile_location, profile_website, role, friends,
-			created_at, updated_at
+			id, username, email, password_hash, display_name, avatar_url,
+			bio, location, roles, profile_visibility, location_sharing,
+			trip_default_privacy, email_notifications, push_notifications,
+			suggestion_notifications, trip_invite_notifications, status,
+			created_at, updated_at, last_active
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
 		) RETURNING id, created_at, updated_at`
 
 	err := r.db.QueryRowContext(ctx, query,
 		user.ID,
 		user.Username,
 		user.Email,
-		user.Password,
-		user.Profile.Name,
-		user.Profile.Bio,
-		user.Profile.Avatar,
-		user.Profile.Location,
-		user.Profile.Website,
-		user.Role,
-		pq.Array(user.Friends),
+		user.PasswordHash,
+		user.DisplayName,
+		user.AvatarURL,
+		user.Bio,
+		user.Location,
+		pq.Array(user.Roles),
+		user.ProfileVisibility,
+		user.LocationSharing,
+		user.TripDefaultPrivacy,
+		user.EmailNotifications,
+		user.PushNotifications,
+		user.SuggestionNotifications,
+		user.TripInviteNotifications,
+		user.Status,
 		user.CreatedAt,
 		user.UpdatedAt,
+		user.LastActive,
 	).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
@@ -68,13 +77,14 @@ func (r *postgresRepository) Create(ctx context.Context, user *User) error {
 // GetByID retrieves a user by ID
 func (r *postgresRepository) GetByID(ctx context.Context, id string) (*User, error) {
 	var user User
-	var friends pq.StringArray
 	
 	query := `
 		SELECT 
-			id, username, email, password_hash, profile_name, profile_bio,
-			profile_avatar, profile_location, profile_website, role, friends,
-			created_at, updated_at
+			id, username, email, password_hash, display_name, avatar_url,
+			bio, location, roles, profile_visibility, location_sharing,
+			trip_default_privacy, email_notifications, push_notifications,
+			suggestion_notifications, trip_invite_notifications, status,
+			created_at, updated_at, last_active
 		FROM users
 		WHERE id = $1`
 
@@ -82,16 +92,23 @@ func (r *postgresRepository) GetByID(ctx context.Context, id string) (*User, err
 		&user.ID,
 		&user.Username,
 		&user.Email,
-		&user.Password,
-		&user.Profile.Name,
-		&user.Profile.Bio,
-		&user.Profile.Avatar,
-		&user.Profile.Location,
-		&user.Profile.Website,
-		&user.Role,
-		&friends,
+		&user.PasswordHash,
+		&user.DisplayName,
+		&user.AvatarURL,
+		&user.Bio,
+		&user.Location,
+		pq.Array(&user.Roles),
+		&user.ProfileVisibility,
+		&user.LocationSharing,
+		&user.TripDefaultPrivacy,
+		&user.EmailNotifications,
+		&user.PushNotifications,
+		&user.SuggestionNotifications,
+		&user.TripInviteNotifications,
+		&user.Status,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.LastActive,
 	)
 	
 	if err != nil {
@@ -101,20 +118,20 @@ func (r *postgresRepository) GetByID(ctx context.Context, id string) (*User, err
 		return nil, fmt.Errorf("failed to get user: %w", err)
 	}
 
-	user.Friends = []string(friends)
 	return &user, nil
 }
 
 // GetByEmail retrieves a user by email
 func (r *postgresRepository) GetByEmail(ctx context.Context, email string) (*User, error) {
 	var user User
-	var friends pq.StringArray
 	
 	query := `
 		SELECT 
-			id, username, email, password_hash, profile_name, profile_bio,
-			profile_avatar, profile_location, profile_website, role, friends,
-			created_at, updated_at
+			id, username, email, password_hash, display_name, avatar_url,
+			bio, location, roles, profile_visibility, location_sharing,
+			trip_default_privacy, email_notifications, push_notifications,
+			suggestion_notifications, trip_invite_notifications, status,
+			created_at, updated_at, last_active
 		FROM users
 		WHERE email = $1`
 
@@ -122,16 +139,23 @@ func (r *postgresRepository) GetByEmail(ctx context.Context, email string) (*Use
 		&user.ID,
 		&user.Username,
 		&user.Email,
-		&user.Password,
-		&user.Profile.Name,
-		&user.Profile.Bio,
-		&user.Profile.Avatar,
-		&user.Profile.Location,
-		&user.Profile.Website,
-		&user.Role,
-		&friends,
+		&user.PasswordHash,
+		&user.DisplayName,
+		&user.AvatarURL,
+		&user.Bio,
+		&user.Location,
+		pq.Array(&user.Roles),
+		&user.ProfileVisibility,
+		&user.LocationSharing,
+		&user.TripDefaultPrivacy,
+		&user.EmailNotifications,
+		&user.PushNotifications,
+		&user.SuggestionNotifications,
+		&user.TripInviteNotifications,
+		&user.Status,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.LastActive,
 	)
 	
 	if err != nil {
@@ -141,20 +165,20 @@ func (r *postgresRepository) GetByEmail(ctx context.Context, email string) (*Use
 		return nil, fmt.Errorf("failed to get user by email: %w", err)
 	}
 
-	user.Friends = []string(friends)
 	return &user, nil
 }
 
 // GetByUsername retrieves a user by username
 func (r *postgresRepository) GetByUsername(ctx context.Context, username string) (*User, error) {
 	var user User
-	var friends pq.StringArray
 	
 	query := `
 		SELECT 
-			id, username, email, password_hash, profile_name, profile_bio,
-			profile_avatar, profile_location, profile_website, role, friends,
-			created_at, updated_at
+			id, username, email, password_hash, display_name, avatar_url,
+			bio, location, roles, profile_visibility, location_sharing,
+			trip_default_privacy, email_notifications, push_notifications,
+			suggestion_notifications, trip_invite_notifications, status,
+			created_at, updated_at, last_active
 		FROM users
 		WHERE username = $1`
 
@@ -162,16 +186,23 @@ func (r *postgresRepository) GetByUsername(ctx context.Context, username string)
 		&user.ID,
 		&user.Username,
 		&user.Email,
-		&user.Password,
-		&user.Profile.Name,
-		&user.Profile.Bio,
-		&user.Profile.Avatar,
-		&user.Profile.Location,
-		&user.Profile.Website,
-		&user.Role,
-		&friends,
+		&user.PasswordHash,
+		&user.DisplayName,
+		&user.AvatarURL,
+		&user.Bio,
+		&user.Location,
+		pq.Array(&user.Roles),
+		&user.ProfileVisibility,
+		&user.LocationSharing,
+		&user.TripDefaultPrivacy,
+		&user.EmailNotifications,
+		&user.PushNotifications,
+		&user.SuggestionNotifications,
+		&user.TripInviteNotifications,
+		&user.Status,
 		&user.CreatedAt,
 		&user.UpdatedAt,
+		&user.LastActive,
 	)
 	
 	if err != nil {
@@ -181,7 +212,6 @@ func (r *postgresRepository) GetByUsername(ctx context.Context, username string)
 		return nil, fmt.Errorf("failed to get user by username: %w", err)
 	}
 
-	user.Friends = []string(friends)
 	return &user, nil
 }
 
@@ -189,9 +219,11 @@ func (r *postgresRepository) GetByUsername(ctx context.Context, username string)
 func (r *postgresRepository) Update(ctx context.Context, user *User) error {
 	query := `
 		UPDATE users
-		SET username = $2, email = $3, password_hash = $4, profile_name = $5,
-			profile_bio = $6, profile_avatar = $7, profile_location = $8,
-			profile_website = $9, role = $10, friends = $11, updated_at = $12
+		SET username = $2, email = $3, password_hash = $4, display_name = $5,
+			avatar_url = $6, bio = $7, location = $8, roles = $9,
+			profile_visibility = $10, location_sharing = $11, trip_default_privacy = $12,
+			email_notifications = $13, push_notifications = $14, suggestion_notifications = $15,
+			trip_invite_notifications = $16, status = $17, updated_at = $18, last_active = $19
 		WHERE id = $1`
 
 	user.UpdatedAt = time.Now()
@@ -200,15 +232,22 @@ func (r *postgresRepository) Update(ctx context.Context, user *User) error {
 		user.ID,
 		user.Username,
 		user.Email,
-		user.Password,
-		user.Profile.Name,
-		user.Profile.Bio,
-		user.Profile.Avatar,
-		user.Profile.Location,
-		user.Profile.Website,
-		user.Role,
-		pq.Array(user.Friends),
+		user.PasswordHash,
+		user.DisplayName,
+		user.AvatarURL,
+		user.Bio,
+		user.Location,
+		pq.Array(user.Roles),
+		user.ProfileVisibility,
+		user.LocationSharing,
+		user.TripDefaultPrivacy,
+		user.EmailNotifications,
+		user.PushNotifications,
+		user.SuggestionNotifications,
+		user.TripInviteNotifications,
+		user.Status,
 		user.UpdatedAt,
+		user.LastActive,
 	)
 
 	if err != nil {
@@ -236,11 +275,13 @@ func (r *postgresRepository) Search(ctx context.Context, query string) ([]*User,
 	
 	searchQuery := `
 		SELECT 
-			id, username, email, password_hash, profile_name, profile_bio,
-			profile_avatar, profile_location, profile_website, role, friends,
-			created_at, updated_at
+			id, username, email, password_hash, display_name, avatar_url,
+			bio, location, roles, profile_visibility, location_sharing,
+			trip_default_privacy, email_notifications, push_notifications,
+			suggestion_notifications, trip_invite_notifications, status,
+			created_at, updated_at, last_active
 		FROM users
-		WHERE username ILIKE $1 OR email ILIKE $1 OR profile_name ILIKE $1`
+		WHERE username ILIKE $1 OR email ILIKE $1 OR display_name ILIKE $1`
 
 	searchPattern := "%" + query + "%"
 	rows, err := r.db.QueryContext(ctx, searchQuery, searchPattern, searchPattern, searchPattern)
@@ -251,42 +292,47 @@ func (r *postgresRepository) Search(ctx context.Context, query string) ([]*User,
 
 	for rows.Next() {
 		var user User
-		var friends pq.StringArray
 		
 		err := rows.Scan(
 			&user.ID,
 			&user.Username,
 			&user.Email,
-			&user.Password,
-			&user.Profile.Name,
-			&user.Profile.Bio,
-			&user.Profile.Avatar,
-			&user.Profile.Location,
-			&user.Profile.Website,
-			&user.Role,
-			&friends,
+			&user.PasswordHash,
+			&user.DisplayName,
+			&user.AvatarURL,
+			&user.Bio,
+			&user.Location,
+			pq.Array(&user.Roles),
+			&user.ProfileVisibility,
+			&user.LocationSharing,
+			&user.TripDefaultPrivacy,
+			&user.EmailNotifications,
+			&user.PushNotifications,
+			&user.SuggestionNotifications,
+			&user.TripInviteNotifications,
+			&user.Status,
 			&user.CreatedAt,
 			&user.UpdatedAt,
+			&user.LastActive,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan user: %w", err)
 		}
 		
-		user.Friends = []string(friends)
 		users = append(users, &user)
 	}
 
 	return users, nil
 }
 
-// AddFriend adds a friend relationship
+// AddFriend adds a friend relationship using the user_friends table
 func (r *postgresRepository) AddFriend(ctx context.Context, userID, friendID string) error {
 	query := `
-		UPDATE users
-		SET friends = array_append(friends, $1), updated_at = $2
-		WHERE id = $3 AND NOT ($1 = ANY(friends))`
+		INSERT INTO user_friends (user_id, friend_id, status)
+		VALUES ($1, $2, 'accepted')
+		ON CONFLICT (user_id, friend_id) DO NOTHING`
 
-	_, err := r.db.ExecContext(ctx, query, friendID, time.Now(), userID)
+	_, err := r.db.ExecContext(ctx, query, userID, friendID)
 	if err != nil {
 		return fmt.Errorf("failed to add friend: %w", err)
 	}
@@ -296,12 +342,9 @@ func (r *postgresRepository) AddFriend(ctx context.Context, userID, friendID str
 
 // RemoveFriend removes a friend relationship
 func (r *postgresRepository) RemoveFriend(ctx context.Context, userID, friendID string) error {
-	query := `
-		UPDATE users
-		SET friends = array_remove(friends, $1), updated_at = $2
-		WHERE id = $3`
+	query := `DELETE FROM user_friends WHERE user_id = $1 AND friend_id = $2`
 
-	_, err := r.db.ExecContext(ctx, query, friendID, time.Now(), userID)
+	_, err := r.db.ExecContext(ctx, query, userID, friendID)
 	if err != nil {
 		return fmt.Errorf("failed to remove friend: %w", err)
 	}
@@ -309,32 +352,22 @@ func (r *postgresRepository) RemoveFriend(ctx context.Context, userID, friendID 
 	return nil
 }
 
-// GetFriends retrieves a user's friends
+// GetFriends retrieves a user's friends using the user_friends table
 func (r *postgresRepository) GetFriends(ctx context.Context, userID string) ([]*User, error) {
-	// First get the friend IDs
-	var friendIDs pq.StringArray
-	query := `SELECT friends FROM users WHERE id = $1`
-	
-	err := r.db.QueryRowContext(ctx, query, userID).Scan(&friendIDs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get friend IDs: %w", err)
-	}
-
-	if len(friendIDs) == 0 {
-		return []*User{}, nil
-	}
-
-	// Then get the friend details
 	var users []*User
-	friendQuery := `
+	
+	query := `
 		SELECT 
-			id, username, email, password_hash, profile_name, profile_bio,
-			profile_avatar, profile_location, profile_website, role, friends,
-			created_at, updated_at
-		FROM users
-		WHERE id = ANY($1)`
+			u.id, u.username, u.email, u.password_hash, u.display_name, u.avatar_url,
+			u.bio, u.location, u.roles, u.profile_visibility, u.location_sharing,
+			u.trip_default_privacy, u.email_notifications, u.push_notifications,
+			u.suggestion_notifications, u.trip_invite_notifications, u.status,
+			u.created_at, u.updated_at, u.last_active
+		FROM users u
+		INNER JOIN user_friends uf ON u.id = uf.friend_id
+		WHERE uf.user_id = $1 AND uf.status = 'accepted'`
 
-	rows, err := r.db.QueryContext(ctx, friendQuery, pq.Array(friendIDs))
+	rows, err := r.db.QueryContext(ctx, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get friends: %w", err)
 	}
@@ -342,28 +375,33 @@ func (r *postgresRepository) GetFriends(ctx context.Context, userID string) ([]*
 
 	for rows.Next() {
 		var user User
-		var friends pq.StringArray
 		
 		err := rows.Scan(
 			&user.ID,
 			&user.Username,
 			&user.Email,
-			&user.Password,
-			&user.Profile.Name,
-			&user.Profile.Bio,
-			&user.Profile.Avatar,
-			&user.Profile.Location,
-			&user.Profile.Website,
-			&user.Role,
-			&friends,
+			&user.PasswordHash,
+			&user.DisplayName,
+			&user.AvatarURL,
+			&user.Bio,
+			&user.Location,
+			pq.Array(&user.Roles),
+			&user.ProfileVisibility,
+			&user.LocationSharing,
+			&user.TripDefaultPrivacy,
+			&user.EmailNotifications,
+			&user.PushNotifications,
+			&user.SuggestionNotifications,
+			&user.TripInviteNotifications,
+			&user.Status,
 			&user.CreatedAt,
 			&user.UpdatedAt,
+			&user.LastActive,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan friend: %w", err)
 		}
 		
-		user.Friends = []string(friends)
 		users = append(users, &user)
 	}
 

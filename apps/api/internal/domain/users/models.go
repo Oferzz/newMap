@@ -54,7 +54,6 @@ type User struct {
 	PushNotifications       bool           `db:"push_notifications" json:"push_notifications"`
 	SuggestionNotifications bool           `db:"suggestion_notifications" json:"suggestion_notifications"`
 	TripInviteNotifications bool           `db:"trip_invite_notifications" json:"trip_invite_notifications"`
-	Friends                 pq.StringArray `db:"friends" json:"friends"`  // Added for friends
 	IsVerified              bool           `db:"is_verified" json:"is_verified"`  // Added for compatibility
 	Profile                 Profile        `json:"profile"`  // Added for profile compatibility
 	CreatedAt               time.Time      `db:"created_at" json:"created_at"`
