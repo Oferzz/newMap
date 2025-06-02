@@ -19,14 +19,25 @@ export class TemporaryMarker {
     el.className = 'temporary-marker';
     el.setAttribute('data-testid', 'temporary-marker');
     
-    // Create marker content
+    // Create marker content with simple circle design
     const root = ReactDOM.createRoot(el);
     root.render(
-      <div className="relative">
-        <div className="absolute -top-8 -left-4 w-8 h-8 bg-blue-500 rounded-full shadow-lg cursor-pointer hover:bg-blue-600 transition-colors">
-          <div className="absolute inset-2 bg-white rounded-full"></div>
-        </div>
-        <div className="absolute -top-1 -left-0.5 w-1 h-8 bg-blue-500"></div>
+      <div 
+        className="relative cursor-pointer"
+        style={{ transform: 'translate(-50%, -50%)' }}
+      >
+        <svg
+          width="32"
+          height="32"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="drop-shadow-lg hover:scale-110 transition-transform"
+        >
+          <circle cx="12" cy="12" r="11" fill="white" stroke="#446b8e" strokeWidth="2"/>
+          <circle cx="12" cy="12" r="4" fill="#446b8e"/>
+          <circle cx="12" cy="12" r="8" fill="none" stroke="#446b8e" strokeWidth="1" strokeDasharray="2 2" opacity="0.5"/>
+        </svg>
       </div>
     );
 

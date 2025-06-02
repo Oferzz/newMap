@@ -9,51 +9,36 @@ interface LocationPinProps {
 
 export const LocationPin: React.FC<LocationPinProps> = ({ 
   size = 24, 
-  color = '#EA4335', // Google's red color similar to the screenshot
+  color = '#5e4c41', // Brown color matching the theme
   className = '',
   onClick
 }) => {
   return (
     <svg
       width={size}
-      height={size * 1.2} // Make it slightly taller for the pin shape
-      viewBox="0 0 24 29"
+      height={size}
+      viewBox="0 0 24 24"
       fill="none"
       className={className}
       onClick={onClick}
       style={{ cursor: onClick ? 'pointer' : 'default' }}
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Drop shadow */}
-      <ellipse
-        cx="12"
-        cy="26"
-        rx="3"
-        ry="1.5"
-        fill="rgba(0,0,0,0.2)"
-      />
-      
-      {/* Main pin body */}
-      <path
-        d="M12 0C7.03 0 3 4.03 3 9c0 6.75 9 20 9 20s9-13.25 9-20c0-4.97-4.03-9-9-9z"
-        fill={color}
-        stroke="#fff"
-        strokeWidth="0.5"
-      />
-      
-      {/* Inner white circle */}
+      {/* Outer circle */}
       <circle
         cx="12"
-        cy="9"
-        r="3.5"
+        cy="12"
+        r="11"
         fill="white"
+        stroke={color}
+        strokeWidth="2"
       />
       
-      {/* Small center dot */}
+      {/* Inner dot */}
       <circle
         cx="12"
-        cy="9"
-        r="1.5"
+        cy="12"
+        r="4"
         fill={color}
       />
     </svg>
@@ -97,11 +82,11 @@ export const SimpleLocationPin: React.FC<LocationPinProps> = ({
 
 // Define color constants
 export const LocationPinColors = {
-  default: '#EA4335',     // Google red
-  restaurant: '#FF6B6B',  // Red
-  hotel: '#4ECDC4',       // Teal  
-  attraction: '#45B7D1',  // Blue
-  shopping: '#96CEB4',    // Green
-  transport: '#FECA57',   // Yellow
-  selected: '#8E44AD',    // Purple
+  default: '#5e4c41',     // Trail brown (matching theme)
+  restaurant: '#d4b5a0',  // Terrain
+  hotel: '#6a9ec9',       // Water blue  
+  attraction: '#8fbe7e',  // Forest green
+  shopping: '#fda328',    // Road orange
+  transport: '#927b67',   // Trail light
+  selected: '#446b8e',    // Water dark
 } as const;
