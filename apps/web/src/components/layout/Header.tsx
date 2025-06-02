@@ -103,7 +103,7 @@ export const Header: React.FC = () => {
               
               <button
                 onClick={handleCreateTrip}
-                className="flex items-center px-4 py-2 bg-forest-600 text-white rounded-lg hover:bg-forest-700 transition-colors shadow-soft"
+                className="flex items-center px-4 py-2 bg-forest-600 text-trail-800 rounded-lg hover:bg-forest-700 transition-colors shadow-soft"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 New Trip
@@ -127,7 +127,7 @@ export const Header: React.FC = () => {
                 </button>
                 
                 {showProfileMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-terrain-100 rounded-lg shadow-lg border border-terrain-300 py-1">
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-terrain-300 py-1">
                     <div className="px-4 py-2 border-b border-terrain-300">
                       <p className="text-sm font-medium text-trail-800">{user?.displayName}</p>
                       <p className="text-xs text-trail-600">{user?.email}</p>
@@ -156,7 +156,7 @@ export const Header: React.FC = () => {
           ) : (
             <button
               onClick={() => navigate('/login')}
-              className="flex items-center px-4 py-2 text-white rounded-lg transition-colors shadow-soft"
+              className="flex items-center px-4 py-2 text-trail-800 rounded-lg transition-colors shadow-soft"
               style={{ backgroundColor: '#70a55e' }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#5a8a4a'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#70a55e'}
