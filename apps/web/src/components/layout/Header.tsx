@@ -56,9 +56,9 @@ export const Header: React.FC = () => {
 
   return (
     <header className="fixed top-0 left-0 right-0 h-16 bg-terrain-100 border-b border-terrain-300 z-50 shadow-soft">
-      <div className="h-full px-4 flex items-center justify-between">
+      <div className="h-full px-4 flex items-center justify-between relative">
         {/* Logo */}
-        <div className="flex items-center">
+        <div className="flex items-center z-10">
           <button
             className="md:hidden p-2 mr-2 text-trail-700 hover:text-trail-800"
             onClick={() => setIsMobileMenuOpen(true)}
@@ -75,8 +75,8 @@ export const Header: React.FC = () => {
           </a>
         </div>
 
-        {/* Search Bar - Hidden on mobile */}
-        <div className="hidden md:flex flex-1 max-w-xl mx-4">
+        {/* Search Bar - Absolutely centered */}
+        <div className="hidden md:block absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-xl px-4">
           <SearchBar 
             onSearch={handleSearch}
             placeholder="Search places, trips, or users..."
@@ -90,7 +90,7 @@ export const Header: React.FC = () => {
         </button>
 
         {/* Desktop Actions */}
-        <div className="hidden md:flex items-center space-x-3 flex-shrink-0">
+        <div className="hidden md:flex items-center space-x-3 flex-shrink-0 z-10">
           <button
             onClick={() => navigate('/explore')}
             className="flex items-center px-3 py-2 text-trail-700 hover:text-trail-800 hover:bg-terrain-200 rounded-lg transition-colors"
