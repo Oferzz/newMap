@@ -76,7 +76,7 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Search Bar - Hidden on mobile */}
-        <div className="hidden md:flex flex-1 max-w-2xl mx-4">
+        <div className="hidden md:flex flex-1 max-w-xl mx-4">
           <SearchBar 
             onSearch={handleSearch}
             placeholder="Search places, trips, or users..."
@@ -90,7 +90,7 @@ export const Header: React.FC = () => {
         </button>
 
         {/* Desktop Actions */}
-        <div className="hidden md:flex items-center space-x-3">
+        <div className="hidden md:flex items-center space-x-3 flex-shrink-0">
           {isAuthenticated ? (
             <>
               <button
