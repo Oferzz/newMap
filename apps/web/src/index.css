@@ -76,10 +76,9 @@
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden; /* Let the app container handle scrolling */
 }
 
 #root {
@@ -93,6 +92,12 @@ button:hover,
 [role="button"]:hover,
 .cursor-pointer:hover {
   cursor: pointer;
+}
+
+/* Ensure the app can handle viewport changes gracefully */
+html {
+  height: 100%;
+  overflow: hidden;
 }
 
 /* Remove dark mode for now to maintain consistent outdoors theme */

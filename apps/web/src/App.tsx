@@ -22,7 +22,7 @@ function App() {
   return (
     <WebSocketProvider>
       <Router>
-        <div className="relative h-screen w-screen overflow-hidden">
+        <div className="relative h-screen w-full overflow-auto">
           {/* Global Toast Notifications */}
           <Toaster 
             position="top-center"
