@@ -87,7 +87,7 @@ func main() {
 	collectionRepo := collections.NewPostgresRepository(db.DB)
 
 	// Initialize services
-	userService := users.NewPostgreSQLService(userRepo)
+	userService := users.NewPostgreSQLService(userRepo, cfg)
 	
 	// Use cached trip service if Redis is available
 	baseTripService := trips.NewService(tripRepo, userRepo)

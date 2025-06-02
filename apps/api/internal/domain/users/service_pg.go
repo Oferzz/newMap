@@ -6,32 +6,25 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Oferzz/newMap/apps/api/internal/config"
+	"github.com/Oferzz/newMap/apps/api/internal/utils"
 	"github.com/google/uuid"
 )
 
 // postgresService implements the service layer for PostgreSQL
 type postgresService struct {
-	repo Repository
+	repo       Repository
+	jwtManager *utils.JWTManager
 }
 
 // NewPostgreSQLService creates a new PostgreSQL service
-func NewPostgreSQLService(repo Repository) *postgresService {
+func NewPostgreSQLService(repo Repository, cfg *config.Config) *postgresService {
 	return &postgresService{
-		repo: repo,
+		repo:       repo,
+		jwtManager: utils.NewJWTManager(&cfg.JWT),
 	}
 }
 
-// HashPassword is a simple mock hash function for testing
-func HashPassword(password string) (string, error) {
-	// In production, use bcrypt or similar
-	return "hashed_" + password, nil
-}
-
-// CheckPassword is a simple mock check function for testing
-func CheckPassword(password, hash string) bool {
-	// In production, use bcrypt or similar
-	return hash == "hashed_"+password
-}
 
 // Register creates a new user account
 func (s *postgresService) Register(ctx context.Context, username, email, password string) (*User, error) {
@@ -48,7 +41,7 @@ func (s *postgresService) Register(ctx context.Context, username, email, passwor
 	}
 
 	// Hash password
-	hashedPassword, err := HashPassword(password)
+	hashedPassword, err := utils.HashPassword(password)
 	if err != nil {
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
@@ -87,7 +80,7 @@ func (s *postgresService) LoginOriginal(ctx context.Context, emailOrUsername, pa
 	}
 
 	// Check password
-	if !CheckPassword(password, user.Password) {
+	if !utils.CheckPassword(password, user.Password) {
 		return nil, errors.New("invalid credentials")
 	}
 
@@ -236,8 +229,51 @@ func (s *postgresService) GetByID(ctx context.Context, userID string) (*User, er
 // Missing interface methods - stub implementations for now
 
 func (s *postgresService) Create(ctx context.Context, input *CreateUserInput) (*User, error) {
-	// TODO: Implement
-	return nil, errors.New("not implemented")
+	// Check if email already exists
+	existingUser, _ := s.repo.GetByEmail(ctx, input.Email)
+	if existingUser != nil {
+		return nil, errors.New("email already exists")
+	}
+
+	// Check if username already exists
+	existingUser, _ = s.repo.GetByUsername(ctx, input.Username)
+	if existingUser != nil {
+		return nil, errors.New("username already exists")
+	}
+
+	// Hash password
+	hashedPassword, err := utils.HashPassword(input.Password)
+	if err != nil {
+		return nil, fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	// Create user
+	user := &User{
+		ID:                      uuid.New().String(),
+		Username:                input.Username,
+		Email:                   input.Email,
+		PasswordHash:            hashedPassword,
+		DisplayName:             input.DisplayName,
+		Roles:                   []string{"user"},
+		ProfileVisibility:       "public",
+		LocationSharing:         false,
+		TripDefaultPrivacy:      "private",
+		EmailNotifications:      true,
+		PushNotifications:       true,
+		SuggestionNotifications: true,
+		TripInviteNotifications: true,
+		IsVerified:              false,
+		Status:                  "active",
+		CreatedAt:               time.Now(),
+		UpdatedAt:               time.Now(),
+		LastActive:              time.Now(),
+	}
+
+	if err := s.repo.Create(ctx, user); err != nil {
+		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	return user, nil
 }
 
 func (s *postgresService) GetByEmail(ctx context.Context, email string) (*User, error) {
@@ -256,8 +292,29 @@ func (s *postgresService) Delete(ctx context.Context, id string) error {
 }
 
 func (s *postgresService) Login(ctx context.Context, input *LoginInput) (*LoginResponse, error) {
-	// TODO: Implement
-	return nil, errors.New("not implemented")
+	// Try to find user by email
+	user, err := s.repo.GetByEmail(ctx, input.Email)
+	if err != nil {
+		return nil, errors.New("invalid credentials")
+	}
+
+	// Check password
+	if !utils.CheckPassword(input.Password, user.PasswordHash) {
+		return nil, errors.New("invalid credentials")
+	}
+
+	// Generate tokens
+	accessToken, refreshToken, err := s.jwtManager.GenerateTokenPair(user.ID, user.Email)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate tokens: %w", err)
+	}
+
+	return &LoginResponse{
+		User:         user,
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		ExpiresIn:    900, // 15 minutes
+	}, nil
 }
 
 func (s *postgresService) RefreshToken(ctx context.Context, refreshToken string) (*LoginResponse, error) {

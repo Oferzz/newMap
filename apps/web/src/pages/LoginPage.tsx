@@ -20,16 +20,69 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isRegister = false }) => {
     confirmPassword: '',
     displayName: '',
   });
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  const validateForm = () => {
+    const errors: Record<string, string> = {};
+    setFieldErrors({});
+
+    // Email validation
+    if (!formData.email) {
+      errors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = 'Invalid email format';
+    }
+
+    if (isRegister) {
+      // Username validation
+      if (!formData.username) {
+        errors.username = 'Username is required';
+      } else if (formData.username.length < 3) {
+        errors.username = 'Username must be at least 3 characters';
+      } else if (formData.username.length > 30) {
+        errors.username = 'Username cannot exceed 30 characters';
+      } else if (!/^[a-zA-Z0-9_-]+$/.test(formData.username)) {
+        errors.username = 'Username can only contain letters, numbers, underscores, and hyphens';
+      }
+
+      // Display name validation
+      if (!formData.displayName) {
+        errors.displayName = 'Display name is required';
+      } else if (formData.displayName.length < 2) {
+        errors.displayName = 'Display name must be at least 2 characters';
+      } else if (formData.displayName.length > 100) {
+        errors.displayName = 'Display name cannot exceed 100 characters';
+      }
+
+      // Password confirmation
+      if (formData.password !== formData.confirmPassword) {
+        errors.confirmPassword = 'Passwords do not match';
+      }
+    }
+
+    // Password validation
+    if (!formData.password) {
+      errors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      errors.password = 'Password must be at least 8 characters';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return false;
+    }
+    return true;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (isRegister && formData.password !== formData.confirmPassword) {
-      toast.error('Passwords do not match');
+    if (!validateForm()) {
       return;
     }
 
     setIsLoading(true);
+    setFieldErrors({});
 
     try {
       if (isRegister) {
@@ -53,8 +106,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isRegister = false }) => {
       }
       
       navigate('/');
-    } catch (error) {
-      // Error handling is done in the thunks
+    } catch (error: any) {
+      // Handle specific field errors from the server
+      if (error?.message) {
+        const message = error.message.toLowerCase();
+        if (message.includes('email already exists')) {
+          setFieldErrors({ email: 'This email is already registered' });
+        } else if (message.includes('username already exists')) {
+          setFieldErrors({ username: 'This username is already taken' });
+        } else if (message.includes('invalid credentials')) {
+          setFieldErrors({ email: 'Invalid email or password', password: 'Invalid email or password' });
+        }
+      }
     } finally {
       setIsLoading(false);
     }
@@ -92,10 +155,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isRegister = false }) => {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full pl-10 pr-4 py-2 bg-terrain-50 border border-terrain-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent placeholder-trail-400"
+                  className={`w-full pl-10 pr-4 py-2 bg-terrain-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent placeholder-trail-400 ${fieldErrors.email ? 'border-red-500' : 'border-terrain-300'}`}
                   placeholder="you@example.com"
                 />
               </div>
+              {fieldErrors.email && <p className="text-red-500 text-sm mt-1">{fieldErrors.email}</p>}
             </div>
 
             {isRegister && (
@@ -113,10 +177,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isRegister = false }) => {
                       title="Username can only contain letters, numbers, underscores, and hyphens"
                       value={formData.username}
                       onChange={(e) => setFormData({ ...formData, username: e.target.value.replace(/\s/g, '') })}
-                      className="w-full pl-10 pr-4 py-2 bg-terrain-50 border border-terrain-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent placeholder-trail-400"
+                      className={`w-full pl-10 pr-4 py-2 bg-terrain-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent placeholder-trail-400 ${fieldErrors.username ? 'border-red-500' : 'border-terrain-300'}`}
                       placeholder="johndoe"
                     />
                   </div>
+                  {fieldErrors.username && <p className="text-red-500 text-sm mt-1">{fieldErrors.username}</p>}
                 </div>
 
                 <div>
@@ -128,9 +193,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isRegister = false }) => {
                     required
                     value={formData.displayName}
                     onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                    className="w-full px-4 py-2 bg-terrain-50 border border-terrain-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent placeholder-trail-400"
+                    className={`w-full px-4 py-2 bg-terrain-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent placeholder-trail-400 ${fieldErrors.displayName ? 'border-red-500' : 'border-terrain-300'}`}
                     placeholder="John Doe"
                   />
+                  {fieldErrors.displayName && <p className="text-red-500 text-sm mt-1">{fieldErrors.displayName}</p>}
                 </div>
               </>
             )}
@@ -146,10 +212,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isRegister = false }) => {
                   required
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full pl-10 pr-4 py-2 bg-terrain-50 border border-terrain-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent placeholder-trail-400"
+                  className={`w-full pl-10 pr-4 py-2 bg-terrain-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent placeholder-trail-400 ${fieldErrors.password ? 'border-red-500' : 'border-terrain-300'}`}
                   placeholder="••••••••"
                 />
               </div>
+              {fieldErrors.password && <p className="text-red-500 text-sm mt-1">{fieldErrors.password}</p>}
             </div>
 
             {isRegister && (
@@ -164,17 +231,18 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isRegister = false }) => {
                     required
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    className="w-full pl-10 pr-4 py-2 bg-terrain-50 border border-terrain-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent placeholder-trail-400"
+                    className={`w-full pl-10 pr-4 py-2 bg-terrain-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent placeholder-trail-400 ${fieldErrors.confirmPassword ? 'border-red-500' : 'border-terrain-300'}`}
                     placeholder="••••••••"
                   />
                 </div>
+                {fieldErrors.confirmPassword && <p className="text-red-500 text-sm mt-1">{fieldErrors.confirmPassword}</p>}
               </div>
             )}
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 bg-forest-600 text-white rounded-lg font-medium hover:bg-forest-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-soft"
+              className="w-full py-3 bg-forest-600 text-trail-800 rounded-lg font-medium hover:bg-forest-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-soft"
             >
               {isLoading ? (
                 <>
