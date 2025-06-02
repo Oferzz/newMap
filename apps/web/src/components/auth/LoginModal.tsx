@@ -156,9 +156,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onClose, isRegis
         onClick={onClose}
       />
       
-      {/* Modal Content */}
-      <div className="relative max-w-md w-full animate-in">
-        <div className="bg-terrain-100 rounded-2xl shadow-xl border border-terrain-300 p-8">
+      {/* Modal Content - isolate from backdrop to prevent blur inheritance */}
+      <div className="relative z-10 max-w-md w-full animate-in">
+        <div className="bg-terrain-100 rounded-2xl shadow-xl border border-terrain-300 p-8" style={{ backgroundColor: '#faf8f5' }}>
           {/* Close button */}
           <button
             onClick={onClose}
