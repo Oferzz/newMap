@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
-  Search, 
   Calendar, 
   MapPin, 
   Users, 
@@ -16,10 +15,12 @@ import {
   List
 } from 'lucide-react';
 import { getUserTripsThunk } from '../store/thunks/trips.thunks';
-import { Trip } from '../store/slices/tripsSlice';
-import { Place } from '../types';
+import { Trip as ReduxTrip } from '../store/slices/tripsSlice';
+import { Place, Trip as APITrip } from '../types';
 import { format, differenceInDays } from 'date-fns';
 import { api } from '../services/api';
+import { clearSearch as clearSearchAction } from '../store/slices/searchSlice';
+import { clearSearch as clearUISearch } from '../store/slices/uiSlice';
 
 type ContentType = 'all' | 'trips' | 'places';
 type FilterType = 'all' | 'saved';
@@ -30,17 +31,32 @@ interface ExplorePageProps {}
 export const ExplorePage: React.FC<ExplorePageProps> = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { items: userTrips } = useAppSelector(state => state.trips);
   const { items: userPlaces } = useAppSelector(state => state.places);
   const { isAuthenticated } = useAppSelector(state => state.auth);
+  
+  // Get search query from Redux search state
+  const searchQuery = useAppSelector(state => state.search.query);
+  const searchResults = useAppSelector(state => state.ui.searchResults);
+  
+  // Clear search when leaving the explore page
+  useEffect(() => {
+    return () => {
+      if (location.pathname !== '/explore') {
+        // Clear search when navigating away from explore page
+        dispatch(clearSearchAction());
+        dispatch(clearUISearch());
+      }
+    };
+  }, [location.pathname, dispatch]);
 
   // Local state
   const [contentType, setContentType] = useState<ContentType>('all');
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [publicTrips, setPublicTrips] = useState<Trip[]>([]);
+  const [publicTrips, setPublicTrips] = useState<APITrip[]>([]);
   const [publicPlaces, setPublicPlaces] = useState<Place[]>([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -48,7 +64,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = () => {
   // Load data on component mount and when filters change
   useEffect(() => {
     loadData();
-  }, [contentType, filterType, searchQuery]);
+  }, [contentType, filterType]);
 
   // Load user's saved content if authenticated
   useEffect(() => {
@@ -56,6 +72,18 @@ export const ExplorePage: React.FC<ExplorePageProps> = () => {
       dispatch(getUserTripsThunk());
     }
   }, [isAuthenticated, filterType, dispatch]);
+
+  // Use search results from Redux when available
+  useEffect(() => {
+    if (searchResults && searchQuery) {
+      // Search results from header search are already filtered
+      setPublicTrips(searchResults.trips || []);
+      setPublicPlaces(searchResults.places || []);
+    } else if (!searchQuery) {
+      // Load default content when no search query
+      loadData();
+    }
+  }, [searchResults, searchQuery]);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -91,7 +119,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = () => {
         params.append('q', searchQuery);
       }
 
-      const response = await api.get<{data: Trip[], meta: {hasMore: boolean}}>(`/trips?${params.toString()}`, { skipAuth: true });
+      const response = await api.get<{data: APITrip[], meta: {hasMore: boolean}}>(`/trips?${params.toString()}`, { skipAuth: true });
       
       if (reset) {
         setPublicTrips(response.data || []);
@@ -156,27 +184,28 @@ export const ExplorePage: React.FC<ExplorePageProps> = () => {
 
   // Get filtered data based on current settings
   const getFilteredData = () => {
-    let trips: Trip[] = [];
+    let trips: (ReduxTrip | APITrip)[] = [];
     let places: Place[] = [];
 
     if (filterType === 'saved') {
       trips = userTrips;
       places = userPlaces;
+      
+      // Apply search filter for saved content if search query exists
+      if (searchQuery) {
+        trips = trips.filter(trip => 
+          trip.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          trip.description?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        places = places.filter(place => 
+          place.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          place.description?.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+      }
     } else {
-      trips = publicTrips;
-      places = publicPlaces;
-    }
-
-    // Apply search filter
-    if (searchQuery) {
-      trips = trips.filter(trip => 
-        trip.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        trip.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      places = places.filter(place => 
-        place.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        place.description?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      // For public content, use search results if available, otherwise use loaded public content
+      trips = searchResults && searchQuery ? (searchResults.trips || []) : publicTrips;
+      places = searchResults && searchQuery ? (searchResults.places || []) : publicPlaces;
     }
 
     return { trips, places };
@@ -208,7 +237,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = () => {
     }
   };
 
-  const getTripDuration = (trip: Trip) => {
+  const getTripDuration = (trip: ReduxTrip | APITrip) => {
     const startDate = trip.startDate || (trip as any).start_date;
     const endDate = trip.endDate || (trip as any).end_date;
     
@@ -218,7 +247,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = () => {
     return `${days} day${days > 1 ? 's' : ''}`;
   };
 
-  const handleTripClick = (trip: Trip) => {
+  const handleTripClick = (trip: ReduxTrip | APITrip) => {
     navigate(`/trips/${trip.id}`);
   };
 
@@ -226,7 +255,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = () => {
     navigate(`/places/${place.id}`);
   };
 
-  const renderTripCard = (trip: Trip) => (
+  const renderTripCard = (trip: ReduxTrip | APITrip) => (
     <div
       key={trip.id}
       className={`bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow ${
@@ -234,10 +263,10 @@ export const ExplorePage: React.FC<ExplorePageProps> = () => {
       }`}
       onClick={() => handleTripClick(trip)}
     >
-      {(trip as any).cover_image || trip.coverImage ? (
+      {(trip as any).cover_image || (trip as any).coverImage ? (
         <div className={`${viewMode === 'list' ? 'w-32 h-24' : 'h-48'} bg-gray-200 relative`}>
           <img
-            src={(trip as any).cover_image || trip.coverImage}
+            src={(trip as any).cover_image || (trip as any).coverImage}
             alt={trip.title}
             className="w-full h-full object-cover"
           />
@@ -275,7 +304,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = () => {
             <Clock className="w-3 h-3" />
             <span>{getTripDuration(trip)}</span>
           </div>
-          {trip.waypoints?.length > 0 && (
+          {trip.waypoints && trip.waypoints.length > 0 && (
             <div className="flex items-center gap-1">
               <MapPin className="w-3 h-3" />
               <span>{trip.waypoints.length} places</span>
@@ -283,7 +312,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = () => {
           )}
         </div>
 
-        {trip.collaborators?.length > 1 && (
+        {trip.collaborators && trip.collaborators.length > 1 && (
           <div className="flex items-center gap-1 mt-2">
             <Users className="w-3 h-3 text-gray-400" />
             <span className="text-xs text-gray-500">
@@ -367,6 +396,29 @@ export const ExplorePage: React.FC<ExplorePageProps> = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
+      {/* Content Type Toggles - Centered under header */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex justify-center">
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              {(['all', 'trips', 'places'] as ContentType[]).map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setContentType(type)}
+                  className={`px-6 py-2 rounded-md text-sm font-medium transition-colors capitalize ${
+                    contentType === type
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-gray-700 hover:text-gray-900'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -381,24 +433,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = () => {
 
         {/* Controls */}
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
-          {/* Content Type Toggle */}
-          <div className="flex flex-wrap gap-4 mb-6">
-            <div className="flex bg-gray-100 rounded-lg p-1">
-              {(['all', 'trips', 'places'] as ContentType[]).map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setContentType(type)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors capitalize ${
-                    contentType === type
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'text-gray-700 hover:text-gray-900'
-                  }`}
-                >
-                  {type}
-                </button>
-              ))}
-            </div>
-
+          <div className="flex flex-wrap gap-4 items-center">
             {/* Filter Toggle */}
             <div className="flex bg-gray-100 rounded-lg p-1">
               <button
@@ -427,8 +462,15 @@ export const ExplorePage: React.FC<ExplorePageProps> = () => {
               )}
             </div>
 
+            {/* Search instruction */}
+            <div className="flex-1 text-center">
+              <p className="text-sm text-gray-500">
+                {searchQuery ? `Showing results for "${searchQuery}"` : 'Use the search bar above to find specific content'}
+              </p>
+            </div>
+
             {/* View Mode Toggle */}
-            <div className="flex bg-gray-100 rounded-lg p-1 ml-auto">
+            <div className="flex bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-2 rounded-md transition-colors ${
@@ -450,18 +492,6 @@ export const ExplorePage: React.FC<ExplorePageProps> = () => {
                 <List className="w-4 h-4" />
               </button>
             </div>
-          </div>
-
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder={`Search ${contentType === 'all' ? 'trips and places' : contentType}...`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
           </div>
         </div>
 
