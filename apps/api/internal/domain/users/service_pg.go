@@ -124,7 +124,7 @@ func (s *postgresService) UpdateProfile(ctx context.Context, userID string, upda
 // AddFriend adds a friend relationship
 func (s *postgresService) AddFriend(ctx context.Context, userID, friendID string) error {
 	// Verify both users exist
-	user, err := s.repo.GetByID(ctx, userID)
+	_, err := s.repo.GetByID(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("user not found: %w", err)
 	}
@@ -151,7 +151,7 @@ func (s *postgresService) AddFriend(ctx context.Context, userID, friendID string
 // RemoveFriend removes a friend relationship
 func (s *postgresService) RemoveFriend(ctx context.Context, userID, friendID string) error {
 	// Verify both users exist
-	user, err := s.repo.GetByID(ctx, userID)
+	_, err := s.repo.GetByID(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("user not found: %w", err)
 	}
