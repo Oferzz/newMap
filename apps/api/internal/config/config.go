@@ -197,5 +197,6 @@ func getAllowedOrigins() []string {
 		"http://localhost:3000",
 		"http://localhost:5173", 
 		"https://newmap-fe.onrender.com",
+		"https://newmap-qojk.onrender.com",
 	}
 }
