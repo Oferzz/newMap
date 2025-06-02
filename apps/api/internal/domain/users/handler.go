@@ -49,12 +49,16 @@ func (h *Handler) Register(c *gin.Context) {
 func (h *Handler) Login(c *gin.Context) {
 	var input LoginInput
 	if err := c.ShouldBindJSON(&input); err != nil {
+		fmt.Printf("DEBUG: Login - Failed to bind JSON input: %v\n", err)
 		response.BadRequest(c, err.Error())
 		return
 	}
 
+	fmt.Printf("DEBUG: Login attempt with input: Email=%s, Password=%s\n", input.Email, input.Password)
+
 	loginResp, err := h.service.Login(c.Request.Context(), &input)
 	if err != nil {
+		fmt.Printf("DEBUG: Login - Service.Login failed with error: %v\n", err)
 		if err.Error() == "invalid credentials" {
 			response.Unauthorized(c, err.Error())
 			return
@@ -63,6 +67,7 @@ func (h *Handler) Login(c *gin.Context) {
 		return
 	}
 
+	fmt.Printf("DEBUG: Login successful for user: %+v\n", loginResp.User)
 	response.Success(c, loginResp)
 }
 

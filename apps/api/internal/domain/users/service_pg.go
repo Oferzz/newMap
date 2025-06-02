@@ -293,22 +293,37 @@ func (s *postgresService) Delete(ctx context.Context, id string) error {
 }
 
 func (s *postgresService) Login(ctx context.Context, input *LoginInput) (*LoginResponse, error) {
+	fmt.Printf("DEBUG: Service.Login called with input: Email=%s, Password=%s\n", input.Email, input.Password)
+
 	// Try to find user by email
 	user, err := s.repo.GetByEmail(ctx, input.Email)
 	if err != nil {
+		fmt.Printf("DEBUG: Login - Failed to find user by email: %v\n", err)
 		return nil, errors.New("invalid credentials")
 	}
 
+	fmt.Printf("DEBUG: Login - Found user: ID=%s, Email=%s, PasswordHash=%s\n", user.ID, user.Email, user.PasswordHash)
+
 	// Check password
-	if !utils.CheckPassword(input.Password, user.PasswordHash) {
+	fmt.Printf("DEBUG: Login - Checking password: input='%s' vs stored='%s'\n", input.Password, user.PasswordHash)
+	passwordMatch := utils.CheckPassword(input.Password, user.PasswordHash)
+	fmt.Printf("DEBUG: Login - Password match result: %t\n", passwordMatch)
+	
+	if !passwordMatch {
+		fmt.Printf("DEBUG: Login - Password check failed\n")
 		return nil, errors.New("invalid credentials")
 	}
+
+	fmt.Printf("DEBUG: Login - Password check succeeded, generating tokens\n")
 
 	// Generate tokens
 	accessToken, refreshToken, err := s.jwtManager.GenerateTokenPair(user.ID, user.Email)
 	if err != nil {
+		fmt.Printf("DEBUG: Login - Failed to generate tokens: %v\n", err)
 		return nil, fmt.Errorf("failed to generate tokens: %w", err)
 	}
+
+	fmt.Printf("DEBUG: Login - Tokens generated successfully\n")
 
 	return &LoginResponse{
 		User:         user,

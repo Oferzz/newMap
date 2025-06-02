@@ -158,6 +158,7 @@ func (r *postgresRepository) GetByID(ctx context.Context, id string) (*User, err
 
 // GetByEmail retrieves a user by email
 func (r *postgresRepository) GetByEmail(ctx context.Context, email string) (*User, error) {
+	fmt.Printf("DEBUG: Repository.GetByEmail called with email: %s\n", email)
 	var user User
 	
 	query := `
@@ -195,11 +196,14 @@ func (r *postgresRepository) GetByEmail(ctx context.Context, email string) (*Use
 	
 	if err != nil {
 		if err == sql.ErrNoRows {
+			fmt.Printf("DEBUG: GetByEmail - No user found with email: %s\n", email)
 			return nil, fmt.Errorf("user not found")
 		}
+		fmt.Printf("DEBUG: GetByEmail - Database error: %v\n", err)
 		return nil, fmt.Errorf("failed to get user by email: %w", err)
 	}
 
+	fmt.Printf("DEBUG: GetByEmail - Found user: ID=%s, Email=%s, PasswordHash=%s\n", user.ID, user.Email, user.PasswordHash)
 	return &user, nil
 }
 
