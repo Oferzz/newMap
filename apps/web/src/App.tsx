@@ -4,7 +4,7 @@ import { Header } from './components/layout/Header';
 import { MapView } from './components/map/MapView';
 import { LoginModal } from './components/auth/LoginModal';
 import { TripCreationPage } from './pages/TripCreationPage';
-import { ExplorePage } from './pages/ExplorePage';
+import { ExplorePageWrapper } from './pages/ExplorePageWrapper';
 import { PrivateRoute } from './components/auth/PrivateRoute';
 import { WebSocketProvider } from './providers/WebSocketProvider';
 import { Notifications } from './components/layout/Notifications';
@@ -98,12 +98,7 @@ function AppContent() {
         {/* Explore Page - Browse public trips and places */}
         <Route
           path="/explore"
-          element={
-            <>
-              <Header />
-              <ExplorePage />
-            </>
-          }
+          element={<ExplorePageWrapper />}
         />
         
         <Route

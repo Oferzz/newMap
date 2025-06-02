@@ -26,9 +26,14 @@ type ContentType = 'all' | 'trips' | 'places';
 type FilterType = 'all' | 'saved';
 type ViewMode = 'grid' | 'list';
 
-interface ExplorePageProps {}
+interface ExplorePageProps {
+  contentType?: ContentType;
+  onContentTypeChange?: (type: ContentType) => void;
+}
 
-export const ExplorePage: React.FC<ExplorePageProps> = () => {
+export const ExplorePage: React.FC<ExplorePageProps> = ({ 
+  contentType: propContentType = 'all'
+}) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -51,8 +56,8 @@ export const ExplorePage: React.FC<ExplorePageProps> = () => {
     };
   }, [location.pathname, dispatch]);
 
-  // Local state
-  const [contentType, setContentType] = useState<ContentType>('all');
+  // Use contentType from props instead of local state
+  const contentType = propContentType;
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [isLoading, setIsLoading] = useState(false);
@@ -396,29 +401,6 @@ export const ExplorePage: React.FC<ExplorePageProps> = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pt-16">
-      {/* Content Type Toggles - Centered under header */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex justify-center">
-            <div className="flex bg-gray-100 rounded-lg p-1">
-              {(['all', 'trips', 'places'] as ContentType[]).map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setContentType(type)}
-                  className={`px-6 py-2 rounded-md text-sm font-medium transition-colors capitalize ${
-                    contentType === type
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'text-gray-700 hover:text-gray-900'
-                  }`}
-                >
-                  {type}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
