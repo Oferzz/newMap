@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAppDispatch } from '../hooks/redux';
 import { loginThunk, registerThunk } from '../store/thunks/auth.thunks';
 import { Mail, Lock, User, Loader2 } from 'lucide-react';
-import toast from 'react-hot-toast';
 
 interface LoginPageProps {
   isRegister?: boolean;
