@@ -477,7 +477,9 @@ export const MapView: React.FC<MapViewProps> = ({
           onCreateRoute={handleCreateRoute}
           onAddToCollection={handleAddToCollection}
           onDropPin={() => {
-            dispatch(addTemporaryMarker({ coordinates: contextMenuState.coordinates }));
+            if (contextMenuState.coordinates) {
+              dispatch(addTemporaryMarker({ coordinates: contextMenuState.coordinates }));
+            }
             dispatch(closeContextMenu());
           }}
         />
