@@ -109,8 +109,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isRegister = false }) => {
                     <input
                       type="text"
                       required
+                      pattern="^[a-zA-Z0-9_-]+$"
+                      title="Username can only contain letters, numbers, underscores, and hyphens"
                       value={formData.username}
-                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, username: e.target.value.replace(/\s/g, '') })}
                       className="w-full pl-10 pr-4 py-2 bg-terrain-50 border border-terrain-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent placeholder-trail-400"
                       placeholder="johndoe"
                     />
