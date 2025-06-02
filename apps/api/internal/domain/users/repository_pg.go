@@ -123,6 +123,9 @@ func (r *postgresRepository) GetByID(ctx context.Context, id string) (*User, err
 		FROM users
 		WHERE id = $1`
 
+	// Create a temporary variable for roles scanning
+	var rolesArray pq.StringArray
+	
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&user.ID,
 		&user.Username,
@@ -132,7 +135,7 @@ func (r *postgresRepository) GetByID(ctx context.Context, id string) (*User, err
 		&user.AvatarURL,
 		&user.Bio,
 		&user.Location,
-		pq.Array(&user.Roles),
+		&rolesArray,
 		&user.ProfileVisibility,
 		&user.LocationSharing,
 		&user.TripDefaultPrivacy,
@@ -145,6 +148,9 @@ func (r *postgresRepository) GetByID(ctx context.Context, id string) (*User, err
 		&user.UpdatedAt,
 		&user.LastActive,
 	)
+	
+	// Assign the scanned roles to the user
+	user.Roles = rolesArray
 	
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -171,6 +177,9 @@ func (r *postgresRepository) GetByEmail(ctx context.Context, email string) (*Use
 		FROM users
 		WHERE email = $1`
 
+	// Create a temporary variable for roles scanning
+	var rolesArray pq.StringArray
+	
 	err := r.db.QueryRowContext(ctx, query, email).Scan(
 		&user.ID,
 		&user.Username,
@@ -180,7 +189,7 @@ func (r *postgresRepository) GetByEmail(ctx context.Context, email string) (*Use
 		&user.AvatarURL,
 		&user.Bio,
 		&user.Location,
-		pq.Array(&user.Roles),
+		&rolesArray,
 		&user.ProfileVisibility,
 		&user.LocationSharing,
 		&user.TripDefaultPrivacy,
@@ -193,6 +202,9 @@ func (r *postgresRepository) GetByEmail(ctx context.Context, email string) (*Use
 		&user.UpdatedAt,
 		&user.LastActive,
 	)
+	
+	// Assign the scanned roles to the user
+	user.Roles = rolesArray
 	
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -221,6 +233,9 @@ func (r *postgresRepository) GetByUsername(ctx context.Context, username string)
 		FROM users
 		WHERE username = $1`
 
+	// Create a temporary variable for roles scanning
+	var rolesArray pq.StringArray
+	
 	err := r.db.QueryRowContext(ctx, query, username).Scan(
 		&user.ID,
 		&user.Username,
@@ -230,7 +245,7 @@ func (r *postgresRepository) GetByUsername(ctx context.Context, username string)
 		&user.AvatarURL,
 		&user.Bio,
 		&user.Location,
-		pq.Array(&user.Roles),
+		&rolesArray,
 		&user.ProfileVisibility,
 		&user.LocationSharing,
 		&user.TripDefaultPrivacy,
@@ -243,6 +258,9 @@ func (r *postgresRepository) GetByUsername(ctx context.Context, username string)
 		&user.UpdatedAt,
 		&user.LastActive,
 	)
+	
+	// Assign the scanned roles to the user
+	user.Roles = rolesArray
 	
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -331,6 +349,7 @@ func (r *postgresRepository) Search(ctx context.Context, query string) ([]*User,
 
 	for rows.Next() {
 		var user User
+		var rolesArray pq.StringArray
 		
 		err := rows.Scan(
 			&user.ID,
@@ -341,7 +360,7 @@ func (r *postgresRepository) Search(ctx context.Context, query string) ([]*User,
 			&user.AvatarURL,
 			&user.Bio,
 			&user.Location,
-			pq.Array(&user.Roles),
+			&rolesArray,
 			&user.ProfileVisibility,
 			&user.LocationSharing,
 			&user.TripDefaultPrivacy,
@@ -358,6 +377,7 @@ func (r *postgresRepository) Search(ctx context.Context, query string) ([]*User,
 			return nil, fmt.Errorf("failed to scan user: %w", err)
 		}
 		
+		user.Roles = rolesArray
 		users = append(users, &user)
 	}
 
@@ -414,6 +434,7 @@ func (r *postgresRepository) GetFriends(ctx context.Context, userID string) ([]*
 
 	for rows.Next() {
 		var user User
+		var rolesArray pq.StringArray
 		
 		err := rows.Scan(
 			&user.ID,
@@ -424,7 +445,7 @@ func (r *postgresRepository) GetFriends(ctx context.Context, userID string) ([]*
 			&user.AvatarURL,
 			&user.Bio,
 			&user.Location,
-			pq.Array(&user.Roles),
+			&rolesArray,
 			&user.ProfileVisibility,
 			&user.LocationSharing,
 			&user.TripDefaultPrivacy,
@@ -441,6 +462,7 @@ func (r *postgresRepository) GetFriends(ctx context.Context, userID string) ([]*
 			return nil, fmt.Errorf("failed to scan friend: %w", err)
 		}
 		
+		user.Roles = rolesArray
 		users = append(users, &user)
 	}
 
