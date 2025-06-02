@@ -320,7 +320,7 @@ func (r *postgresRepository) Search(ctx context.Context, query string) ([]*User,
 			suggestion_notifications, trip_invite_notifications, status,
 			created_at, updated_at, last_active
 		FROM users
-		WHERE username ILIKE $1 OR email ILIKE $1 OR display_name ILIKE $1`
+		WHERE username ILIKE $1 OR email ILIKE $2 OR display_name ILIKE $3`
 
 	searchPattern := "%" + query + "%"
 	rows, err := r.db.QueryContext(ctx, searchQuery, searchPattern, searchPattern, searchPattern)

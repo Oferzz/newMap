@@ -6,6 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Oferzz/newMap/apps/api/internal/config"
+	"github.com/Oferzz/newMap/apps/api/internal/utils"
+	"github.com/lib/pq"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -83,7 +86,14 @@ func (m *MockRepository) GetFriends(ctx context.Context, userID string) ([]*User
 
 func TestServicePG_Register(t *testing.T) {
 	mockRepo := new(MockRepository)
-	service := NewPostgreSQLService(mockRepo)
+	mockConfig := &config.Config{
+		JWT: config.JWTConfig{
+			Secret: "test-secret",
+			AccessExpiry: 15 * time.Minute,
+			RefreshExpiry: 7 * 24 * time.Hour,
+		},
+	}
+	service := NewPostgreSQLService(mockRepo, mockConfig)
 	ctx := context.Background()
 
 	t.Run("successful registration", func(t *testing.T) {
@@ -151,27 +161,34 @@ func TestServicePG_Register(t *testing.T) {
 
 func TestServicePG_Login(t *testing.T) {
 	mockRepo := new(MockRepository)
-	service := NewPostgreSQLService(mockRepo)
+	mockConfig := &config.Config{
+		JWT: config.JWTConfig{
+			Secret: "test-secret",
+			AccessExpiry: 15 * time.Minute,
+			RefreshExpiry: 7 * 24 * time.Hour,
+		},
+	}
+	service := NewPostgreSQLService(mockRepo, mockConfig)
 	ctx := context.Background()
 
 	t.Run("successful login with email", func(t *testing.T) {
 		email := "test@example.com"
 		password := "password123"
-		hashedPassword, _ := HashPassword(password)
+		hashedPassword, _ := utils.HashPassword(password)
 
 		user := &User{
 			ID:       uuid.New().String(),
 			Email:    email,
 			Username: "testuser",
-			Password: hashedPassword,
+			PasswordHash: hashedPassword,
 		}
 
 		mockRepo.On("GetByEmail", ctx, email).Return(user, nil).Once()
 
-		result, err := service.Login(ctx, email, password)
+		result, err := service.Login(ctx, &LoginInput{Email: email, Password: password})
 		assert.NoError(t, err)
 		assert.NotNil(t, result)
-		assert.Equal(t, user.ID, result.ID)
+		assert.Equal(t, user.ID, result.User.ID)
 		mockRepo.AssertExpectations(t)
 	})
 
@@ -179,17 +196,17 @@ func TestServicePG_Login(t *testing.T) {
 		email := "test@example.com"
 		correctPassword := "password123"
 		wrongPassword := "wrongpassword"
-		hashedPassword, _ := HashPassword(correctPassword)
+		hashedPassword, _ := utils.HashPassword(correctPassword)
 
 		user := &User{
 			ID:       uuid.New().String(),
 			Email:    email,
-			Password: hashedPassword,
+			PasswordHash: hashedPassword,
 		}
 
 		mockRepo.On("GetByEmail", ctx, email).Return(user, nil).Once()
 
-		result, err := service.Login(ctx, email, wrongPassword)
+		result, err := service.Login(ctx, &LoginInput{Email: email, Password: wrongPassword})
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid credentials")
 		assert.Nil(t, result)
@@ -203,7 +220,7 @@ func TestServicePG_Login(t *testing.T) {
 		mockRepo.On("GetByEmail", ctx, email).Return(nil, errors.New("not found")).Once()
 		mockRepo.On("GetByUsername", ctx, email).Return(nil, errors.New("not found")).Once()
 
-		result, err := service.Login(ctx, email, password)
+		result, err := service.Login(ctx, &LoginInput{Email: email, Password: password})
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid credentials")
 		assert.Nil(t, result)
@@ -213,7 +230,14 @@ func TestServicePG_Login(t *testing.T) {
 
 func TestServicePG_UpdateProfile(t *testing.T) {
 	mockRepo := new(MockRepository)
-	service := NewPostgreSQLService(mockRepo)
+	mockConfig := &config.Config{
+		JWT: config.JWTConfig{
+			Secret: "test-secret",
+			AccessExpiry: 15 * time.Minute,
+			RefreshExpiry: 7 * 24 * time.Hour,
+		},
+	}
+	service := NewPostgreSQLService(mockRepo, mockConfig)
 	ctx := context.Background()
 
 	t.Run("successful profile update", func(t *testing.T) {
@@ -262,7 +286,14 @@ func TestServicePG_UpdateProfile(t *testing.T) {
 
 func TestServicePG_AddFriend(t *testing.T) {
 	mockRepo := new(MockRepository)
-	service := NewPostgreSQLService(mockRepo)
+	mockConfig := &config.Config{
+		JWT: config.JWTConfig{
+			Secret: "test-secret",
+			AccessExpiry: 15 * time.Minute,
+			RefreshExpiry: 7 * 24 * time.Hour,
+		},
+	}
+	service := NewPostgreSQLService(mockRepo, mockConfig)
 	ctx := context.Background()
 
 	t.Run("successful add friend", func(t *testing.T) {
@@ -271,12 +302,12 @@ func TestServicePG_AddFriend(t *testing.T) {
 
 		user := &User{
 			ID:      userID,
-			Friends: []string{},
+			Roles: pq.StringArray{"user"},
 		}
 
 		friend := &User{
 			ID:      friendID,
-			Friends: []string{},
+			Roles: pq.StringArray{"user"},
 		}
 
 		mockRepo.On("GetByID", ctx, userID).Return(user, nil).Once()
@@ -295,7 +326,7 @@ func TestServicePG_AddFriend(t *testing.T) {
 
 		user := &User{
 			ID:      userID,
-			Friends: []string{},
+			Roles: pq.StringArray{"user"},
 		}
 
 		mockRepo.On("GetByID", ctx, userID).Return(user, nil).Once()
@@ -313,12 +344,12 @@ func TestServicePG_AddFriend(t *testing.T) {
 
 		user := &User{
 			ID:      userID,
-			Friends: []string{friendID}, // Already friends
+			Roles: pq.StringArray{"user"}, // Already friends
 		}
 
 		friend := &User{
 			ID:      friendID,
-			Friends: []string{userID},
+			Roles: pq.StringArray{"user"},
 		}
 
 		mockRepo.On("GetByID", ctx, userID).Return(user, nil).Once()
@@ -333,7 +364,14 @@ func TestServicePG_AddFriend(t *testing.T) {
 
 func TestServicePG_RemoveFriend(t *testing.T) {
 	mockRepo := new(MockRepository)
-	service := NewPostgreSQLService(mockRepo)
+	mockConfig := &config.Config{
+		JWT: config.JWTConfig{
+			Secret: "test-secret",
+			AccessExpiry: 15 * time.Minute,
+			RefreshExpiry: 7 * 24 * time.Hour,
+		},
+	}
+	service := NewPostgreSQLService(mockRepo, mockConfig)
 	ctx := context.Background()
 
 	t.Run("successful remove friend", func(t *testing.T) {
@@ -342,12 +380,12 @@ func TestServicePG_RemoveFriend(t *testing.T) {
 
 		user := &User{
 			ID:      userID,
-			Friends: []string{friendID},
+			Roles: pq.StringArray{"user"},
 		}
 
 		friend := &User{
 			ID:      friendID,
-			Friends: []string{userID},
+			Roles: pq.StringArray{"user"},
 		}
 
 		mockRepo.On("GetByID", ctx, userID).Return(user, nil).Once()
@@ -366,12 +404,12 @@ func TestServicePG_RemoveFriend(t *testing.T) {
 
 		user := &User{
 			ID:      userID,
-			Friends: []string{}, // Not friends
+			Roles: pq.StringArray{"user"}, // Not friends
 		}
 
 		friend := &User{
 			ID:      friendID,
-			Friends: []string{},
+			Roles: pq.StringArray{"user"},
 		}
 
 		mockRepo.On("GetByID", ctx, userID).Return(user, nil).Once()
@@ -386,7 +424,14 @@ func TestServicePG_RemoveFriend(t *testing.T) {
 
 func TestServicePG_SearchUsers(t *testing.T) {
 	mockRepo := new(MockRepository)
-	service := NewPostgreSQLService(mockRepo)
+	mockConfig := &config.Config{
+		JWT: config.JWTConfig{
+			Secret: "test-secret",
+			AccessExpiry: 15 * time.Minute,
+			RefreshExpiry: 7 * 24 * time.Hour,
+		},
+	}
+	service := NewPostgreSQLService(mockRepo, mockConfig)
 	ctx := context.Background()
 
 	t.Run("successful search", func(t *testing.T) {
@@ -424,7 +469,14 @@ func TestServicePG_SearchUsers(t *testing.T) {
 
 func TestServicePG_GetFriends(t *testing.T) {
 	mockRepo := new(MockRepository)
-	service := NewPostgreSQLService(mockRepo)
+	mockConfig := &config.Config{
+		JWT: config.JWTConfig{
+			Secret: "test-secret",
+			AccessExpiry: 15 * time.Minute,
+			RefreshExpiry: 7 * 24 * time.Hour,
+		},
+	}
+	service := NewPostgreSQLService(mockRepo, mockConfig)
 	ctx := context.Background()
 
 	t.Run("successful get friends", func(t *testing.T) {
@@ -444,9 +496,10 @@ func TestServicePG_GetFriends(t *testing.T) {
 
 		mockRepo.On("GetFriends", ctx, userID).Return(friends, nil).Once()
 
-		result, err := service.GetFriends(ctx, userID)
+		result, total, err := service.GetFriends(ctx, userID, 10, 0)
 		assert.NoError(t, err)
 		assert.Len(t, result, 2)
+		assert.Equal(t, int64(2), total)
 		mockRepo.AssertExpectations(t)
 	})
 
@@ -456,9 +509,10 @@ func TestServicePG_GetFriends(t *testing.T) {
 
 		mockRepo.On("GetFriends", ctx, userID).Return(friends, nil).Once()
 
-		result, err := service.GetFriends(ctx, userID)
+		result, total, err := service.GetFriends(ctx, userID, 10, 0)
 		assert.NoError(t, err)
 		assert.Len(t, result, 0)
+		assert.Equal(t, int64(0), total)
 		mockRepo.AssertExpectations(t)
 	})
 }

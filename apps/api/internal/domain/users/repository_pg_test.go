@@ -8,6 +8,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -25,10 +26,10 @@ func TestPostgreSQLRepository_Create(t *testing.T) {
 			ID:        uuid.New().String(),
 			Username:  "testuser",
 			Email:     "test@example.com",
-			Password:  "hashedpassword",
+			PasswordHash:  "hashedpassword",
 			Profile:   Profile{Name: "Test User", Bio: "Test bio"},
 			Role:      "user",
-			Friends:   []string{},
+			Roles:     pq.StringArray{"user"},
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
@@ -41,16 +42,23 @@ func TestPostgreSQLRepository_Create(t *testing.T) {
 				user.ID,
 				user.Username,
 				user.Email,
-				user.Password,
-				user.Profile.Name,
-				user.Profile.Bio,
-				user.Profile.Avatar,
-				user.Profile.Location,
-				user.Profile.Website,
-				user.Role,
-				sqlmock.AnyArg(), // friends array
+				user.PasswordHash,
+				user.DisplayName,
+				user.AvatarURL,
+				user.Bio,
+				user.Location,
+				sqlmock.AnyArg(), // roles array
+				user.ProfileVisibility,
+				user.LocationSharing,
+				user.TripDefaultPrivacy,
+				user.EmailNotifications,
+				user.PushNotifications,
+				user.SuggestionNotifications,
+				user.TripInviteNotifications,
+				user.Status,
 				user.CreatedAt,
 				user.UpdatedAt,
+				user.LastActive,
 			).
 			WillReturnRows(rows)
 
@@ -90,13 +98,16 @@ func TestPostgreSQLRepository_GetByID(t *testing.T) {
 		now := time.Now()
 
 		rows := sqlmock.NewRows([]string{
-			"id", "username", "email", "password", "profile_name",
-			"profile_bio", "profile_avatar", "profile_location",
-			"profile_website", "role", "friends", "created_at", "updated_at",
+			"id", "username", "email", "password_hash", "display_name", "avatar_url",
+			"bio", "location", "roles", "profile_visibility", "location_sharing",
+			"trip_default_privacy", "email_notifications", "push_notifications",
+			"suggestion_notifications", "trip_invite_notifications", "status",
+			"created_at", "updated_at", "last_active",
 		}).AddRow(
-			userID, "testuser", "test@example.com", "hashedpassword",
-			"Test User", "Test bio", "avatar.jpg", "New York",
-			"https://example.com", "user", "{}", now, now,
+			userID, "testuser", "test@example.com", "hashedpassword", "Test User", "avatar.jpg",
+			"Test bio", "New York", "{user}", "public", false,
+			"private", true, true, true, true, "active",
+			now, now, now,
 		)
 
 		mock.ExpectQuery(`SELECT (.+) FROM users WHERE id = \$1`).
@@ -207,10 +218,10 @@ func TestPostgreSQLRepository_Update(t *testing.T) {
 			ID:        uuid.New().String(),
 			Username:  "updateduser",
 			Email:     "updated@example.com",
-			Password:  "newhashedpassword",
+			PasswordHash:  "newhashedpassword",
 			Profile:   Profile{Name: "Updated User", Bio: "Updated bio"},
 			Role:      "user",
-			Friends:   []string{"friend1", "friend2"},
+			Roles:     pq.StringArray{"user"},
 			UpdatedAt: time.Now(),
 		}
 
