@@ -157,77 +157,8 @@ export const MapView: React.FC<MapViewProps> = ({
       });
     });
 
-    // Left click hold handler for adding places (only when mouse is stationary)
-    let holdTimer: number | null = null;
-    let holdCoordinates: [number, number] | null = null;
-    let initialMousePosition: { x: number; y: number } | null = null;
-    let hasMoved = false;
-
-    map.current.on('mousedown', (e) => {
-      // Only handle left mouse button
-      if (e.originalEvent.button !== 0) return;
-      
-      // Only handle clicks on the map itself, not on markers
-      const features = map.current?.queryRenderedFeatures(e.point);
-      if (features && features.length > 0) return;
-
-      holdCoordinates = [e.lngLat.lng, e.lngLat.lat];
-      initialMousePosition = { x: e.point.x, y: e.point.y };
-      hasMoved = false;
-
-      // Start hold timer for 0.2 seconds
-      holdTimer = setTimeout(() => {
-        // Only add place if mouse hasn't moved significantly
-        if (holdCoordinates && !hasMoved) {
-          dispatch({ type: 'ui/setMapClickLocation', payload: { coordinates: holdCoordinates } });
-        }
-        holdTimer = null;
-      }, 200);
-    });
-
-    map.current.on('mousemove', (e) => {
-      // If we're tracking a potential place addition, check for movement
-      if (holdTimer && initialMousePosition) {
-        const deltaX = Math.abs(e.point.x - initialMousePosition.x);
-        const deltaY = Math.abs(e.point.y - initialMousePosition.y);
-        
-        // If mouse moved more than 5 pixels, consider it as dragging
-        if (deltaX > 5 || deltaY > 5) {
-          hasMoved = true;
-          // Cancel the hold timer since user is dragging
-          clearTimeout(holdTimer);
-          holdTimer = null;
-        }
-      }
-    });
-
-    map.current.on('mouseup', (e) => {
-      // Only handle left mouse button
-      if (e.originalEvent.button !== 0) return;
-
-      // Clear the hold timer if still active
-      if (holdTimer) {
-        clearTimeout(holdTimer);
-        holdTimer = null;
-      }
-
-      // Reset hold state
-      holdCoordinates = null;
-      initialMousePosition = null;
-      hasMoved = false;
-    });
-
-    // Handle mouse leave to cancel hold
-    map.current.on('mouseleave', () => {
-      if (holdTimer) {
-        clearTimeout(holdTimer);
-        holdTimer = null;
-      }
-      
-      holdCoordinates = null;
-      initialMousePosition = null;
-      hasMoved = false;
-    });
+    // Disable the click-and-hold feature for adding markers
+    // Users should use the right-click context menu to add places instead
 
     // Right click handler for context menu
     map.current.on('contextmenu', (e) => {
@@ -254,18 +185,14 @@ export const MapView: React.FC<MapViewProps> = ({
     }
   }, [mapViewState.style]);
 
-  // Handle map clicks based on current mode
+  // Disable automatic marker addition on map clicks
+  // Users should use the right-click context menu instead
   useEffect(() => {
     if (!mapClickLocation) return;
 
-    console.log('Map clicked at:', mapClickLocation);
-    console.log('Route creation mode active:', routeCreationMode.isActive);
-
+    // Only handle clicks in route creation mode
     if (routeCreationMode.isActive) {
       dispatch(addRouteWaypoint({ coordinates: mapClickLocation }));
-    } else {
-      console.log('Adding temporary marker at:', mapClickLocation);
-      dispatch(addTemporaryMarker({ coordinates: mapClickLocation }));
     }
 
     dispatch(clearMapClickLocation());
