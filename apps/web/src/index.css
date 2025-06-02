@@ -88,4 +88,11 @@ body {
   margin: 0 auto;
 }
 
+/* Interactive element cursor styles for better UX */
+button:hover,
+[role="button"]:hover,
+.cursor-pointer:hover {
+  cursor: pointer;
+}
+
 /* Remove dark mode for now to maintain consistent outdoors theme */
