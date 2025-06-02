@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Plus, User, Menu, MapPin } from 'lucide-react';
+import { Search, Plus, User, Menu, MapPin, LogIn, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { SearchBar } from '../search/SearchBar';
@@ -7,12 +7,28 @@ import { MobileMenu } from './MobileMenu';
 import { searchAllThunk } from '../../store/thunks/search.thunks';
 import { setActivePanel } from '../../store/slices/uiSlice';
 import { SearchResult } from '../../types';
+import { logout } from '../../store/slices/authSlice';
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [showProfileMenu, setShowProfileMenu] = React.useState(false);
+  const profileMenuRef = React.useRef<HTMLDivElement>(null);
+
+  // Close profile menu when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleCreateTrip = () => {
     // Allow trip creation in guest mode with local storage
@@ -30,6 +46,12 @@ export const Header: React.FC = () => {
   const handleSearchResultSelect = (result: SearchResult) => {
     dispatch({ type: 'ui/selectItem', payload: result });
     dispatch({ type: 'ui/setActivePanel', payload: 'details' });
+  };
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate('/');
+    setShowProfileMenu(false);
   };
 
   return (
@@ -69,30 +91,86 @@ export const Header: React.FC = () => {
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center space-x-3">
-          <button
-            onClick={handleOpenTrips}
-            className="flex items-center px-3 py-2 text-trail-700 hover:text-trail-800 hover:bg-terrain-200 rounded-lg transition-colors"
-          >
-            <MapPin className="w-4 h-4 mr-2" />
-            My Trips
-          </button>
-          
-          <button
-            onClick={handleCreateTrip}
-            className="flex items-center px-4 py-2 bg-forest-600 text-white rounded-lg hover:bg-forest-700 transition-colors shadow-soft"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Trip
-          </button>
-          
-          {user && (
-            <button className="p-2">
-              <img 
-                src={user.avatarUrl || '/default-avatar.png'} 
-                alt={user.displayName}
-                className="w-8 h-8 rounded-full"
-              />
-            </button>
+          {isAuthenticated ? (
+            <>
+              <button
+                onClick={handleOpenTrips}
+                className="flex items-center px-3 py-2 text-trail-700 hover:text-trail-800 hover:bg-terrain-200 rounded-lg transition-colors"
+              >
+                <MapPin className="w-4 h-4 mr-2" />
+                My Trips
+              </button>
+              
+              <button
+                onClick={handleCreateTrip}
+                className="flex items-center px-4 py-2 bg-forest-600 text-white rounded-lg hover:bg-forest-700 transition-colors shadow-soft"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Trip
+              </button>
+              
+              {/* User Profile Dropdown */}
+              <div className="relative" ref={profileMenuRef}>
+                <button 
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  className="p-2 hover:bg-terrain-200 rounded-lg transition-colors"
+                >
+                  {user?.avatarUrl ? (
+                    <img 
+                      src={user.avatarUrl} 
+                      alt={user.displayName}
+                      className="w-8 h-8 rounded-full"
+                    />
+                  ) : (
+                    <User className="w-6 h-6 text-trail-700" />
+                  )}
+                </button>
+                
+                {showProfileMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-terrain-100 rounded-lg shadow-lg border border-terrain-300 py-1">
+                    <div className="px-4 py-2 border-b border-terrain-300">
+                      <p className="text-sm font-medium text-trail-800">{user?.displayName}</p>
+                      <p className="text-xs text-trail-600">{user?.email}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        navigate('/profile');
+                        setShowProfileMenu(false);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-trail-700 hover:bg-terrain-200 transition-colors"
+                    >
+                      <User className="w-4 h-4 inline mr-2" />
+                      Profile
+                    </button>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-sm text-trail-700 hover:bg-terrain-200 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4 inline mr-2" />
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={handleCreateTrip}
+                className="flex items-center px-4 py-2 bg-terrain-200 text-trail-700 rounded-lg hover:bg-terrain-300 transition-colors"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                New Trip
+              </button>
+              
+              <button
+                onClick={() => navigate('/login')}
+                className="flex items-center px-4 py-2 bg-forest-600 text-white rounded-lg hover:bg-forest-700 transition-colors shadow-soft"
+              >
+                <LogIn className="w-4 h-4 mr-2" />
+                Login
+              </button>
+            </>
           )}
         </div>
 

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Header } from './components/layout/Header';
 import { MapView } from './components/map/MapView';
@@ -7,9 +8,17 @@ import { PrivateRoute } from './components/auth/PrivateRoute';
 import { WebSocketProvider } from './providers/WebSocketProvider';
 import { Notifications } from './components/layout/Notifications';
 import { Toaster } from 'react-hot-toast';
+import { useAppDispatch } from './hooks/redux';
+import { initializeAuthThunk } from './store/thunks/auth.thunks';
 import './App.css';
 
 function App() {
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    // Initialize authentication on app load
+    dispatch(initializeAuthThunk());
+  }, [dispatch]);
   return (
     <WebSocketProvider>
       <Router>
@@ -41,15 +50,13 @@ function App() {
               </>
             } />
             
-            {/* Protected Routes */}
+            {/* Trip Creation - Works in guest mode */}
             <Route
               path="/trips/new"
               element={
                 <>
                   <Header />
-                  <PrivateRoute>
-                    <TripCreationPage />
-                  </PrivateRoute>
+                  <TripCreationPage />
                 </>
               }
             />

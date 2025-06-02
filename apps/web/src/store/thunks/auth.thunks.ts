@@ -171,3 +171,57 @@ export const verifyEmailThunk = createAsyncThunk(
     }
   }
 );
+
+export const initializeAuthThunk = createAsyncThunk(
+  'auth/initialize',
+  async (_, { dispatch }) => {
+    const accessToken = localStorage.getItem('accessToken');
+    const refreshToken = localStorage.getItem('refreshToken');
+    
+    if (!accessToken || !refreshToken) {
+      return null;
+    }
+    
+    try {
+      // Try to get profile with current token
+      const user = await authService.getProfile();
+      dispatch(loginSuccess({
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          displayName: user.display_name,
+          avatarUrl: user.avatar_url,
+        },
+        accessToken,
+        refreshToken,
+      }));
+      return user;
+    } catch (error) {
+      // If token is expired, try to refresh
+      if (refreshToken) {
+        try {
+          const response = await authService.refreshToken(refreshToken);
+          dispatch(loginSuccess({
+            user: {
+              id: response.user.id,
+              email: response.user.email,
+              username: response.user.username,
+              displayName: response.user.display_name,
+              avatarUrl: response.user.avatar_url,
+            },
+            accessToken: response.access_token,
+            refreshToken: response.refresh_token,
+          }));
+          return response.user;
+        } catch (refreshError) {
+          // Clear invalid tokens
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+          return null;
+        }
+      }
+      return null;
+    }
+  }
+);

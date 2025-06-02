@@ -38,7 +38,7 @@ COPY --from=builder /build/apps/api/server .
 COPY --from=builder /build/apps/api/migrations ./migrations
 
 # Copy health check script
-COPY healthcheck.sh .
+COPY apps/api/healthcheck.sh .
 
 # Create directory for media storage
 RUN mkdir -p /data/media && chown -R appuser:appuser /data

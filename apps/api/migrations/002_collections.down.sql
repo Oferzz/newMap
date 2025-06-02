@@ -1,6 +1,5 @@
 -- Drop triggers
 DROP TRIGGER IF EXISTS update_collections_updated_at ON collections;
-DROP FUNCTION IF EXISTS update_updated_at_column();
 
 -- Drop indexes
 DROP INDEX IF EXISTS idx_collection_collaborators_user_id;
