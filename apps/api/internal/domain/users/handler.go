@@ -1,6 +1,7 @@
 package users
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -22,12 +23,16 @@ func NewHandler(service Service) *Handler {
 func (h *Handler) Register(c *gin.Context) {
 	var input CreateUserInput
 	if err := c.ShouldBindJSON(&input); err != nil {
+		fmt.Printf("DEBUG: Failed to bind JSON input: %v\n", err)
 		response.BadRequest(c, err.Error())
 		return
 	}
 
+	fmt.Printf("DEBUG: Creating user with input: %+v\n", input)
+
 	user, err := h.service.Create(c.Request.Context(), &input)
 	if err != nil {
+		fmt.Printf("DEBUG: Service.Create failed with error: %v\n", err)
 		if err.Error() == "email already exists" || err.Error() == "username already exists" {
 			response.Conflict(c, err.Error())
 			return
@@ -36,6 +41,7 @@ func (h *Handler) Register(c *gin.Context) {
 		return
 	}
 
+	fmt.Printf("DEBUG: User created successfully: %+v\n", user)
 	response.Created(c, user)
 }
 

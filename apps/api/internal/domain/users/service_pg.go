@@ -212,23 +212,36 @@ func (s *postgresService) GetByID(ctx context.Context, userID string) (*User, er
 // Missing interface methods - stub implementations for now
 
 func (s *postgresService) Create(ctx context.Context, input *CreateUserInput) (*User, error) {
+	fmt.Printf("DEBUG: Service.Create called with input: %+v\n", input)
+
 	// Check if email already exists
-	existingUser, _ := s.repo.GetByEmail(ctx, input.Email)
+	existingUser, err := s.repo.GetByEmail(ctx, input.Email)
+	if err != nil {
+		fmt.Printf("DEBUG: Error checking existing email: %v\n", err)
+	}
 	if existingUser != nil {
+		fmt.Printf("DEBUG: Email already exists for user: %+v\n", existingUser)
 		return nil, errors.New("email already exists")
 	}
 
 	// Check if username already exists
-	existingUser, _ = s.repo.GetByUsername(ctx, input.Username)
+	existingUser, err = s.repo.GetByUsername(ctx, input.Username)
+	if err != nil {
+		fmt.Printf("DEBUG: Error checking existing username: %v\n", err)
+	}
 	if existingUser != nil {
+		fmt.Printf("DEBUG: Username already exists for user: %+v\n", existingUser)
 		return nil, errors.New("username already exists")
 	}
 
 	// Hash password
+	fmt.Printf("DEBUG: Hashing password...\n")
 	hashedPassword, err := utils.HashPassword(input.Password)
 	if err != nil {
+		fmt.Printf("DEBUG: Failed to hash password: %v\n", err)
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
+	fmt.Printf("DEBUG: Password hashed successfully\n")
 
 	// Create user
 	user := &User{
@@ -252,10 +265,15 @@ func (s *postgresService) Create(ctx context.Context, input *CreateUserInput) (*
 		LastActive:              time.Now(),
 	}
 
+	fmt.Printf("DEBUG: Created user object: %+v\n", user)
+	fmt.Printf("DEBUG: Calling repository Create...\n")
+
 	if err := s.repo.Create(ctx, user); err != nil {
+		fmt.Printf("DEBUG: Repository Create failed: %v\n", err)
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
+	fmt.Printf("DEBUG: Repository Create succeeded\n")
 	return user, nil
 }
 

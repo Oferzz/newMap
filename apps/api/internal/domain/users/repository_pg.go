@@ -23,6 +23,8 @@ func NewPostgresRepository(db *sql.DB) Repository {
 
 // Create creates a new user
 func (r *postgresRepository) Create(ctx context.Context, user *User) error {
+	fmt.Printf("DEBUG: Repository.Create called with user: %+v\n", user)
+
 	query := `
 		INSERT INTO users (
 			id, username, email, password_hash, display_name, avatar_url,
@@ -33,6 +35,28 @@ func (r *postgresRepository) Create(ctx context.Context, user *User) error {
 		) VALUES (
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
 		) RETURNING id, created_at, updated_at`
+
+	fmt.Printf("DEBUG: Executing SQL query with parameters:\n")
+	fmt.Printf("  ID: %s\n", user.ID)
+	fmt.Printf("  Username: %s\n", user.Username)
+	fmt.Printf("  Email: %s\n", user.Email)
+	fmt.Printf("  PasswordHash: %s\n", user.PasswordHash)
+	fmt.Printf("  DisplayName: %s\n", user.DisplayName)
+	fmt.Printf("  AvatarURL: %s\n", user.AvatarURL)
+	fmt.Printf("  Bio: %s\n", user.Bio)
+	fmt.Printf("  Location: %s\n", user.Location)
+	fmt.Printf("  Roles: %+v\n", user.Roles)
+	fmt.Printf("  ProfileVisibility: %s\n", user.ProfileVisibility)
+	fmt.Printf("  LocationSharing: %t\n", user.LocationSharing)
+	fmt.Printf("  TripDefaultPrivacy: %s\n", user.TripDefaultPrivacy)
+	fmt.Printf("  EmailNotifications: %t\n", user.EmailNotifications)
+	fmt.Printf("  PushNotifications: %t\n", user.PushNotifications)
+	fmt.Printf("  SuggestionNotifications: %t\n", user.SuggestionNotifications)
+	fmt.Printf("  TripInviteNotifications: %t\n", user.TripInviteNotifications)
+	fmt.Printf("  Status: %s\n", user.Status)
+	fmt.Printf("  CreatedAt: %s\n", user.CreatedAt)
+	fmt.Printf("  UpdatedAt: %s\n", user.UpdatedAt)
+	fmt.Printf("  LastActive: %s\n", user.LastActive)
 
 	err := r.db.QueryRowContext(ctx, query,
 		user.ID,
@@ -58,7 +82,17 @@ func (r *postgresRepository) Create(ctx context.Context, user *User) error {
 	).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
+		fmt.Printf("DEBUG: SQL execution failed with error: %v\n", err)
 		if pqErr, ok := err.(*pq.Error); ok {
+			fmt.Printf("DEBUG: PostgreSQL error details:\n")
+			fmt.Printf("  Code: %s\n", pqErr.Code)
+			fmt.Printf("  Message: %s\n", pqErr.Message)
+			fmt.Printf("  Detail: %s\n", pqErr.Detail)
+			fmt.Printf("  Hint: %s\n", pqErr.Hint)
+			fmt.Printf("  Constraint: %s\n", pqErr.Constraint)
+			fmt.Printf("  Table: %s\n", pqErr.Table)
+			fmt.Printf("  Column: %s\n", pqErr.Column)
+			
 			if pqErr.Code == "23505" { // unique_violation
 				if pqErr.Constraint == "users_email_key" {
 					return fmt.Errorf("email already exists")
@@ -71,6 +105,7 @@ func (r *postgresRepository) Create(ctx context.Context, user *User) error {
 		return fmt.Errorf("failed to create user: %w", err)
 	}
 
+	fmt.Printf("DEBUG: SQL execution succeeded\n")
 	return nil
 }
 
