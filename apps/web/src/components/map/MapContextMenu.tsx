@@ -7,6 +7,7 @@ interface MapContextMenuProps {
   onSaveLocation: () => void;
   onCreateRoute: () => void;
   onAddToCollection: () => void;
+  onDropPin: () => void;
 }
 
 export const MapContextMenu: React.FC<MapContextMenuProps> = ({
@@ -16,6 +17,7 @@ export const MapContextMenu: React.FC<MapContextMenuProps> = ({
   onSaveLocation,
   onCreateRoute,
   onAddToCollection,
+  onDropPin,
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -42,6 +44,11 @@ export const MapContextMenu: React.FC<MapContextMenuProps> = ({
   }, [onClose]);
 
   const menuItems = [
+    {
+      icon: '📌',
+      label: 'Drop Pin',
+      action: onDropPin,
+    },
     {
       icon: '📍',
       label: 'Save Location',

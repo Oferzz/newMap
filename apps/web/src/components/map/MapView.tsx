@@ -476,6 +476,10 @@ export const MapView: React.FC<MapViewProps> = ({
           onSaveLocation={handleSaveLocation}
           onCreateRoute={handleCreateRoute}
           onAddToCollection={handleAddToCollection}
+          onDropPin={() => {
+            dispatch(addTemporaryMarker({ coordinates: contextMenuState.coordinates }));
+            dispatch(closeContextMenu());
+          }}
         />
       )}
     </div>
