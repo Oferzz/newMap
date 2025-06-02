@@ -90,27 +90,29 @@ export const MobileMenu: React.FC<MobileMenuProps> = ({ isOpen, onClose }) => {
           {/* Navigation Items */}
           <nav className="flex-1 overflow-y-auto">
             <div className="p-2">
-              {/* Create Trip */}
-              <button
-                onClick={() => handleNavigation('/trips/new')}
-                className="w-full flex items-center px-4 py-3 text-left hover:bg-terrain-200 rounded-lg"
-              >
-                <Plus className="w-5 h-5 mr-3 text-forest-600" />
-                <span className="font-medium text-trail-700">Create New Trip</span>
-              </button>
-
-              {/* My Trips */}
+              {/* Create Trip - Only for authenticated users */}
               {isAuthenticated && (
-                <button
-                  onClick={() => {
-                    dispatch(setActivePanel('trips'));
-                    onClose();
-                  }}
-                  className="w-full flex items-center px-4 py-3 text-left hover:bg-terrain-200 rounded-lg"
-                >
-                  <MapPin className="w-5 h-5 mr-3 text-trail-600" />
-                  <span className="text-trail-700">My Trips</span>
-                </button>
+                <>
+                  <button
+                    onClick={() => handleNavigation('/trips/new')}
+                    className="w-full flex items-center px-4 py-3 text-left hover:bg-terrain-200 rounded-lg"
+                  >
+                    <Plus className="w-5 h-5 mr-3 text-forest-600" />
+                    <span className="font-medium text-trail-700">Create New Trip</span>
+                  </button>
+
+                  {/* My Trips */}
+                  <button
+                    onClick={() => {
+                      dispatch(setActivePanel('trips'));
+                      onClose();
+                    }}
+                    className="w-full flex items-center px-4 py-3 text-left hover:bg-terrain-200 rounded-lg"
+                  >
+                    <MapPin className="w-5 h-5 mr-3 text-trail-600" />
+                    <span className="text-trail-700">My Trips</span>
+                  </button>
+                </>
               )}
 
               {/* Explore Places */}
