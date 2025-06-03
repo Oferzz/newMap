@@ -9,7 +9,19 @@ import { setActivePanel } from '../../store/slices/uiSlice';
 import { SearchResult } from '../../types';
 import { logout } from '../../store/slices/authSlice';
 
-export const Header: React.FC = () => {
+type ContentType = 'all' | 'trips' | 'places';
+
+interface HeaderProps {
+  showContentTypeButtons?: boolean;
+  contentType?: ContentType;
+  onContentTypeChange?: (type: ContentType) => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ 
+  showContentTypeButtons = false,
+  contentType = 'all',
+  onContentTypeChange 
+}) => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
@@ -55,8 +67,8 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-16 bg-terrain-100 border-b border-terrain-300 z-50 shadow-soft">
-      <div className="h-full px-4 flex items-center justify-between relative">
+    <header className={`fixed top-0 left-0 right-0 bg-terrain-100 border-b border-terrain-300 z-50 shadow-soft ${showContentTypeButtons ? '' : 'h-16'}`}>
+      <div className="h-16 px-4 flex items-center justify-between relative">
         {/* Logo */}
         <div className="flex items-center z-10">
           <button
@@ -192,6 +204,29 @@ export const Header: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Content Type Toggles - Part of header for explore page */}
+      {showContentTypeButtons && (
+        <div className="bg-terrain-100 border-t border-terrain-200">
+          <div className="flex justify-center pt-3 pb-2">
+            <div className="flex items-center gap-6">
+              {(['all', 'trips', 'places'] as ContentType[]).map((type) => (
+                <button
+                  key={type}
+                  onClick={() => onContentTypeChange?.(type)}
+                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors capitalize ${
+                    contentType === type
+                      ? 'text-trail-800 bg-terrain-200'
+                      : 'text-trail-700 hover:text-trail-800 hover:bg-terrain-200'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mobile Menu */}
       <MobileMenu 
