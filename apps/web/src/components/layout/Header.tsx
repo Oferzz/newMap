@@ -214,7 +214,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <button
                   key={type}
                   onClick={() => onContentTypeChange?.(type)}
-                  className={`px-2 py-1 text-xs font-medium rounded-md transition-colors capitalize ${
+                  className={`px-2 py-1 font-medium rounded-md transition-colors capitalize ${
                     contentType === type
                       ? 'text-trail-800 bg-terrain-200'
                       : 'text-trail-700 hover:text-trail-800 hover:bg-terrain-200'
