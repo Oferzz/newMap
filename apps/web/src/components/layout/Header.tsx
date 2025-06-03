@@ -67,7 +67,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className={`fixed top-0 left-0 right-0 bg-terrain-100 border-b border-terrain-300 z-50 shadow-soft ${showContentTypeButtons ? '' : 'h-16'}`}>
+    <header className={`fixed top-0 left-0 right-0 bg-terrain-100 z-50 shadow-soft border-b border-terrain-300 ${showContentTypeButtons ? '' : 'h-16'}`}>
       <div className="h-16 px-4 flex items-center justify-between relative">
         {/* Logo */}
         <div className="flex items-center z-10">
@@ -207,7 +207,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Content Type Toggles - Part of header for explore page */}
       {showContentTypeButtons && (
-        <div className="bg-terrain-100 border-t border-terrain-200">
+        <div className="bg-terrain-100">
           <div className="flex justify-center pt-3 pb-2">
             <div className="flex items-center gap-6">
               {(['all', 'trips', 'places'] as ContentType[]).map((type) => (
