@@ -207,7 +207,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Content Type Toggles - Part of header for explore page */}
       {showContentTypeButtons && (
-        <div className="bg-terrain-100">
+        <div className="bg-terrain-100 -mt-1">
           <div className="flex justify-center py-0.5">
             <div className="flex items-center gap-6">
               {(['all', 'trips', 'places'] as ContentType[]).map((type) => (
