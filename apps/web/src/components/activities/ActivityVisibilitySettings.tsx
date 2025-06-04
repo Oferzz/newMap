@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { Globe, Users, Lock, MessageCircle, Download, Share2, Copy, Check } from 'lucide-react';
+import { activitiesService } from '../../services/activities.service';
+import { ShareLink, ShareSettings } from '../../types/activity.types';
+import toast from 'react-hot-toast';
 
 interface VisibilitySettings {
   privacy: 'public' | 'friends' | 'private';
@@ -11,6 +14,7 @@ interface VisibilitySettings {
 interface ActivityVisibilitySettingsProps {
   settings: VisibilitySettings;
   onUpdate: (settings: VisibilitySettings) => void;
+  activityId?: string; // Optional - only needed after activity is created
 }
 
 const PRIVACY_OPTIONS = [
@@ -39,7 +43,8 @@ const PRIVACY_OPTIONS = [
 
 export const ActivityVisibilitySettings: React.FC<ActivityVisibilitySettingsProps> = ({
   settings,
-  onUpdate
+  onUpdate,
+  activityId
 }) => {
   const [shareLink, setShareLink] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
@@ -51,10 +56,28 @@ export const ActivityVisibilitySettings: React.FC<ActivityVisibilitySettingsProp
     });
   };
 
-  const generateShareLink = () => {
-    // In real implementation, this would generate an actual share link
-    const mockLink = `https://newmap.app/activities/shared/${Math.random().toString(36).substr(2, 9)}`;
-    setShareLink(mockLink);
+  const generateShareLink = async () => {
+    if (!activityId) {
+      // If no activityId yet, generate a temporary preview link
+      const mockLink = `https://newmap-fe.onrender.com/activities/shared/${Math.random().toString(36).substr(2, 9)}`;
+      setShareLink(mockLink);
+      toast.info('Share link will be active after creating the activity');
+      return;
+    }
+
+    try {
+      const shareSettings: ShareSettings = {
+        allow_comments: settings.allowComments,
+        allow_downloads: settings.allowDownloads,
+      };
+      
+      const shareLinkData = await activitiesService.generateShareLink(activityId, shareSettings);
+      setShareLink(shareLinkData.url);
+      toast.success('Share link generated successfully!');
+    } catch (error) {
+      console.error('Failed to generate share link:', error);
+      toast.error('Failed to generate share link');
+    }
   };
 
   const copyShareLink = async () => {
