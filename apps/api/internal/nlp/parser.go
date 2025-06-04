@@ -24,6 +24,7 @@ type ParsedQuery struct {
 	SearchText  string                 `json:"search_text"`
 	Filters     map[string]interface{} `json:"filters"`
 	Location    *LocationFilter        `json:"location,omitempty"`
+	Spatial     *SpatialSearchContext  `json:"spatial,omitempty"`
 	Confidence  float64                `json:"confidence"`
 	Keywords    []string               `json:"keywords"`
 	Explanation string                 `json:"explanation"`
@@ -35,6 +36,22 @@ type LocationFilter struct {
 	Latitude  float64 `json:"latitude,omitempty"`
 	Longitude float64 `json:"longitude,omitempty"`
 	Radius    float64 `json:"radius,omitempty"` // in kilometers
+}
+
+// AreaFilter represents geometric area-based search parameters
+type AreaFilter struct {
+	Type        string      `json:"type"`        // "circle", "polygon", "bounds", "region"
+	Coordinates interface{} `json:"coordinates"` // Format depends on type
+	Radius      *float64    `json:"radius,omitempty"` // for circles
+	Name        string      `json:"name,omitempty"`   // human-readable name
+}
+
+// SpatialSearchContext represents enhanced spatial search parameters
+type SpatialSearchContext struct {
+	Areas      []AreaFilter `json:"areas,omitempty"`      // Areas to search within
+	Within     *AreaFilter  `json:"within,omitempty"`     // Must be completely within
+	Intersects *AreaFilter  `json:"intersects,omitempty"` // Must intersect with
+	Near       *AreaFilter  `json:"near,omitempty"`       // Within distance of
 }
 
 // Parser handles natural language query parsing
@@ -135,6 +152,13 @@ func (p *Parser) parseWithRules(query string) *ParsedQuery {
 	if location != nil {
 		parsed.Location = location
 		parsed.Confidence += 0.1
+	}
+
+	// Parse spatial/area information
+	spatial := p.parseSpatialContext(query)
+	if spatial != nil {
+		parsed.Spatial = spatial
+		parsed.Confidence += 0.15
 	}
 
 	// Parse duration and distance
@@ -294,6 +318,172 @@ func (p *Parser) parseLocation(query string) *LocationFilter {
 	return nil
 }
 
+// parseSpatialContext extracts area-based spatial search parameters
+func (p *Parser) parseSpatialContext(query string) *SpatialSearchContext {
+	spatial := &SpatialSearchContext{}
+	hasFilters := false
+
+	// Within patterns - activities/places that must be completely inside an area
+	withinPatterns := []string{
+		`within\s+([a-zA-Z\s]+?)(?:\s+area|region|bounds)?(?:\s|$|,)`,
+		`inside\s+([a-zA-Z\s]+?)(?:\s+area|region|bounds)?(?:\s|$|,)`,
+		`in\s+the\s+([a-zA-Z\s]+?)\s+(?:area|region|zone|district)(?:\s|$|,)`,
+		`([a-zA-Z\s]+?)\s+city\s+limits`,
+		`([a-zA-Z\s]+?)\s+county(?:\s|$|,)`,
+		`([a-zA-Z\s]+?)\s+state\s+park(?:\s|$|,)`,
+		`([a-zA-Z\s]+?)\s+national\s+park(?:\s|$|,)`,
+	}
+
+	for _, pattern := range withinPatterns {
+		re := regexp.MustCompile(pattern)
+		matches := re.FindStringSubmatch(query)
+		if len(matches) > 1 {
+			areaName := strings.TrimSpace(matches[1])
+			if len(areaName) > 2 {
+				spatial.Within = &AreaFilter{
+					Type: "region",
+					Name: areaName,
+				}
+				hasFilters = true
+				break
+			}
+		}
+	}
+
+	// Distance-based area patterns - creates circular areas
+	distancePatterns := []string{
+		`within\s+(\d+(?:\.\d+)?)\s*(?:miles?|mi|kilometers?|km)\s+of\s+([a-zA-Z\s]+?)(?:\s|$|,)`,
+		`(\d+(?:\.\d+)?)\s*(?:miles?|mi|kilometers?|km)\s+(?:from|of|around)\s+([a-zA-Z\s]+?)(?:\s|$|,)`,
+		`near\s+([a-zA-Z\s]+?)\s+within\s+(\d+(?:\.\d+)?)\s*(?:miles?|mi|kilometers?|km)(?:\s|$|,)`,
+		`around\s+([a-zA-Z\s]+?)\s+(\d+(?:\.\d+)?)\s*(?:miles?|mi|kilometers?|km)(?:\s|$|,)`,
+	}
+
+	for _, pattern := range distancePatterns {
+		re := regexp.MustCompile(pattern)
+		matches := re.FindStringSubmatch(query)
+		if len(matches) >= 3 {
+			var distance float64
+			var locationName string
+			var err error
+
+			// Handle different pattern groups
+			if strings.Contains(pattern, "within.*of") {
+				// Pattern: "within X miles of location"
+				distance, err = strconv.ParseFloat(matches[1], 64)
+				locationName = strings.TrimSpace(matches[2])
+			} else if strings.Contains(pattern, "near.*within") {
+				// Pattern: "near location within X miles"
+				locationName = strings.TrimSpace(matches[1])
+				distance, err = strconv.ParseFloat(matches[2], 64)
+			} else {
+				// Pattern: "X miles from location" or "around location X miles"
+				if strings.Contains(pattern, "around") {
+					locationName = strings.TrimSpace(matches[1])
+					distance, err = strconv.ParseFloat(matches[2], 64)
+				} else {
+					distance, err = strconv.ParseFloat(matches[1], 64)
+					locationName = strings.TrimSpace(matches[2])
+				}
+			}
+
+			if err == nil && len(locationName) > 2 {
+				// Convert miles to km if needed
+				if strings.Contains(matches[0], "mile") || strings.Contains(matches[0], "mi") {
+					distance = distance * 1.60934
+				}
+
+				spatial.Near = &AreaFilter{
+					Type:   "circle",
+					Name:   locationName,
+					Radius: &distance,
+				}
+				hasFilters = true
+				break
+			}
+		}
+	}
+
+	// Geographic region patterns
+	regionPatterns := []string{
+		`in\s+(?:the\s+)?([a-zA-Z\s]+?)\s+(?:mountains?|hills?|valleys?)(?:\s|$|,)`,
+		`(?:along|near)\s+(?:the\s+)?([a-zA-Z\s]+?)\s+(?:coast|coastline|shore|shoreline)(?:\s|$|,)`,
+		`in\s+(?:the\s+)?([a-zA-Z\s]+?)\s+(?:desert|wilderness|forest)(?:\s|$|,)`,
+		`(?:around|near)\s+(?:the\s+)?([a-zA-Z\s]+?)\s+(?:river|lake|bay|peninsula)(?:\s|$|,)`,
+		`in\s+(?:the\s+)?([a-zA-Z\s]+?)\s+(?:area|region|zone)(?:\s|$|,)`,
+		`(?:north|south|east|west|northern|southern|eastern|western)\s+([a-zA-Z\s]+?)(?:\s|$|,)`,
+	}
+
+	for _, pattern := range regionPatterns {
+		re := regexp.MustCompile(pattern)
+		matches := re.FindStringSubmatch(query)
+		if len(matches) > 1 {
+			regionName := strings.TrimSpace(matches[1])
+			if len(regionName) > 2 {
+				area := AreaFilter{
+					Type: "region",
+					Name: regionName,
+				}
+				
+				// Determine if this should be "within" or just an area filter
+				if strings.Contains(pattern, "mountains") || strings.Contains(pattern, "coast") || 
+				   strings.Contains(pattern, "desert") || strings.Contains(pattern, "forest") {
+					spatial.Within = &area
+				} else {
+					spatial.Areas = append(spatial.Areas, area)
+				}
+				hasFilters = true
+				break
+			}
+		}
+	}
+
+	// Elevation-based areas
+	elevationPatterns := []string{
+		`(?:above|over)\s+(\d+)\s*(?:feet|ft|meters?|m)\s*(?:elevation)?`,
+		`(?:below|under)\s+(\d+)\s*(?:feet|ft|meters?|m)\s*(?:elevation)?`,
+		`(?:at|around)\s+(\d+)\s*(?:feet|ft|meters?|m)\s*(?:elevation)?`,
+		`(?:high|low)\s+elevation`,
+		`(?:sea\s+level|low\s+altitude)`,
+	}
+
+	for _, pattern := range elevationPatterns {
+		re := regexp.MustCompile(pattern)
+		matches := re.FindStringSubmatch(query)
+		if len(matches) > 0 {
+			// Add elevation filter to main filters rather than spatial context
+			// This will be handled in the repository layer
+			if len(matches) > 1 {
+				if elevation, err := strconv.ParseFloat(matches[1], 64); err == nil {
+					// Convert feet to meters if needed
+					if strings.Contains(matches[0], "feet") || strings.Contains(matches[0], "ft") {
+						elevation = elevation * 0.3048
+					}
+					
+					if strings.Contains(pattern, "above") || strings.Contains(pattern, "over") {
+						// This would be added to parsed.Filters in the calling function
+					} else if strings.Contains(pattern, "below") || strings.Contains(pattern, "under") {
+						// This would be added to parsed.Filters in the calling function
+					}
+				}
+			}
+			// Add semantic elevation filters
+			if strings.Contains(matches[0], "high elevation") {
+				// High elevation areas
+			} else if strings.Contains(matches[0], "sea level") || strings.Contains(matches[0], "low altitude") {
+				// Low elevation areas
+			}
+			hasFilters = true
+			break
+		}
+	}
+
+	if !hasFilters {
+		return nil
+	}
+
+	return spatial
+}
+
 // parseDurationAndDistance extracts duration and distance information
 func (p *Parser) parseDurationAndDistance(query string, parsed *ParsedQuery) {
 	// Duration patterns
@@ -416,6 +606,27 @@ func (p *Parser) GenerateExplanation(parsed *ParsedQuery) string {
 	// Location
 	if parsed.Location != nil && parsed.Location.Name != "" {
 		parts = append(parts, fmt.Sprintf("Near %s", parsed.Location.Name))
+	}
+
+	// Spatial context
+	if parsed.Spatial != nil {
+		if parsed.Spatial.Within != nil {
+			parts = append(parts, fmt.Sprintf("Within %s", parsed.Spatial.Within.Name))
+		}
+		if parsed.Spatial.Near != nil {
+			if parsed.Spatial.Near.Radius != nil {
+				parts = append(parts, fmt.Sprintf("Within %.1f km of %s", *parsed.Spatial.Near.Radius, parsed.Spatial.Near.Name))
+			} else {
+				parts = append(parts, fmt.Sprintf("Near %s", parsed.Spatial.Near.Name))
+			}
+		}
+		if len(parsed.Spatial.Areas) > 0 {
+			areaNames := make([]string, len(parsed.Spatial.Areas))
+			for i, area := range parsed.Spatial.Areas {
+				areaNames[i] = area.Name
+			}
+			parts = append(parts, fmt.Sprintf("In areas: %s", strings.Join(areaNames, ", ")))
+		}
 	}
 
 	// Duration

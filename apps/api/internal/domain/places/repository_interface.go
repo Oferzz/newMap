@@ -3,6 +3,7 @@ package places
 import (
 	"context"
 	"errors"
+	"github.com/Oferzz/newMap/apps/api/internal/nlp"
 )
 
 var (
@@ -22,6 +23,12 @@ type Repository interface {
 	GetByCategory(ctx context.Context, category string, limit, offset int) ([]*Place, error)
 	GetChildren(ctx context.Context, parentID string) ([]*Place, error)
 	UpdateRating(ctx context.Context, placeID string, rating float64, count int) error
+	
+	// Enhanced spatial search methods
+	SearchWithSpatialContext(ctx context.Context, query string, spatial *nlp.SpatialSearchContext, filters SearchFilters) (*SearchResult, error)
+	GetInArea(ctx context.Context, area nlp.AreaFilter) ([]*Place, error)
+	GetIntersecting(ctx context.Context, area nlp.AreaFilter) ([]*Place, error)
+	GetWithinDistance(ctx context.Context, area nlp.AreaFilter) ([]*Place, error)
 }
 
 // SearchFilters contains filters for place search

@@ -141,6 +141,11 @@ func (s *Service) buildElasticsearchQuery(parsedQuery *nlp.ParsedQuery, limit, o
 		query = elasticsearch.BuildQuery(parsedQuery.SearchText, parsedQuery.Filters, limit, offset)
 	}
 
+	// Add enhanced spatial search if present
+	if parsedQuery.Spatial != nil {
+		s.addSpatialFilters(query, parsedQuery.Spatial)
+	}
+
 	// Add visibility filters
 	if visibilityFilter, ok := parsedQuery.Filters["visibility_filter"].(map[string]interface{}); ok {
 		userID := visibilityFilter["user_id"].(string)
@@ -341,4 +346,172 @@ func (s *Service) DeleteFromIndex(ctx context.Context, docType, documentID strin
 	}
 
 	return s.esClient.DeleteDocument(ctx, index, documentID)
+}
+// addSpatialFilters adds enhanced spatial search filters to Elasticsearch query
+func (s *Service) addSpatialFilters(query map[string]interface{}, spatial *nlp.SpatialSearchContext) {
+	if spatial == nil {
+		return
+	}
+
+	// Get the bool query to add filters to
+	boolQuery, ok := query["query"].(map[string]interface{})["bool"].(map[string]interface{})
+	if !ok {
+		// Create bool query if it doesn't exist
+		query["query"] = map[string]interface{}{
+			"bool": map[string]interface{}{
+				"must":   []interface{}{},
+				"filter": []interface{}{},
+			},
+		}
+		boolQuery = query["query"].(map[string]interface{})["bool"].(map[string]interface{})
+	}
+
+	// Ensure filter array exists
+	if _, ok := boolQuery["filter"]; !ok {
+		boolQuery["filter"] = []interface{}{}
+	}
+	filters := boolQuery["filter"].([]interface{})
+
+	// Within area - document must be completely within the specified area
+	if spatial.Within != nil {
+		spatialFilter := s.buildSpatialFilter("within", spatial.Within)
+		if spatialFilter != nil {
+			filters = append(filters, spatialFilter)
+		}
+	}
+
+	// Near area - document must be within distance of the specified area
+	if spatial.Near != nil {
+		spatialFilter := s.buildSpatialFilter("distance", spatial.Near)
+		if spatialFilter != nil {
+			filters = append(filters, spatialFilter)
+		}
+	}
+
+	// Intersects area - document must intersect with the specified area
+	if spatial.Intersects != nil {
+		spatialFilter := s.buildSpatialFilter("intersects", spatial.Intersects)
+		if spatialFilter != nil {
+			filters = append(filters, spatialFilter)
+		}
+	}
+
+	// Multiple areas - document must be in one of the specified areas
+	if len(spatial.Areas) > 0 {
+		areaFilters := []interface{}{}
+		for _, area := range spatial.Areas {
+			spatialFilter := s.buildSpatialFilter("within", &area)
+			if spatialFilter != nil {
+				areaFilters = append(areaFilters, spatialFilter)
+			}
+		}
+		
+		if len(areaFilters) > 0 {
+			// Use "should" query for OR logic between areas
+			filters = append(filters, map[string]interface{}{
+				"bool": map[string]interface{}{
+					"should": areaFilters,
+					"minimum_should_match": 1,
+				},
+			})
+		}
+	}
+
+	// Update the filters array
+	boolQuery["filter"] = filters
+}
+
+// buildSpatialFilter creates Elasticsearch spatial filter for a specific area
+func (s *Service) buildSpatialFilter(operation string, area *nlp.AreaFilter) map[string]interface{} {
+	if area == nil {
+		return nil
+	}
+
+	switch area.Type {
+	case "circle":
+		// Circular area search using geo_distance
+		if coords, ok := area.Coordinates.([]interface{}); ok && len(coords) >= 2 && area.Radius != nil {
+			lat, latOk := coords[1].(float64)
+			lng, lngOk := coords[0].(float64)
+			if latOk && lngOk {
+				return map[string]interface{}{
+					"geo_distance": map[string]interface{}{
+						"distance": fmt.Sprintf("%.0fkm", *area.Radius),
+						"location": map[string]float64{
+							"lat": lat,
+							"lon": lng,
+						},
+					},
+				}
+			}
+		}
+
+	case "polygon":
+		// Polygon area search using geo_polygon
+		if coords, ok := area.Coordinates.([]interface{}); ok {
+			// Convert coordinates to Elasticsearch format
+			points := []map[string]float64{}
+			for _, coord := range coords {
+				if coordPair, ok := coord.([]interface{}); ok && len(coordPair) >= 2 {
+					if lng, lngOk := coordPair[0].(float64); lngOk {
+						if lat, latOk := coordPair[1].(float64); latOk {
+							points = append(points, map[string]float64{
+								"lat": lat,
+								"lon": lng,
+							})
+						}
+					}
+				}
+			}
+
+			if len(points) >= 3 { // Minimum points for a polygon
+				return map[string]interface{}{
+					"geo_polygon": map[string]interface{}{
+						"location": map[string]interface{}{
+							"points": points,
+						},
+					},
+				}
+			}
+		}
+
+	case "bounds":
+		// Rectangular bounds search using geo_bounding_box
+		if coords, ok := area.Coordinates.([]interface{}); ok && len(coords) >= 4 {
+			minLng, _ := coords[0].(float64)
+			minLat, _ := coords[1].(float64)
+			maxLng, _ := coords[2].(float64)
+			maxLat, _ := coords[3].(float64)
+
+			return map[string]interface{}{
+				"geo_bounding_box": map[string]interface{}{
+					"location": map[string]interface{}{
+						"top_left": map[string]float64{
+							"lat": maxLat,
+							"lon": minLng,
+						},
+						"bottom_right": map[string]float64{
+							"lat": minLat,
+							"lon": maxLng,
+						},
+					},
+				},
+			}
+		}
+
+	case "region":
+		// Named region search - add to text search
+		if area.Name != "" {
+			return map[string]interface{}{
+				"multi_match": map[string]interface{}{
+					"query":  area.Name,
+					"fields": []string{"city", "state", "country", "region", "location_name"},
+					"type":   "best_fields",
+					"boost":  0.5, // Lower boost than main content
+				},
+			}
+		}
+	}
+
+	return nil
 }
