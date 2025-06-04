@@ -192,30 +192,33 @@ export const ProfilePage: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 relative">
-        {/* Blurred background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-terrain-100 via-terrain-200 to-forest-100 backdrop-blur-sm" />
+      <>
+        {/* Blurred background overlay */}
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-20" />
         
-        <div className="relative z-10 text-center">
-          <p className="text-trail-700">Please log in to view your profile.</p>
+        <div className="fixed inset-0 z-30 flex items-center justify-center p-4">
+          <div className="relative z-10 text-center">
+            <p className="text-black">Please log in to view your profile.</p>
           <button 
             onClick={() => navigate('/login')} 
             className="mt-4 px-4 py-2 bg-forest-600 text-white rounded-lg hover:bg-forest-700 transition-colors"
           >
             Go to Login
-          </button>
+            </button>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 relative">
-      {/* Blurred background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-terrain-100 via-terrain-200 to-forest-100 backdrop-blur-sm" />
+    <>
+      {/* Blurred background overlay */}
+      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-20" />
       
-      <div className="relative z-10 max-w-4xl w-full">
-        <div className="bg-terrain-100 rounded-2xl shadow-xl border border-terrain-300 overflow-hidden">
+      <div className="fixed inset-0 z-30 flex items-center justify-center p-4">
+        <div className="relative w-full max-w-4xl h-full max-h-[90vh] overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 h-full flex flex-col">
           {/* Header */}
           <div className="p-6 border-b border-terrain-300 bg-gradient-to-r from-forest-500 to-forest-600 text-white">
             <div className="flex items-center justify-between">
@@ -224,17 +227,17 @@ export const ProfilePage: React.FC = () => {
                   onClick={() => navigate('/')}
                   className="p-2 hover:bg-white/20 rounded-lg transition-colors"
                 >
-                  <ArrowLeft className="w-5 h-5" />
+                  <ArrowLeft className="w-5 h-5 text-white" />
                 </button>
                 <div>
-                  <h1 className="text-2xl font-bold">Profile Settings</h1>
+                  <h1 className="text-2xl font-bold text-white">Profile Settings</h1>
                   <p className="text-forest-100 mt-1">Manage your account and preferences</p>
                 </div>
               </div>
               {!isEditing && activeTab === 'profile' && (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-white"
                 >
                   <Edit3 className="w-4 h-4" />
                   Edit Profile
@@ -244,13 +247,13 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           {/* Tabs */}
-          <div className="flex border-b border-terrain-300 bg-terrain-50">
+          <div className="flex border-b border-gray-200 bg-gray-50 flex-shrink-0">
             <button
               onClick={() => setActiveTab('profile')}
               className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors ${
                 activeTab === 'profile'
-                  ? 'text-forest-700 border-b-2 border-forest-600 bg-white'
-                  : 'text-trail-600 hover:text-trail-800 hover:bg-terrain-100'
+                  ? 'text-black border-b-2 border-forest-600 bg-white'
+                  : 'text-black hover:text-gray-800 hover:bg-gray-100'
               }`}
             >
               <User className="w-4 h-4" />
@@ -260,8 +263,8 @@ export const ProfilePage: React.FC = () => {
               onClick={() => setActiveTab('password')}
               className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors ${
                 activeTab === 'password'
-                  ? 'text-forest-700 border-b-2 border-forest-600 bg-white'
-                  : 'text-trail-600 hover:text-trail-800 hover:bg-terrain-100'
+                  ? 'text-black border-b-2 border-forest-600 bg-white'
+                  : 'text-black hover:text-gray-800 hover:bg-gray-100'
               }`}
             >
               <Shield className="w-4 h-4" />
@@ -271,8 +274,8 @@ export const ProfilePage: React.FC = () => {
               onClick={() => setActiveTab('preferences')}
               className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors ${
                 activeTab === 'preferences'
-                  ? 'text-forest-700 border-b-2 border-forest-600 bg-white'
-                  : 'text-trail-600 hover:text-trail-800 hover:bg-terrain-100'
+                  ? 'text-black border-b-2 border-forest-600 bg-white'
+                  : 'text-black hover:text-gray-800 hover:bg-gray-100'
               }`}
             >
               <Settings className="w-4 h-4" />
@@ -281,7 +284,7 @@ export const ProfilePage: React.FC = () => {
           </div>
 
           {/* Content */}
-          <div className="p-6">
+          <div className="flex-1 overflow-y-auto p-6">
             {activeTab === 'profile' && (
               <div className="max-w-2xl">
                 {/* Avatar Section */}
@@ -297,8 +300,8 @@ export const ProfilePage: React.FC = () => {
                         }}
                       />
                     ) : (
-                      <div className="w-24 h-24 rounded-full bg-terrain-300 flex items-center justify-center">
-                        <User className="w-12 h-12 text-trail-500" />
+                      <div className="w-24 h-24 rounded-full bg-gray-300 flex items-center justify-center">
+                        <User className="w-12 h-12 text-gray-500" />
                       </div>
                     )}
                     {isEditing && (
@@ -308,9 +311,9 @@ export const ProfilePage: React.FC = () => {
                     )}
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold text-trail-800">{user.displayName}</h2>
-                    <p className="text-trail-600">@{user.username}</p>
-                    <div className="flex items-center gap-2 mt-2 text-sm text-trail-500">
+                    <h2 className="text-2xl font-bold text-black">{user.displayName}</h2>
+                    <p className="text-gray-600">@{user.username}</p>
+                    <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
                       <Calendar className="w-4 h-4" />
                       Member since {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
                     </div>
@@ -321,15 +324,15 @@ export const ProfilePage: React.FC = () => {
                 <div className="space-y-6">
                   {isEditing && (
                     <div>
-                      <label className="block text-sm font-medium text-trail-700 mb-2">
+                      <label className="block text-sm font-medium text-black mb-2">
                         Avatar URL
                       </label>
                       <input
                         type="url"
                         value={profileForm.avatar_url}
                         onChange={(e) => setProfileForm(prev => ({ ...prev, avatar_url: e.target.value }))}
-                        className={`w-full px-4 py-3 bg-terrain-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent ${
-                          formErrors.avatar_url ? 'border-red-500' : 'border-terrain-300'
+                        className={`w-full px-4 py-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent text-black ${
+                          formErrors.avatar_url ? 'border-red-500' : 'border-gray-300'
                         }`}
                         placeholder="https://example.com/avatar.jpg"
                       />
@@ -338,7 +341,7 @@ export const ProfilePage: React.FC = () => {
                   )}
 
                   <div>
-                    <label className="block text-sm font-medium text-trail-700 mb-2">
+                    <label className="block text-sm font-medium text-black mb-2">
                       Display Name
                     </label>
                     {isEditing ? (
@@ -346,46 +349,46 @@ export const ProfilePage: React.FC = () => {
                         type="text"
                         value={profileForm.display_name}
                         onChange={(e) => setProfileForm(prev => ({ ...prev, display_name: e.target.value }))}
-                        className={`w-full px-4 py-3 bg-terrain-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent ${
-                          formErrors.display_name ? 'border-red-500' : 'border-terrain-300'
+                        className={`w-full px-4 py-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent text-black ${
+                          formErrors.display_name ? 'border-red-500' : 'border-gray-300'
                         }`}
                         placeholder="Your display name"
                       />
                     ) : (
-                      <p className="px-4 py-3 bg-terrain-50 border border-terrain-300 rounded-lg">{user.displayName}</p>
+                      <p className="px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-black">{user.displayName}</p>
                     )}
                     {formErrors.display_name && <p className="text-red-500 text-sm mt-1">{formErrors.display_name}</p>}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-trail-700 mb-2">
+                    <label className="block text-sm font-medium text-black mb-2">
                       Email
                     </label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-trail-500 w-5 h-5" />
-                      <p className="pl-10 pr-4 py-3 bg-gray-100 border border-terrain-300 rounded-lg text-trail-600">
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                      <p className="pl-10 pr-4 py-3 bg-gray-100 border border-gray-300 rounded-lg text-black">
                         {user.email}
                       </p>
                     </div>
-                    <p className="text-xs text-trail-500 mt-1">Email cannot be changed</p>
+                    <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-trail-700 mb-2">
+                    <label className="block text-sm font-medium text-black mb-2">
                       Bio
                     </label>
                     {isEditing ? (
                       <textarea
                         value={profileForm.bio}
                         onChange={(e) => setProfileForm(prev => ({ ...prev, bio: e.target.value }))}
-                        className={`w-full px-4 py-3 bg-terrain-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent ${
-                          formErrors.bio ? 'border-red-500' : 'border-terrain-300'
+                        className={`w-full px-4 py-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent text-black ${
+                          formErrors.bio ? 'border-red-500' : 'border-gray-300'
                         }`}
                         rows={4}
                         placeholder="Tell us about yourself..."
                       />
                     ) : (
-                      <p className="px-4 py-3 bg-terrain-50 border border-terrain-300 rounded-lg min-h-[100px]">
+                      <p className="px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg min-h-[100px] text-black">
                         {user.bio || 'No bio added yet.'}
                       </p>
                     )}
@@ -393,24 +396,24 @@ export const ProfilePage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-trail-700 mb-2">
+                    <label className="block text-sm font-medium text-black mb-2">
                       Location
                     </label>
                     {isEditing ? (
                       <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-trail-500 w-5 h-5" />
+                        <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
                         <input
                           type="text"
                           value={profileForm.location}
                           onChange={(e) => setProfileForm(prev => ({ ...prev, location: e.target.value }))}
-                          className="w-full pl-10 pr-4 py-3 bg-terrain-50 border border-terrain-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent"
+                          className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent text-black"
                           placeholder="Your location"
                         />
                       </div>
                     ) : (
                       <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-trail-500 w-5 h-5" />
-                        <p className="pl-10 pr-4 py-3 bg-terrain-50 border border-terrain-300 rounded-lg">
+                        <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
+                        <p className="pl-10 pr-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-black">
                           {user.location || 'No location added yet.'}
                         </p>
                       </div>
@@ -430,7 +433,7 @@ export const ProfilePage: React.FC = () => {
                       <button
                         onClick={handleCancelEdit}
                         disabled={isSaving}
-                        className="flex items-center gap-2 px-6 py-3 border border-terrain-300 rounded-lg hover:bg-terrain-100 transition-colors"
+                        className="flex items-center gap-2 px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors text-black"
                       >
                         <X className="w-4 h-4" />
                         Cancel
@@ -444,30 +447,30 @@ export const ProfilePage: React.FC = () => {
             {activeTab === 'password' && (
               <div className="max-w-md">
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-trail-800 mb-2">Change Password</h3>
-                  <p className="text-trail-600">Ensure your account is protected with a strong password.</p>
+                  <h3 className="text-lg font-semibold text-black mb-2">Change Password</h3>
+                  <p className="text-gray-600">Ensure your account is protected with a strong password.</p>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-trail-700 mb-2">
+                    <label className="block text-sm font-medium text-black mb-2">
                       Current Password
                     </label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-trail-500 w-5 h-5" />
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
                       <input
                         type={showPassword ? 'text' : 'password'}
                         value={passwordForm.current_password}
                         onChange={(e) => setPasswordForm(prev => ({ ...prev, current_password: e.target.value }))}
-                        className={`w-full pl-10 pr-12 py-3 bg-terrain-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent ${
-                          formErrors.current_password ? 'border-red-500' : 'border-terrain-300'
+                        className={`w-full pl-10 pr-12 py-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent text-black ${
+                          formErrors.current_password ? 'border-red-500' : 'border-gray-300'
                         }`}
                         placeholder="Enter current password"
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-trail-500 hover:text-trail-700"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
                       >
                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
@@ -476,24 +479,24 @@ export const ProfilePage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-trail-700 mb-2">
+                    <label className="block text-sm font-medium text-black mb-2">
                       New Password
                     </label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-trail-500 w-5 h-5" />
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
                       <input
                         type={showNewPassword ? 'text' : 'password'}
                         value={passwordForm.new_password}
                         onChange={(e) => setPasswordForm(prev => ({ ...prev, new_password: e.target.value }))}
-                        className={`w-full pl-10 pr-12 py-3 bg-terrain-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent ${
-                          formErrors.new_password ? 'border-red-500' : 'border-terrain-300'
+                        className={`w-full pl-10 pr-12 py-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent text-black ${
+                          formErrors.new_password ? 'border-red-500' : 'border-gray-300'
                         }`}
                         placeholder="Enter new password"
                       />
                       <button
                         type="button"
                         onClick={() => setShowNewPassword(!showNewPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-trail-500 hover:text-trail-700"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
                       >
                         {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
@@ -502,24 +505,24 @@ export const ProfilePage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-trail-700 mb-2">
+                    <label className="block text-sm font-medium text-black mb-2">
                       Confirm New Password
                     </label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-trail-500 w-5 h-5" />
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-5 h-5" />
                       <input
                         type={showConfirmPassword ? 'text' : 'password'}
                         value={passwordForm.confirm_password}
                         onChange={(e) => setPasswordForm(prev => ({ ...prev, confirm_password: e.target.value }))}
-                        className={`w-full pl-10 pr-12 py-3 bg-terrain-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent ${
-                          formErrors.confirm_password ? 'border-red-500' : 'border-terrain-300'
+                        className={`w-full pl-10 pr-12 py-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-transparent text-black ${
+                          formErrors.confirm_password ? 'border-red-500' : 'border-gray-300'
                         }`}
                         placeholder="Confirm new password"
                       />
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-trail-500 hover:text-trail-700"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
                       >
                         {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                       </button>
@@ -542,43 +545,43 @@ export const ProfilePage: React.FC = () => {
             {activeTab === 'preferences' && (
               <div className="max-w-2xl">
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-trail-800 mb-2">Preferences</h3>
-                  <p className="text-trail-600">Customize your experience on the platform.</p>
+                  <h3 className="text-lg font-semibold text-black mb-2">Preferences</h3>
+                  <p className="text-gray-600">Customize your experience on the platform.</p>
                 </div>
 
                 <div className="space-y-6">
-                  <div className="p-4 bg-terrain-50 rounded-lg border border-terrain-300">
-                    <h4 className="font-medium text-trail-800 mb-2">Notifications</h4>
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-300">
+                    <h4 className="font-medium text-black mb-2">Notifications</h4>
                     <div className="space-y-3">
                       <label className="flex items-center">
-                        <input type="checkbox" className="rounded border-terrain-300 text-forest-600 focus:ring-forest-500" defaultChecked />
-                        <span className="ml-2 text-sm text-trail-700">Email notifications</span>
+                        <input type="checkbox" className="rounded border-gray-300 text-forest-600 focus:ring-forest-500" defaultChecked />
+                        <span className="ml-2 text-sm text-black">Email notifications</span>
                       </label>
                       <label className="flex items-center">
-                        <input type="checkbox" className="rounded border-terrain-300 text-forest-600 focus:ring-forest-500" defaultChecked />
-                        <span className="ml-2 text-sm text-trail-700">Trip invitations</span>
+                        <input type="checkbox" className="rounded border-gray-300 text-forest-600 focus:ring-forest-500" defaultChecked />
+                        <span className="ml-2 text-sm text-black">Trip invitations</span>
                       </label>
                       <label className="flex items-center">
-                        <input type="checkbox" className="rounded border-terrain-300 text-forest-600 focus:ring-forest-500" />
-                        <span className="ml-2 text-sm text-trail-700">Marketing emails</span>
+                        <input type="checkbox" className="rounded border-gray-300 text-forest-600 focus:ring-forest-500" />
+                        <span className="ml-2 text-sm text-black">Marketing emails</span>
                       </label>
                     </div>
                   </div>
 
-                  <div className="p-4 bg-terrain-50 rounded-lg border border-terrain-300">
-                    <h4 className="font-medium text-trail-800 mb-2">Privacy</h4>
+                  <div className="p-4 bg-gray-50 rounded-lg border border-gray-300">
+                    <h4 className="font-medium text-black mb-2">Privacy</h4>
                     <div className="space-y-3">
                       <label className="flex items-center">
-                        <input type="checkbox" className="rounded border-terrain-300 text-forest-600 focus:ring-forest-500" defaultChecked />
-                        <span className="ml-2 text-sm text-trail-700">Make profile public</span>
+                        <input type="checkbox" className="rounded border-gray-300 text-forest-600 focus:ring-forest-500" defaultChecked />
+                        <span className="ml-2 text-sm text-black">Make profile public</span>
                       </label>
                       <label className="flex items-center">
-                        <input type="checkbox" className="rounded border-terrain-300 text-forest-600 focus:ring-forest-500" defaultChecked />
-                        <span className="ml-2 text-sm text-trail-700">Allow location sharing</span>
+                        <input type="checkbox" className="rounded border-gray-300 text-forest-600 focus:ring-forest-500" defaultChecked />
+                        <span className="ml-2 text-sm text-black">Allow location sharing</span>
                       </label>
                       <label className="flex items-center">
-                        <input type="checkbox" className="rounded border-terrain-300 text-forest-600 focus:ring-forest-500" />
-                        <span className="ml-2 text-sm text-trail-700">Show in search results</span>
+                        <input type="checkbox" className="rounded border-gray-300 text-forest-600 focus:ring-forest-500" />
+                        <span className="ml-2 text-sm text-black">Show in search results</span>
                       </label>
                     </div>
                   </div>
@@ -591,7 +594,8 @@ export const ProfilePage: React.FC = () => {
             )}
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
