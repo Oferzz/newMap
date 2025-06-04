@@ -72,17 +72,17 @@ class AuthService {
   }
 
   async getProfile(): Promise<User> {
-    const response = await api.get<ApiResponse<User>>('/users/profile');
+    const response = await api.get<ApiResponse<User>>('/users/me');
     return response.data;
   }
 
   async updateProfile(input: UpdateProfileInput): Promise<User> {
-    const response = await api.put<ApiResponse<User>>('/users/profile', input);
+    const response = await api.put<ApiResponse<User>>('/users/me', input);
     return response.data;
   }
 
   async changePassword(input: ChangePasswordInput): Promise<void> {
-    await api.post('/users/change-password', input);
+    await api.put('/users/me/password', input);
   }
 
   async resetPasswordRequest(email: string): Promise<void> {

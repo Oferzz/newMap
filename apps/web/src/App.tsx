@@ -5,6 +5,7 @@ import { MapView } from './components/map/MapView';
 import { LoginModal } from './components/auth/LoginModal';
 import { TripCreationPage } from './pages/TripCreationPage';
 import { ExplorePageWrapper } from './pages/ExplorePageWrapper';
+import { ProfilePage } from './pages/ProfilePage';
 import { PrivateRoute } from './components/auth/PrivateRoute';
 import { WebSocketProvider } from './providers/WebSocketProvider';
 import { Notifications } from './components/layout/Notifications';
@@ -126,12 +127,9 @@ function AppContent() {
         <Route
           path="/profile"
           element={
-            <>
-              <Header />
-              <PrivateRoute>
-                <MapView />
-              </PrivateRoute>
-            </>
+            <PrivateRoute>
+              <ProfilePage />
+            </PrivateRoute>
           }
         />
       </Routes>
