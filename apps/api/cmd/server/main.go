@@ -175,16 +175,25 @@ func setupRouter(cfg *config.Config, userHandler *users.Handler, tripHandler *tr
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
-	// CORS middleware
+	// CORS middleware - temporarily allow all origins to debug CORS issues
 	corsConfig := cors.Config{
-		AllowOrigins:     cfg.App.AllowedOrigins,
+		AllowAllOrigins:  true,
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
 		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
+		AllowCredentials: false, // Must be false when AllowAllOrigins is true
 		MaxAge:           12 * time.Hour,
 	}
 	router.Use(cors.New(corsConfig))
+
+	// Root route to avoid 404s from health checks
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"service": "newMap API",
+			"status":  "healthy",
+			"version": "1.0.0",
+		})
+	})
 
 	// Health check routes
 	healthHandler.RegisterRoutes(router)
