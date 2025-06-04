@@ -145,7 +145,15 @@ export const TripsPanel: React.FC<TripsPanelProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="absolute top-16 left-0 w-96 h-[calc(100vh-4rem)] bg-white shadow-2xl z-40 flex flex-col">
+    <>
+      {/* Backdrop with blur */}
+      <div 
+        className="fixed inset-0 top-16 bg-black/30 backdrop-blur-sm z-30"
+        onClick={onClose}
+      />
+      
+      {/* Panel Content */}
+      <div className="absolute top-16 left-0 w-96 h-[calc(100vh-4rem)] bg-white shadow-2xl z-40 flex flex-col">
       {/* Header */}
       <div className="p-4 border-b bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
         <div className="flex items-center justify-between mb-3">
@@ -322,5 +330,6 @@ export const TripsPanel: React.FC<TripsPanelProps> = ({ isOpen, onClose }) => {
         </div>
       )}
     </div>
+    </>
   );
 };

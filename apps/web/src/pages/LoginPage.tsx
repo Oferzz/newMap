@@ -123,8 +123,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isRegister = false }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-terrain-200 p-4">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen flex items-center justify-center p-4 relative">
+      {/* Blurred background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-terrain-100 via-terrain-200 to-forest-100 backdrop-blur-sm" />
+      
+      <div className="max-w-md w-full relative z-10">
         <div className="bg-terrain-100 rounded-2xl shadow-xl border border-terrain-300 p-8">
           <div className="text-center mb-8">
             <img 

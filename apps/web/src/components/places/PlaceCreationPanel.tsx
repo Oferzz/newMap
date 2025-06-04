@@ -89,7 +89,15 @@ export const PlaceCreationPanel: React.FC<PlaceCreationPanelProps> = ({ isOpen, 
   if (!isOpen) return null;
 
   return (
-    <div className="absolute left-4 top-20 bottom-4 w-96 bg-white rounded-lg shadow-xl z-30 flex flex-col">
+    <>
+      {/* Backdrop with blur */}
+      <div 
+        className="fixed inset-0 top-16 bg-black/30 backdrop-blur-sm z-20"
+        onClick={onClose}
+      />
+      
+      {/* Panel Content */}
+      <div className="absolute left-4 top-20 bottom-4 w-96 bg-white rounded-lg shadow-xl z-30 flex flex-col">
       <div className="p-6 border-b">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-2xl font-bold">Create New Place</h2>
@@ -237,5 +245,6 @@ export const PlaceCreationPanel: React.FC<PlaceCreationPanelProps> = ({ isOpen, 
         </div>
       </div>
     </div>
+    </>
   );
 };

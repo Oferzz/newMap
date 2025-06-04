@@ -62,10 +62,17 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({ item, onClose }) => 
   };
 
   return (
-    <div 
-      ref={panelRef}
-      className="details-panel panel-slide-right open"
-    >
+    <>
+      {/* Backdrop with blur - only on mobile/tablet */}
+      <div 
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm z-35 md:hidden"
+        onClick={onClose}
+      />
+      
+      <div 
+        ref={panelRef}
+        className="details-panel panel-slide-right open"
+      >
       <div className="h-full flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-terrain-300 bg-terrain-50">
@@ -251,5 +258,6 @@ export const DetailsPanel: React.FC<DetailsPanelProps> = ({ item, onClose }) => 
         </div>
       </div>
     </div>
+    </>
   );
 };

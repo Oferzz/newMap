@@ -216,7 +216,74 @@ npm test -- --watch
 ## Puppeteer Memory
 - When using puppeteer, go to https://newmap-qojk.onrender.com for the website url
 
+## UI Design Patterns
+
+### Blurred Background Pattern
+All modals and panels MUST use a consistent blurred background overlay for better visual hierarchy and user focus:
+
+**Modal Components** (full screen overlays):
+```jsx
+return (
+  <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    {/* Backdrop with blur */}
+    <div 
+      className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+      onClick={onClose}
+    />
+    
+    {/* Modal Content */}
+    <div className="relative z-10 bg-white rounded-lg ...">
+      {/* Modal content */}
+    </div>
+  </div>
+);
+```
+
+**Side Panel Components** (TripsPanel, TripPlanningPanel, etc.):
+```jsx
+return (
+  <>
+    {/* Backdrop with blur */}
+    <div 
+      className="fixed inset-0 top-16 bg-black/30 backdrop-blur-sm z-30"
+      onClick={onClose}
+    />
+    
+    {/* Panel Content */}
+    <div className="absolute top-16 left-0 w-96 h-[calc(100vh-4rem)] bg-white shadow-2xl z-40 flex flex-col">
+      {/* Panel content */}
+    </div>
+  </>
+);
+```
+
+**Details Panel** (uses CSS classes, blur only on mobile/tablet):
+```jsx
+return (
+  <>
+    {/* Backdrop with blur - only on mobile/tablet */}
+    <div 
+      className="fixed inset-0 bg-black/30 backdrop-blur-sm z-35 md:hidden"
+      onClick={onClose}
+    />
+    
+    <div className="details-panel panel-slide-right open">
+      {/* Panel content */}
+    </div>
+  </>
+);
+```
+
+**Key Rules:**
+- Always use `backdrop-blur-sm` for the blur effect
+- Modal overlays: `bg-black/50` (darker for better contrast)
+- Panel overlays: `bg-black/30` (lighter for side panels)
+- Ensure proper z-index layering (backdrop < content)
+- Make backdrop clickable to close (`onClick={onClose}`)
+- Start backdrop below header (`top-16` for panels)
+
 ## Development Memories
 - create every feature on main branch, push everything after finishing implementing
 - no local deployment, always commit to github (main branch) and wait 2 minutes and then test on the deployment, that includes docker-compose
 - when creating a new feature/button or a page, first look at the current platform design and styling, and keep it
+- all modals and panels must have blurred background overlays as specified in UI Design Patterns
