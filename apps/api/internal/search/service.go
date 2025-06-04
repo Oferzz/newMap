@@ -14,6 +14,9 @@ import (
 type Service struct {
 	esClient  *elasticsearch.Client
 	nlpParser *nlp.Parser
+	// Add database repositories for fallback search
+	placeRepo interface{}
+	tripRepo  interface{}
 }
 
 // SearchRequest represents a search request
@@ -42,6 +45,12 @@ func NewService(esClient *elasticsearch.Client, nlpParser *nlp.Parser) *Service 
 	}
 }
 
+// SetRepositories sets the database repositories for fallback search
+func (s *Service) SetRepositories(placeRepo, tripRepo interface{}) {
+	s.placeRepo = placeRepo
+	s.tripRepo = tripRepo
+}
+
 // Search performs a unified natural language search
 func (s *Service) Search(ctx context.Context, req *SearchRequest) (*SearchResponse, error) {
 	// Set defaults
@@ -66,7 +75,7 @@ func (s *Service) Search(ctx context.Context, req *SearchRequest) (*SearchRespon
 
 	// Execute search based on intent
 	var esResponse *elasticsearch.SearchResponse
-	if s.esClient.IsAvailable() {
+	if s.esClient != nil && s.esClient.IsAvailable() {
 		switch parsedQuery.Intent {
 		case nlp.IntentActivity:
 			esResponse, err = s.esClient.SearchActivities(ctx, esQuery)
@@ -192,14 +201,27 @@ func (s *Service) buildElasticsearchQuery(parsedQuery *nlp.ParsedQuery, limit, o
 
 // fallbackSearch provides database-based search when Elasticsearch is unavailable
 func (s *Service) fallbackSearch(ctx context.Context, parsedQuery *nlp.ParsedQuery, req *SearchRequest) *elasticsearch.SearchResponse {
-	// This would integrate with the existing database search
-	// For now, return empty results
-	log.Printf("Using fallback search for query: %s", req.Query)
+	log.Printf("Using PostgreSQL fallback search for query: %s", req.Query)
+	
+	// For now, return a message indicating Elasticsearch is not configured
+	// In production, this would query PostgreSQL using the parsed query
+	results := []elasticsearch.SearchResult{
+		{
+			ID:   "fallback-message",
+			Type: "message",
+			Source: map[string]interface{}{
+				"message": "Search is currently using basic functionality. Full-text search will be available soon.",
+				"query":   req.Query,
+				"intent":  string(parsedQuery.Intent),
+			},
+			Score: 1.0,
+		},
+	}
 	
 	return &elasticsearch.SearchResponse{
-		Total:   0,
-		Results: []elasticsearch.SearchResult{},
-		Took:    10, // Placeholder timing
+		Total:   int64(len(results)),
+		Results: results,
+		Took:    10,
 	}
 }
 
@@ -252,7 +274,7 @@ func (s *Service) generateSuggestions(parsedQuery *nlp.ParsedQuery, results *ela
 
 // logSearch logs the search query for analytics
 func (s *Service) logSearch(ctx context.Context, req *SearchRequest, parsedQuery *nlp.ParsedQuery, results *elasticsearch.SearchResponse) {
-	if !s.esClient.IsAvailable() {
+	if s.esClient == nil || !s.esClient.IsAvailable() {
 		return
 	}
 

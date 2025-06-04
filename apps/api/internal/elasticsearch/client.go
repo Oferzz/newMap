@@ -450,5 +450,8 @@ func (c *Client) LogQuery(ctx context.Context, queryLog map[string]interface{}) 
 
 // IsAvailable checks if Elasticsearch is available
 func (c *Client) IsAvailable() bool {
+	if c == nil || c.es == nil {
+		return false
+	}
 	return c.ping() == nil
 }
