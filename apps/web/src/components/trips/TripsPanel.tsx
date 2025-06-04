@@ -30,9 +30,7 @@ export const TripsPanel: React.FC<TripsPanelProps> = ({ isOpen, onClose }) => {
   const { items: trips, isLoading, error } = useAppSelector(state => state.trips);
   const { isAuthenticated } = useAppSelector(state => state.auth);
   
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'planning' | 'active' | 'completed'>('all');
-  const [sortBy, setSortBy] = useState<'recent' | 'alphabetical' | 'date'>('recent');
+  const [naturalLanguageQuery, setNaturalLanguageQuery] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -41,11 +39,45 @@ export const TripsPanel: React.FC<TripsPanelProps> = ({ isOpen, onClose }) => {
     }
   }, [isOpen, dispatch]);
 
+  // Parse natural language query for filtering
+  const parseNaturalQuery = (query: string) => {
+    const lowerQuery = query.toLowerCase();
+    let status: string | null = null;
+    let sortBy = 'recent';
+    let searchTerms = query;
+
+    // Extract status filters
+    if (lowerQuery.includes('planning') || lowerQuery.includes('planned')) {
+      status = 'planning';
+      searchTerms = searchTerms.replace(/\b(planning|planned)\b/gi, '');
+    } else if (lowerQuery.includes('active') || lowerQuery.includes('ongoing')) {
+      status = 'active';
+      searchTerms = searchTerms.replace(/\b(active|ongoing)\b/gi, '');
+    } else if (lowerQuery.includes('completed') || lowerQuery.includes('finished')) {
+      status = 'completed';
+      searchTerms = searchTerms.replace(/\b(completed|finished)\b/gi, '');
+    }
+
+    // Extract sort preferences
+    if (lowerQuery.includes('alphabetical') || lowerQuery.includes('a-z') || lowerQuery.includes('name')) {
+      sortBy = 'alphabetical';
+      searchTerms = searchTerms.replace(/\b(alphabetical|a-z|by name)\b/gi, '');
+    } else if (lowerQuery.includes('date') || lowerQuery.includes('when')) {
+      sortBy = 'date';
+      searchTerms = searchTerms.replace(/\b(by date|date|when)\b/gi, '');
+    }
+
+    return { status, sortBy, searchTerms: searchTerms.trim() };
+  };
+
+  const { status: filterStatus, sortBy, searchTerms } = parseNaturalQuery(naturalLanguageQuery);
+
   const filteredTrips = trips
     .filter(trip => {
-      const matchesSearch = trip.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           trip.description.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = filterStatus === 'all' || trip.status === filterStatus;
+      const matchesSearch = !searchTerms || 
+                           trip.title.toLowerCase().includes(searchTerms.toLowerCase()) ||
+                           trip.description.toLowerCase().includes(searchTerms.toLowerCase());
+      const matchesStatus = !filterStatus || trip.status === filterStatus;
       return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
@@ -135,41 +167,23 @@ export const TripsPanel: React.FC<TripsPanelProps> = ({ isOpen, onClose }) => {
         </button>
       </div>
 
-      {/* Search and Filters */}
-      <div className="p-4 border-b space-y-3">
+      {/* Natural Language Search */}
+      <div className="p-4 border-b space-y-2">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
             type="text"
-            placeholder="Search trips..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Try: 'active trips', 'planning trips sorted by date', 'completed hiking trips'..."
+            value={naturalLanguageQuery}
+            onChange={(e) => setNaturalLanguageQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
-
-        <div className="flex gap-2">
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as any)}
-            className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-          >
-            <option value="all">All Status</option>
-            <option value="planning">Planning</option>
-            <option value="active">Active</option>
-            <option value="completed">Completed</option>
-          </select>
-
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
-            className="flex-1 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-          >
-            <option value="recent">Recent</option>
-            <option value="alphabetical">A-Z</option>
-            <option value="date">Trip Date</option>
-          </select>
-        </div>
+        
+        {/* Help text */}
+        <p className="text-xs text-gray-500 px-1">
+          Use natural language to filter and sort your trips
+        </p>
       </div>
 
       {/* Storage Mode Info */}
