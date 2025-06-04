@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../hooks/redux';
 import { 
@@ -49,6 +49,20 @@ export const ProfilePage: React.FC = () => {
   
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
+
+  // Handle ESC key to close profile
+  const handleEscKey = useCallback((event: KeyboardEvent) => {
+    if (event.key === 'Escape') {
+      navigate('/');
+    }
+  }, [navigate]);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleEscKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [handleEscKey]);
 
   // Initialize form with user data
   useEffect(() => {
@@ -214,30 +228,33 @@ export const ProfilePage: React.FC = () => {
   return (
     <>
       {/* Blurred background overlay */}
-      <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-20" />
+      <div 
+        className="fixed inset-0 bg-black/30 backdrop-blur-sm z-20" 
+        onClick={() => navigate('/')}
+      />
       
       <div className="fixed inset-0 z-30 flex items-center justify-center p-4">
         <div className="relative w-full max-w-4xl h-full max-h-[90vh] overflow-hidden">
           <div className="bg-white rounded-2xl shadow-xl border border-gray-200 h-full flex flex-col">
           {/* Header */}
-          <div className="p-6 border-b border-terrain-300 bg-gradient-to-r from-forest-500 to-forest-600 text-white">
+          <div className="p-6 border-b border-gray-200 bg-white">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <button
                   onClick={() => navigate('/')}
-                  className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  <ArrowLeft className="w-5 h-5 text-white" />
+                  <ArrowLeft className="w-5 h-5 text-gray-600" />
                 </button>
                 <div>
-                  <h1 className="text-2xl font-bold text-white">Profile Settings</h1>
-                  <p className="text-forest-100 mt-1">Manage your account and preferences</p>
+                  <h1 className="text-2xl font-bold text-black">Profile Settings</h1>
+                  <p className="text-gray-600 mt-1">Manage your account and preferences</p>
                 </div>
               </div>
               {!isEditing && activeTab === 'profile' && (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-white"
+                  className="flex items-center gap-2 px-4 py-2 bg-forest-600 hover:bg-forest-700 text-white rounded-lg transition-colors"
                 >
                   <Edit3 className="w-4 h-4" />
                   Edit Profile
