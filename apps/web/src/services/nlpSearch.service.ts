@@ -156,4 +156,3 @@ class NLPSearchService {
 }
 
 export const nlpSearchService = new NLPSearchService();
-EOF < /dev/null
