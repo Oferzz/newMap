@@ -54,7 +54,7 @@ func (s *postgresService) Register(ctx context.Context, username, email, passwor
 		Email:      email,
 		Password:   hashedPassword,
 		Role:       "user",
-		IsVerified: false,
+		IsVerified: true, // Auto-verify new users for simplified auth
 		Profile:    Profile{},
 		CreatedAt:  time.Now(),
 		UpdatedAt:  time.Now(),

@@ -47,7 +47,8 @@ func (m *RBACMiddleware) RequireSystemPermission(permission users.Permission) gi
 		} else if user.IsVerified {
 			userRole = users.RoleEditor
 		} else {
-			userRole = users.RoleViewer
+			// Give all authenticated users at least RoleUser (which can create trips)
+			userRole = users.RoleUser
 		}
 
 		// Check if the role has the required permission

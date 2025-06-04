@@ -214,7 +214,7 @@ npm test -- --watch
 - See `AUTHENTICATION_STRATEGY.md` for detailed implementation guidelines
 
 ## Puppeteer Memory
-- When using puppeteer, go to https://newmap-fe.onrender.com/ for the website url
+- When using puppeteer, go to https://newmap-qojk.onrender.com for the website url
 
 ## Development Memories
 - create every feature on main branch, push everything after finishing implementing
