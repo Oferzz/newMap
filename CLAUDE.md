@@ -219,3 +219,4 @@ npm test -- --watch
 ## Development Memories
 - create every feature on main branch, push everything after finishing implementing
 - no local deployment, always commit to github (main branch) and wait 2 minutes and then test on the deployment, that includes docker-compose
+- when creating a new feature/button or a page, first look at the current platform design and styling, and keep it
