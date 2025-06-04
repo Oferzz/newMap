@@ -2,7 +2,7 @@ import React from 'react';
 import { Search, Plus, User, Menu, MapPin, LogIn, LogOut, Compass } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
-import { SearchBar } from '../search/SearchBar';
+import { NaturalLanguageSearchBar } from '../search/NaturalLanguageSearchBar';
 import { MobileMenu } from './MobileMenu';
 import { searchAllThunk } from '../../store/thunks/search.thunks';
 import { setActivePanel } from '../../store/slices/uiSlice';
@@ -89,7 +89,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Search Bar - Absolutely centered */}
         <div className="hidden md:block absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-xl px-4">
-          <SearchBar 
+          <NaturalLanguageSearchBar 
             onSearch={handleSearch}
             placeholder="Search places, trips, or users..."
             onResultSelect={handleSearchResultSelect}
