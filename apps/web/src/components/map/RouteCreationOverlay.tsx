@@ -29,7 +29,7 @@ export const RouteCreationOverlay: React.FC = () => {
             Create Trip
           </button>
           <button
-            onClick={() => dispatch(cancelRouteCreation())}
+            onClick={() => dispatch(clearRouteCreation())}
             className="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50"
           >
             Cancel

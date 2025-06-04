@@ -5,6 +5,23 @@ import { ActivityFormData } from '../../pages/ActivityCreationPage';
 import { api } from '../../services/api';
 import toast from 'react-hot-toast';
 
+// API Response interface
+interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+    details?: Record<string, any>;
+  };
+  meta?: {
+    page: number;
+    limit: number;
+    total: number;
+    hasMore: boolean;
+  };
+}
+
 // API interfaces
 interface CreateActivityInput {
   title: string;
@@ -80,7 +97,7 @@ export const createActivityThunk = createAsyncThunk<
   { state: RootState }
 >(
   'activities/create',
-  async (formData, { dispatch, getState, rejectWithValue }) => {
+  async (formData, { getState, rejectWithValue }) => {
     try {
       const state = getState();
       const isAuthenticated = state.auth.isAuthenticated;
@@ -92,11 +109,11 @@ export const createActivityThunk = createAsyncThunk<
 
       const activityData = transformFormDataToAPI(formData);
       
-      const response = await api.post('/activities', activityData);
+      const response = await api.post<ApiResponse<Activity>>('/activities', activityData);
       
       if (response.success) {
         toast.success('Activity created successfully!');
-        return response.data;
+        return response.data!;
       } else {
         throw new Error(response.error?.message || 'Failed to create activity');
       }
@@ -146,12 +163,12 @@ export const getActivitiesThunk = createAsyncThunk<
         }
       }
 
-      const response = await api.get(`/activities?${queryParams.toString()}`);
+      const response = await api.get<ApiResponse<{activities: Activity[], pagination: any}>>(`/activities?${queryParams.toString()}`);
       
       if (response.success) {
         return {
-          activities: response.data.activities || [],
-          pagination: response.data.pagination || {
+          activities: response.data?.activities || [],
+          pagination: response.data?.pagination || {
             page: 1,
             limit: 20,
             total: 0,
@@ -177,10 +194,10 @@ export const getActivityThunk = createAsyncThunk<
   'activities/getOne',
   async (activityId, { rejectWithValue }) => {
     try {
-      const response = await api.get(`/activities/${activityId}`);
+      const response = await api.get<ApiResponse<Activity>>(`/activities/${activityId}`);
       
       if (response.success) {
-        return response.data;
+        return response.data!;
       } else {
         throw new Error(response.error?.message || 'Failed to fetch activity');
       }
@@ -200,11 +217,11 @@ export const updateActivityThunk = createAsyncThunk<
   'activities/update',
   async ({ id, updates }, { rejectWithValue }) => {
     try {
-      const response = await api.put(`/activities/${id}`, updates);
+      const response = await api.put<ApiResponse<Activity>>(`/activities/${id}`, updates);
       
       if (response.success) {
         toast.success('Activity updated successfully!');
-        return response.data;
+        return response.data!;
       } else {
         throw new Error(response.error?.message || 'Failed to update activity');
       }
@@ -225,7 +242,7 @@ export const deleteActivityThunk = createAsyncThunk<
   'activities/delete',
   async (activityId, { rejectWithValue }) => {
     try {
-      const response = await api.delete(`/activities/${activityId}`);
+      const response = await api.delete<ApiResponse>(`/activities/${activityId}`);
       
       if (response.success) {
         toast.success('Activity deleted successfully');
@@ -250,7 +267,7 @@ export const likeActivityThunk = createAsyncThunk<
   'activities/like',
   async (activityId, { rejectWithValue }) => {
     try {
-      const response = await api.post(`/activities/${activityId}/like`);
+      const response = await api.post<ApiResponse>(`/activities/${activityId}/like`);
       
       if (response.success) {
         return { activityId, liked: true };
@@ -273,7 +290,7 @@ export const unlikeActivityThunk = createAsyncThunk<
   'activities/unlike',
   async (activityId, { rejectWithValue }) => {
     try {
-      const response = await api.delete(`/activities/${activityId}/like`);
+      const response = await api.delete<ApiResponse>(`/activities/${activityId}/like`);
       
       if (response.success) {
         return { activityId, liked: false };

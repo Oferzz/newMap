@@ -32,7 +32,7 @@ export const ActivityRouteDrawing: React.FC<ActivityRouteDrawingProps> = ({
   useEffect(() => {
     // Start route creation mode when component mounts
     if (!routeCreationMode.isActive) {
-      dispatch(startRouteCreation());
+      dispatch(startRouteCreation({}));
     }
   }, [dispatch, routeCreationMode.isActive]);
 
@@ -55,7 +55,7 @@ export const ActivityRouteDrawing: React.FC<ActivityRouteDrawingProps> = ({
   }, [routeCreationMode, routeType, onRouteUpdate]);
 
   const handleStartRoute = () => {
-    dispatch(startRouteCreation());
+    dispatch(startRouteCreation({}));
   };
 
   const handleClearRoute = () => {

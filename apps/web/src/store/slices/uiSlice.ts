@@ -162,17 +162,22 @@ const uiSlice = createSlice({
         position: null,
       };
     },
-    startRouteCreation: (state, action?: PayloadAction<{ coordinates?: [number, number] }>) => {
-      state.routeCreationMode = {
-        isActive: true,
-        waypoints: (action?.payload?.coordinates) ? [{
-          id: Date.now().toString(),
-          coordinates: action.payload.coordinates,
-        }] : [],
-        distance: 0,
-        elevationGain: 0,
-        elevationLoss: 0,
-      };
+    startRouteCreation: {
+      reducer: (state, action: PayloadAction<{ coordinates?: [number, number] } | undefined>) => {
+        state.routeCreationMode = {
+          isActive: true,
+          waypoints: (action?.payload?.coordinates) ? [{
+            id: Date.now().toString(),
+            coordinates: action.payload.coordinates,
+          }] : [],
+          distance: 0,
+          elevationGain: 0,
+          elevationLoss: 0,
+        };
+      },
+      prepare: (payload?: { coordinates?: [number, number] }) => ({
+        payload: payload || {}
+      })
     },
     addRouteWaypoint: (state, action: PayloadAction<{ coordinates: [number, number] }>) => {
       if (state.routeCreationMode.isActive) {
