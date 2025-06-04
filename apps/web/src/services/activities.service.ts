@@ -42,11 +42,26 @@ class ActivitiesService {
     difficulty?: string[];
     privacy?: string;
   }): Promise<{ activities: Activity[]; total: number }> {
+    // Build query string
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.privacy) queryParams.append('privacy', params.privacy);
+    if (params?.activityType) {
+      params.activityType.forEach(type => queryParams.append('activity_type', type));
+    }
+    if (params?.difficulty) {
+      params.difficulty.forEach(diff => queryParams.append('difficulty', diff));
+    }
+
+    const queryString = queryParams.toString();
+    const endpoint = queryString ? `/activities?${queryString}` : '/activities';
+    
     const response = await api.get<{
       success: boolean;
       data: Activity[];
       meta: { total: number };
-    }>('/activities', { params });
+    }>(endpoint);
     
     if (response.success) {
       return {
@@ -97,10 +112,12 @@ class ActivitiesService {
 
   // Access shared activity
   async getSharedActivity(token: string, password?: string): Promise<Activity> {
-    const params = password ? { password } : undefined;
+    const queryString = password ? `?password=${encodeURIComponent(password)}` : '';
+    const endpoint = `/activities/shared/${token}${queryString}`;
+    
     const response = await api.get<{ success: boolean; data: Activity }>(
-      `/activities/shared/${token}`,
-      { params, skipAuth: true }
+      endpoint,
+      { skipAuth: true }
     );
     if (response.success) {
       return response.data!;

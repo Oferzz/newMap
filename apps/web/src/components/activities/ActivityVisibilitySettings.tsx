@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Globe, Users, Lock, MessageCircle, Download, Share2, Copy, Check } from 'lucide-react';
 import { activitiesService } from '../../services/activities.service';
-import { ShareLink, ShareSettings } from '../../types/activity.types';
+import { ShareSettings } from '../../types/activity.types';
 import toast from 'react-hot-toast';
 
 interface VisibilitySettings {
@@ -61,7 +61,7 @@ export const ActivityVisibilitySettings: React.FC<ActivityVisibilitySettingsProp
       // If no activityId yet, generate a temporary preview link
       const mockLink = `https://newmap-fe.onrender.com/activities/shared/${Math.random().toString(36).substr(2, 9)}`;
       setShareLink(mockLink);
-      toast.info('Share link will be active after creating the activity');
+      toast('Share link will be active after creating the activity', { icon: 'ℹ️' });
       return;
     }
 
