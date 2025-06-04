@@ -16,6 +16,10 @@ export const loginThunk = createAsyncThunk(
           username: response.user.username,
           displayName: response.user.display_name,
           avatarUrl: response.user.avatar_url,
+          bio: response.user.bio,
+          location: response.user.location,
+          created_at: response.user.created_at,
+          updated_at: response.user.updated_at,
         },
         accessToken: response.access_token,
         refreshToken: response.refresh_token,
@@ -90,6 +94,10 @@ export const refreshTokenThunk = createAsyncThunk(
           username: response.user.username,
           displayName: response.user.display_name,
           avatarUrl: response.user.avatar_url,
+          bio: response.user.bio,
+          location: response.user.location,
+          created_at: response.user.created_at,
+          updated_at: response.user.updated_at,
         },
         accessToken: response.access_token,
         refreshToken: response.refresh_token,
@@ -106,7 +114,17 @@ export const getProfileThunk = createAsyncThunk(
   async (_, { dispatch }) => {
     try {
       const user = await authService.getProfile();
-      dispatch(updateUser(user));
+      dispatch(updateUser({
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        displayName: user.display_name,
+        avatarUrl: user.avatar_url,
+        bio: user.bio,
+        location: user.location,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+      }));
       return user;
     } catch (error) {
       throw error;
@@ -119,7 +137,17 @@ export const updateProfileThunk = createAsyncThunk(
   async (input: UpdateProfileInput, { dispatch }) => {
     try {
       const user = await authService.updateProfile(input);
-      dispatch(updateUser(user));
+      dispatch(updateUser({
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        displayName: user.display_name,
+        avatarUrl: user.avatar_url,
+        bio: user.bio,
+        location: user.location,
+        created_at: user.created_at,
+        updated_at: user.updated_at,
+      }));
       toast.success('Profile updated successfully');
       return user;
     } catch (error) {
@@ -192,6 +220,10 @@ export const initializeAuthThunk = createAsyncThunk(
           username: user.username,
           displayName: user.display_name,
           avatarUrl: user.avatar_url,
+          bio: user.bio,
+          location: user.location,
+          created_at: user.created_at,
+          updated_at: user.updated_at,
         },
         accessToken,
         refreshToken,

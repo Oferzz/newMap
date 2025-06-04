@@ -24,7 +24,7 @@ import toast from 'react-hot-toast';
 export const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { user, isLoading } = useAppSelector((state) => state.auth);
+  const { user } = useAppSelector((state) => state.auth);
   
   const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'preferences'>('profile');
   const [isEditing, setIsEditing] = useState(false);
@@ -312,7 +312,7 @@ export const ProfilePage: React.FC = () => {
                     <p className="text-trail-600">@{user.username}</p>
                     <div className="flex items-center gap-2 mt-2 text-sm text-trail-500">
                       <Calendar className="w-4 h-4" />
-                      Member since {new Date(user.created_at).toLocaleDateString()}
+                      Member since {user.created_at ? new Date(user.created_at).toLocaleDateString() : 'Unknown'}
                     </div>
                   </div>
                 </div>

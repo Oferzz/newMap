@@ -6,6 +6,10 @@ interface User {
   username: string;
   displayName: string;
   avatarUrl?: string;
+  bio?: string;
+  location?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface AuthState {
