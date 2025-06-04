@@ -38,6 +38,32 @@ func (s *servicePg) Create(ctx context.Context, userID string, input *CreateTrip
 		Tags:        input.Tags,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
+		
+		// Activity-specific fields
+		ActivityType:       input.ActivityType,
+		DifficultyLevel:    input.DifficultyLevel,
+		DurationHours:      input.DurationHours,
+		DistanceKm:         input.DistanceKm,
+		ElevationGainM:     input.ElevationGainM,
+		MaxElevationM:      input.MaxElevationM,
+		RouteType:          input.RouteType,
+		RouteGeoJSON:       input.RouteGeoJSON,
+		WaterFeatures:      input.WaterFeatures,
+		TerrainTypes:       input.TerrainTypes,
+		EssentialGear:      input.EssentialGear,
+		BestSeasons:        input.BestSeasons,
+		TrailConditions:    input.TrailConditions,
+		AccessibilityNotes: input.AccessibilityNotes,
+		ParkingInfo:        input.ParkingInfo,
+		PermitsRequired:    input.PermitsRequired,
+		Hazards:            input.Hazards,
+		EmergencyContacts:  input.EmergencyContacts,
+		Visibility:         "private",
+		SharedWith:         input.SharedWith,
+		CompletionCount:    0,
+		RatingCount:        0,
+		Featured:           false,
+		Verified:           false,
 	}
 	
 	// Set default privacy if provided
@@ -45,9 +71,19 @@ func (s *servicePg) Create(ctx context.Context, userID string, input *CreateTrip
 		trip.Privacy = input.Privacy
 	}
 	
+	// Set visibility (for activity features)
+	if input.Visibility != "" {
+		trip.Visibility = input.Visibility
+	}
+	
 	// Set default timezone if not provided
 	if trip.Timezone == "" {
 		trip.Timezone = "UTC"
+	}
+	
+	// Set default activity type if not provided
+	if trip.ActivityType == "" {
+		trip.ActivityType = "general"
 	}
 	
 	if err := s.repo.Create(ctx, trip); err != nil {
@@ -82,56 +118,111 @@ func (s *servicePg) Update(ctx context.Context, userID, tripID string, input *Up
 		return nil, ErrUnauthorized
 	}
 	
-	// Update fields
+	// Build updates map for dynamic update
+	updates := make(map[string]interface{})
+	
+	// Basic fields
 	if input.Title != nil {
-		trip.Title = *input.Title
+		updates["title"] = *input.Title
 	}
 	if input.Description != nil {
-		trip.Description = *input.Description
+		updates["description"] = *input.Description
 	}
 	if input.StartDate != nil {
-		trip.StartDate = input.StartDate
+		updates["start_date"] = input.StartDate
 	}
 	if input.EndDate != nil {
-		trip.EndDate = input.EndDate
+		updates["end_date"] = input.EndDate
 	}
 	if input.Privacy != nil {
-		trip.Privacy = *input.Privacy
+		updates["privacy"] = *input.Privacy
 	}
 	if input.Status != nil {
-		trip.Status = *input.Status
+		updates["status"] = *input.Status
 	}
 	if len(input.Tags) > 0 {
-		trip.Tags = input.Tags
+		updates["tags"] = input.Tags
 	}
 	if input.CoverImage != nil {
-		trip.CoverImage = *input.CoverImage
+		updates["cover_image"] = *input.CoverImage
 	}
 	if input.Timezone != nil {
-		trip.Timezone = *input.Timezone
+		updates["timezone"] = *input.Timezone
 	}
 	
-	trip.UpdatedAt = time.Now()
-	
-	// Convert trip to update map
-	updates := map[string]interface{}{
-		"title":       trip.Title,
-		"description": trip.Description,
-		"start_date":  trip.StartDate,
-		"end_date":    trip.EndDate,
-		"privacy":     trip.Privacy,
-		"status":      trip.Status,
-		"tags":        trip.Tags,
-		"cover_image": trip.CoverImage,
-		"timezone":    trip.Timezone,
-		"updated_at":  trip.UpdatedAt,
+	// Activity-specific fields
+	if input.ActivityType != nil {
+		updates["activity_type"] = *input.ActivityType
+	}
+	if input.DifficultyLevel != nil {
+		updates["difficulty_level"] = *input.DifficultyLevel
+	}
+	if input.DurationHours != nil {
+		updates["duration_hours"] = input.DurationHours
+	}
+	if input.DistanceKm != nil {
+		updates["distance_km"] = input.DistanceKm
+	}
+	if input.ElevationGainM != nil {
+		updates["elevation_gain_m"] = input.ElevationGainM
+	}
+	if input.MaxElevationM != nil {
+		updates["max_elevation_m"] = input.MaxElevationM
+	}
+	if input.RouteType != nil {
+		updates["route_type"] = *input.RouteType
+	}
+	if input.RouteGeoJSON != nil {
+		updates["route_geojson"] = input.RouteGeoJSON
+	}
+	if len(input.WaterFeatures) > 0 {
+		updates["water_features"] = input.WaterFeatures
+	}
+	if len(input.TerrainTypes) > 0 {
+		updates["terrain_types"] = input.TerrainTypes
+	}
+	if len(input.EssentialGear) > 0 {
+		updates["essential_gear"] = input.EssentialGear
+	}
+	if len(input.BestSeasons) > 0 {
+		updates["best_seasons"] = input.BestSeasons
+	}
+	if input.TrailConditions != nil {
+		updates["trail_conditions"] = *input.TrailConditions
+	}
+	if input.AccessibilityNotes != nil {
+		updates["accessibility_notes"] = *input.AccessibilityNotes
+	}
+	if input.ParkingInfo != nil {
+		updates["parking_info"] = input.ParkingInfo
+	}
+	if len(input.PermitsRequired) > 0 {
+		updates["permits_required"] = input.PermitsRequired
+	}
+	if len(input.Hazards) > 0 {
+		updates["hazards"] = input.Hazards
+	}
+	if input.EmergencyContacts != nil {
+		updates["emergency_contacts"] = input.EmergencyContacts
+	}
+	if input.Visibility != nil {
+		updates["visibility"] = *input.Visibility
+	}
+	if len(input.SharedWith) > 0 {
+		updates["shared_with"] = input.SharedWith
 	}
 	
 	if err := s.repo.Update(ctx, tripID, updates); err != nil {
 		return nil, fmt.Errorf("failed to update trip: %w", err)
 	}
 	
-	return trip, nil
+	// Get updated trip
+	updatedTrip, err := s.repo.GetByID(ctx, tripID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get updated trip: %w", err)
+	}
+	
+	return updatedTrip, nil
 }
 
 func (s *servicePg) Delete(ctx context.Context, userID, tripID string) error {

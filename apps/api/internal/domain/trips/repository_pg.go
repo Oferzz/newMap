@@ -30,13 +30,21 @@ func (r *PostgresRepository) Create(ctx context.Context, trip *Trip) error {
 	}
 	defer tx.Rollback()
 
-	// Insert trip
+	// Insert trip with all activity fields
 	query := `
 		INSERT INTO trips (
 			title, description, owner_id, cover_image, privacy, status,
-			start_date, end_date, timezone, tags
+			start_date, end_date, timezone, tags,
+			activity_type, difficulty_level, duration_hours, distance_km,
+			elevation_gain_m, max_elevation_m, route_type, route_geojson,
+			water_features, terrain_types, essential_gear, best_seasons,
+			trail_conditions, accessibility_notes, parking_info,
+			permits_required, hazards, emergency_contacts,
+			visibility, shared_with
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+			$11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+			$21, $22, $23, $24, $25, $26, $27, $28, $29, $30
 		) RETURNING id, created_at, updated_at`
 
 	err = tx.QueryRowContext(ctx, query,
@@ -50,6 +58,26 @@ func (r *PostgresRepository) Create(ctx context.Context, trip *Trip) error {
 		trip.EndDate,
 		trip.Timezone,
 		pq.Array(trip.Tags),
+		trip.ActivityType,
+		trip.DifficultyLevel,
+		trip.DurationHours,
+		trip.DistanceKm,
+		trip.ElevationGainM,
+		trip.MaxElevationM,
+		trip.RouteType,
+		trip.RouteGeoJSON,
+		pq.Array(trip.WaterFeatures),
+		pq.Array(trip.TerrainTypes),
+		pq.Array(trip.EssentialGear),
+		pq.Array(trip.BestSeasons),
+		trip.TrailConditions,
+		trip.AccessibilityNotes,
+		trip.ParkingInfo,
+		pq.Array(trip.PermitsRequired),
+		pq.Array(trip.Hazards),
+		trip.EmergencyContacts,
+		trip.Visibility,
+		pq.Array(trip.SharedWith),
 	).Scan(&trip.ID, &trip.CreatedAt, &trip.UpdatedAt)
 
 	if err != nil {
@@ -77,12 +105,19 @@ func (r *PostgresRepository) Create(ctx context.Context, trip *Trip) error {
 func (r *PostgresRepository) GetByID(ctx context.Context, id string) (*Trip, error) {
 	var trip Trip
 	
-	// Get trip
+	// Get trip with all activity fields
 	tripQuery := `
 		SELECT 
 			id, title, description, owner_id, cover_image, privacy, status,
 			start_date, end_date, timezone, tags, view_count, share_count,
-			suggestion_count, created_at, updated_at, deleted_at
+			suggestion_count, created_at, updated_at, deleted_at,
+			activity_type, difficulty_level, duration_hours, distance_km,
+			elevation_gain_m, max_elevation_m, route_type, route_geojson,
+			water_features, terrain_types, essential_gear, best_seasons,
+			trail_conditions, accessibility_notes, parking_info,
+			permits_required, hazards, emergency_contacts,
+			visibility, shared_with, completion_count, average_rating,
+			rating_count, featured, verified
 		FROM trips
 		WHERE id = $1 AND deleted_at IS NULL`
 
@@ -118,12 +153,19 @@ func (r *PostgresRepository) Update(ctx context.Context, id string, updates map[
 	args := []interface{}{id}
 	argCount := 2
 
+	// Array fields that need special handling
+	arrayFields := map[string]bool{
+		"tags": true, "water_features": true, "terrain_types": true,
+		"essential_gear": true, "best_seasons": true, "permits_required": true,
+		"hazards": true, "shared_with": true,
+	}
+
 	for field, value := range updates {
 		if setClause != "" {
 			setClause += ", "
 		}
 		// Handle array fields
-		if field == "tags" {
+		if arrayFields[field] {
 			setClause += fmt.Sprintf("%s = $%d", field, argCount)
 			args = append(args, pq.Array(value))
 		} else {
@@ -192,7 +234,14 @@ func (r *PostgresRepository) List(ctx context.Context, filters TripFilters) ([]*
 			t.id, t.title, t.description, t.owner_id, t.cover_image, 
 			t.privacy, t.status, t.start_date, t.end_date, t.timezone, 
 			t.tags, t.view_count, t.share_count, t.suggestion_count,
-			t.created_at, t.updated_at
+			t.created_at, t.updated_at,
+			t.activity_type, t.difficulty_level, t.duration_hours, t.distance_km,
+			t.elevation_gain_m, t.max_elevation_m, t.route_type, t.route_geojson,
+			t.water_features, t.terrain_types, t.essential_gear, t.best_seasons,
+			t.trail_conditions, t.accessibility_notes, t.parking_info,
+			t.permits_required, t.hazards, t.emergency_contacts,
+			t.visibility, t.shared_with, t.completion_count, t.average_rating,
+			t.rating_count, t.featured, t.verified
 		FROM trips t
 		WHERE t.deleted_at IS NULL`
 
@@ -240,6 +289,81 @@ func (r *PostgresRepository) List(ctx context.Context, filters TripFilters) ([]*
 		query += fmt.Sprintf(" AND t.start_date <= $%d", argCount)
 		args = append(args, filters.StartDateTo)
 		argCount++
+	}
+
+	// Activity-specific filters
+	if len(filters.ActivityTypes) > 0 {
+		query += fmt.Sprintf(" AND t.activity_type = ANY($%d)", argCount)
+		args = append(args, pq.Array(filters.ActivityTypes))
+		argCount++
+	}
+
+	if len(filters.DifficultyLevels) > 0 {
+		query += fmt.Sprintf(" AND t.difficulty_level = ANY($%d)", argCount)
+		args = append(args, pq.Array(filters.DifficultyLevels))
+		argCount++
+	}
+
+	if filters.MinDuration != nil {
+		query += fmt.Sprintf(" AND t.duration_hours >= $%d", argCount)
+		args = append(args, filters.MinDuration)
+		argCount++
+	}
+
+	if filters.MaxDuration != nil {
+		query += fmt.Sprintf(" AND t.duration_hours <= $%d", argCount)
+		args = append(args, filters.MaxDuration)
+		argCount++
+	}
+
+	if filters.MinDistance != nil {
+		query += fmt.Sprintf(" AND t.distance_km >= $%d", argCount)
+		args = append(args, filters.MinDistance)
+		argCount++
+	}
+
+	if filters.MaxDistance != nil {
+		query += fmt.Sprintf(" AND t.distance_km <= $%d", argCount)
+		args = append(args, filters.MaxDistance)
+		argCount++
+	}
+
+	if len(filters.WaterFeatures) > 0 {
+		query += fmt.Sprintf(" AND t.water_features && $%d", argCount)
+		args = append(args, pq.Array(filters.WaterFeatures))
+		argCount++
+	}
+
+	if len(filters.TerrainTypes) > 0 {
+		query += fmt.Sprintf(" AND t.terrain_types && $%d", argCount)
+		args = append(args, pq.Array(filters.TerrainTypes))
+		argCount++
+	}
+
+	if filters.Visibility != "" {
+		query += fmt.Sprintf(" AND t.visibility = $%d", argCount)
+		args = append(args, filters.Visibility)
+		argCount++
+	}
+
+	if filters.Featured != nil {
+		query += fmt.Sprintf(" AND t.featured = $%d", argCount)
+		args = append(args, *filters.Featured)
+		argCount++
+	}
+
+	if filters.Verified != nil {
+		query += fmt.Sprintf(" AND t.verified = $%d", argCount)
+		args = append(args, *filters.Verified)
+		argCount++
+	}
+
+	// Geospatial filters
+	if filters.NearLat != nil && filters.NearLng != nil && filters.RadiusKm != nil {
+		query += fmt.Sprintf(" AND ST_DWithin(t.route_geojson::geography, ST_MakePoint($%d, $%d)::geography, $%d)", 
+			argCount, argCount+1, argCount+2)
+		args = append(args, *filters.NearLng, *filters.NearLat, *filters.RadiusKm*1000) // Convert km to meters
+		argCount += 3
 	}
 
 	if filters.Search != "" {
