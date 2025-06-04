@@ -30,7 +30,10 @@ interface UIState {
   };
   routeCreationMode: {
     isActive: boolean;
-    waypoints: Array<{ id: string; coordinates: [number, number] }>;
+    waypoints: Array<{ id: string; coordinates: [number, number]; elevation?: number }>;
+    distance?: number;
+    elevationGain?: number;
+    elevationLoss?: number;
   };
   collectionsMode: {
     isAddingLocation: boolean;
@@ -66,6 +69,9 @@ const initialState: UIState = {
   routeCreationMode: {
     isActive: false,
     waypoints: [],
+    distance: 0,
+    elevationGain: 0,
+    elevationLoss: 0,
   },
   collectionsMode: {
     isAddingLocation: false,
@@ -156,13 +162,16 @@ const uiSlice = createSlice({
         position: null,
       };
     },
-    startRouteCreation: (state, action: PayloadAction<{ coordinates: [number, number] }>) => {
+    startRouteCreation: (state, action?: PayloadAction<{ coordinates?: [number, number] }>) => {
       state.routeCreationMode = {
         isActive: true,
-        waypoints: [{
+        waypoints: (action?.payload?.coordinates) ? [{
           id: Date.now().toString(),
           coordinates: action.payload.coordinates,
-        }],
+        }] : [],
+        distance: 0,
+        elevationGain: 0,
+        elevationLoss: 0,
       };
     },
     addRouteWaypoint: (state, action: PayloadAction<{ coordinates: [number, number] }>) => {
@@ -173,18 +182,27 @@ const uiSlice = createSlice({
         });
       }
     },
-    cancelRouteCreation: (state) => {
+    clearRouteCreation: (state) => {
       state.routeCreationMode = {
         isActive: false,
         waypoints: [],
+        distance: 0,
+        elevationGain: 0,
+        elevationLoss: 0,
       };
     },
+    removeRouteWaypoint: (state, action: PayloadAction<{ index: number }>) => {
+      if (state.routeCreationMode.isActive) {
+        state.routeCreationMode.waypoints.splice(action.payload.index, 1);
+      }
+    },
+    undoLastWaypoint: (state) => {
+      if (state.routeCreationMode.isActive && state.routeCreationMode.waypoints.length > 0) {
+        state.routeCreationMode.waypoints.pop();
+      }
+    },
     finishRouteCreation: (state) => {
-      state.routeCreationMode = {
-        isActive: false,
-        waypoints: [],
-      };
-      state.activePanel = 'trip-planning';
+      state.routeCreationMode.isActive = false;
     },
     startAddToCollection: (state, action: PayloadAction<{ coordinates: [number, number] }>) => {
       state.collectionsMode = {
@@ -223,7 +241,9 @@ export const {
   closeContextMenu,
   startRouteCreation,
   addRouteWaypoint,
-  cancelRouteCreation,
+  removeRouteWaypoint,
+  undoLastWaypoint,
+  clearRouteCreation,
   finishRouteCreation,
   startAddToCollection,
   cancelAddToCollection,

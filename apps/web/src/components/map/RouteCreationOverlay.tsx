@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
-import { cancelRouteCreation, finishRouteCreation } from '../../store/slices/uiSlice';
+import { clearRouteCreation, finishRouteCreation } from '../../store/slices/uiSlice';
 
 export const RouteCreationOverlay: React.FC = () => {
   const dispatch = useAppDispatch();
