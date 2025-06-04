@@ -17,9 +17,12 @@ import (
 	"github.com/Oferzz/newMap/apps/api/internal/domain/places"
 	"github.com/Oferzz/newMap/apps/api/internal/domain/trips"
 	"github.com/Oferzz/newMap/apps/api/internal/domain/users"
+	"github.com/Oferzz/newMap/apps/api/internal/elasticsearch"
 	"github.com/Oferzz/newMap/apps/api/internal/health"
 	"github.com/Oferzz/newMap/apps/api/internal/media"
 	"github.com/Oferzz/newMap/apps/api/internal/middleware"
+	"github.com/Oferzz/newMap/apps/api/internal/nlp"
+	"github.com/Oferzz/newMap/apps/api/internal/search"
 	"github.com/Oferzz/newMap/apps/api/internal/utils"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -102,12 +105,24 @@ func main() {
 	mediaService := media.NewService(db.DB, mediaStorage)
 	collectionService := collections.NewService(collectionRepo)
 
+	// Initialize Elasticsearch and search services
+	esClient, err := elasticsearch.NewClient()
+	if err != nil {
+		log.Printf("Warning: Failed to connect to Elasticsearch, search will use fallback: %v", err)
+	} else {
+		log.Println("Elasticsearch client initialized")
+	}
+
+	nlpParser := nlp.NewParser()
+	searchService := search.NewService(esClient, nlpParser)
+
 	// Initialize handlers
 	userHandler := users.NewHandler(userService)
 	tripHandler := trips.NewHandler(tripService)
 	placeHandler := places.NewHandler(placeService)
 	mediaHandler := media.NewHandler(mediaService)
 	collectionHandler := collections.NewHandler(collectionService)
+	searchHandler := search.NewHandler(searchService)
 	healthHandler := health.NewHandler(db.DB, redisClient)
 
 	// Initialize middleware
@@ -115,7 +130,7 @@ func main() {
 	rbacMiddleware := middleware.NewRBACMiddleware(userRepo, tripRepo)
 
 	// Setup router
-	router := setupRouter(cfg, userHandler, tripHandler, placeHandler, mediaHandler, collectionHandler, healthHandler, authMiddleware, rbacMiddleware, mediaStorage)
+	router := setupRouter(cfg, userHandler, tripHandler, placeHandler, mediaHandler, collectionHandler, searchHandler, healthHandler, authMiddleware, rbacMiddleware, mediaStorage)
 
 	// Create server
 	srv := &http.Server{
@@ -151,7 +166,7 @@ func main() {
 	log.Println("Server exited")
 }
 
-func setupRouter(cfg *config.Config, userHandler *users.Handler, tripHandler *trips.Handler, placeHandler *places.Handler, mediaHandler *media.Handler, collectionHandler *collections.Handler, healthHandler *health.Handler, authMiddleware *middleware.AuthMiddleware, rbacMiddleware *middleware.RBACMiddleware, mediaStorage media.Storage) *gin.Engine {
+func setupRouter(cfg *config.Config, userHandler *users.Handler, tripHandler *trips.Handler, placeHandler *places.Handler, mediaHandler *media.Handler, collectionHandler *collections.Handler, searchHandler *search.Handler, healthHandler *health.Handler, authMiddleware *middleware.AuthMiddleware, rbacMiddleware *middleware.RBACMiddleware, mediaStorage media.Storage) *gin.Engine {
 	if cfg.Server.Environment == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -269,6 +284,9 @@ func setupRouter(cfg *config.Config, userHandler *users.Handler, tripHandler *tr
 				collectionRoutes.DELETE("/:id/collaborators/:userId", collectionHandler.RemoveCollaborator)
 			}
 		}
+
+		// Search routes (public with optional auth)
+		searchHandler.RegisterRoutes(v1, authMiddleware.OptionalAuth())
 
 		// Media routes
 		mediaRoutes := v1.Group("/media")
