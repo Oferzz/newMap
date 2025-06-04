@@ -41,6 +41,11 @@ services:
         sync: false # Set manually in Render dashboard
       - key: ALLOWED_ORIGINS
         value: https://newmap-fe.onrender.com,http://localhost:3000,http://localhost:5173
+      - key: ELASTICSEARCH_URL
+        fromService:
+          name: newMap-elasticsearch
+          type: web
+          property: hostURL
     disk:
       name: media-storage
       mountPath: /data
@@ -81,6 +86,33 @@ services:
         value: https://newmap-qojk.onrender.com/api/v1
       - key: VITE_MAPBOX_TOKEN
         sync: false # Set manually in Render dashboard
+
+  # Elasticsearch Service  
+  - type: web
+    name: newMap-elasticsearch
+    runtime: docker
+    dockerfilePath: ./services/elasticsearch/Dockerfile
+    dockerContext: .
+    repo: https://github.com/Oferzz/newMap
+    branch: main
+    buildFilter:
+      paths:
+        - services/elasticsearch/**
+    envVars:
+      - key: ES_JAVA_OPTS
+        value: "-Xms512m -Xmx512m"
+      - key: discovery.type
+        value: single-node
+      - key: xpack.security.enabled
+        value: "false"
+    disk:
+      name: elasticsearch-data
+      mountPath: /usr/share/elasticsearch/data
+      sizeGB: 10
+    plan: starter
+    scaling:
+      minInstances: 1
+      maxInstances: 1
 
   # Redis Cache Service (Render Key-Value)
   - type: redis
