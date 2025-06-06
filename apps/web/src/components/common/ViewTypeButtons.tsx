@@ -1,7 +1,7 @@
 import React from 'react';
-import { MapIcon, List, Grid3x3, Calendar } from 'lucide-react';
+import { MapIcon, List, Grid3x3 } from 'lucide-react';
 
-export type ViewType = 'map' | 'list' | 'grid' | 'calendar';
+export type ViewType = 'map' | 'list' | 'grid';
 
 interface ViewTypeButtonsProps {
   activeView: ViewType;
@@ -13,7 +13,6 @@ export const ViewTypeButtons: React.FC<ViewTypeButtonsProps> = ({ activeView, on
     { type: 'map', icon: <MapIcon className="w-4 h-4" />, label: 'Map' },
     { type: 'list', icon: <List className="w-4 h-4" />, label: 'List' },
     { type: 'grid', icon: <Grid3x3 className="w-4 h-4" />, label: 'Grid' },
-    { type: 'calendar', icon: <Calendar className="w-4 h-4" />, label: 'Calendar' },
   ];
 
   return (
