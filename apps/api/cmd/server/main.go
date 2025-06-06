@@ -297,6 +297,14 @@ func setupRouter(cfg *config.Config, userHandler *users.Handler, tripHandler *tr
 		// Search routes (public with optional auth)
 		searchHandler.RegisterRoutes(v1, authMiddleware.OptionalAuth())
 
+
+		// Public Cloudinary endpoints (no auth required)
+		cloudinaryRoutes := v1.Group("/media")
+		{
+			cloudinaryRoutes.POST("/cloudinary/sign", media.SignCloudinaryURL)
+			cloudinaryRoutes.GET("/cloudinary/config", media.GetCloudinaryConfig)
+			cloudinaryRoutes.POST("/cloudinary/list", media.ListCloudinaryImages)
+		}
 		// Media routes
 		mediaRoutes := v1.Group("/media")
 		{
