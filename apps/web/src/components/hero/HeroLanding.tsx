@@ -101,7 +101,7 @@ export const HeroLanding: React.FC<HeroLandingProps> = ({ className = '' }) => {
         <img
           src={imageUrl}
           alt={currentPhoto.altText}
-          className={`w-full h-full object-cover transition-opacity duration-1000 ${
+          className={`hero-image w-full h-full object-cover transition-opacity duration-1000 ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           onLoad={handleImageLoad}
@@ -141,8 +141,8 @@ export const HeroLanding: React.FC<HeroLandingProps> = ({ className = '' }) => {
       </div>
 
       {/* Subtle Ken Burns effect */}
-      <style jsx>{`
-        img {
+      <style>{`
+        .hero-image {
           animation: kenBurns 20s ease-in-out infinite alternate;
         }
         

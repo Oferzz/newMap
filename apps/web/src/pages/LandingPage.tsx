@@ -17,7 +17,7 @@ export const LandingPage: React.FC = () => {
     dispatch(searchAllThunk({ query, filters }));
   };
 
-  const handleSearchResultSelect = (result: SearchResult) => {
+  const handleSearchResultSelect = (_result: SearchResult) => {
     // Navigate to map view and select result
     navigate('/map');
     // Handle result selection (this will be managed by the map view)
