@@ -214,6 +214,8 @@ export const fetchFolderImages = async (folderName: string, maxImages: number = 
  */
 export const fetchCollectionImages = async (collectionId: string, maxImages: number = 100): Promise<CloudinaryImage[]> => {
   try {
+    console.log('Fetching collection images:', { collectionId, maxImages, apiUrl: `${API_BASE_URL}/api/v1/media/cloudinary/list` });
+    
     const response = await fetch(`${API_BASE_URL}/api/v1/media/cloudinary/list`, {
       method: 'POST',
       headers: {
@@ -225,12 +227,21 @@ export const fetchCollectionImages = async (collectionId: string, maxImages: num
       })
     });
 
+    console.log('Collection API response status:', response.status);
+    
     if (!response.ok) {
-      throw new Error('Failed to fetch collection images');
+      const errorText = await response.text();
+      console.error('Collection API error response:', errorText);
+      throw new Error(`Failed to fetch collection images: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    return data.data.images || [];
+    console.log('Collection API response data:', data);
+    
+    const images = data.data?.images || [];
+    console.log('Extracted images from response:', images.length, 'images');
+    
+    return images;
   } catch (error) {
     console.error('Error fetching collection images:', error);
     return [];

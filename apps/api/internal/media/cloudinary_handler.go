@@ -334,8 +334,12 @@ func listCollectionImages(cloudName, apiKey, apiSecret, collectionName string, m
 	params := url.Values{}
 	params.Set("max_results", strconv.Itoa(maxImages))
 	
+	fullURL := apiURL + "?" + params.Encode()
+	fmt.Printf("Making request to Cloudinary collection API: %s\n", fullURL)
+	fmt.Printf("Using credentials - Cloud Name: %s, API Key: %s, Collection: %s\n", cloudName, apiKey, collectionName)
+	
 	// Create HTTP request
-	req, err := http.NewRequest("GET", apiURL+"?"+params.Encode(), nil)
+	req, err := http.NewRequest("GET", fullURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -351,16 +355,22 @@ func listCollectionImages(cloudName, apiKey, apiSecret, collectionName string, m
 	}
 	defer resp.Body.Close()
 	
+	// Read response body for debugging
+	body, _ := io.ReadAll(resp.Body)
+	fmt.Printf("Cloudinary API response status: %d\n", resp.StatusCode)
+	fmt.Printf("Cloudinary API response body: %s\n", string(body))
+	
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("cloudinary API error (status %d): %s", resp.StatusCode, string(body))
 	}
 	
 	// Parse response
 	var listResp CloudinaryListResponse
-	if err := json.NewDecoder(resp.Body).Decode(&listResp); err != nil {
+	if err := json.Unmarshal(body, &listResp); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
+	
+	fmt.Printf("Parsed %d resources from Cloudinary response\n", len(listResp.Resources))
 	
 	// Convert to our format
 	images := make([]CloudinaryImage, len(listResp.Resources))
