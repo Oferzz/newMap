@@ -281,7 +281,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
           </div>
         </div>
       ) : (
-        <div className={`${viewMode === 'list' ? 'w-32 h-24' : 'h-48'} bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center relative`}>
+        <div className={`${viewMode === 'list' ? 'w-32 h-24' : 'h-48'} bg-gray-300 flex items-center justify-center relative`}>
           <MapPin className="w-12 h-12 text-white" />
           <div className="absolute top-2 right-2 flex gap-1">
             {getTripIcon(trip.status)}
@@ -346,7 +346,7 @@ export const ExplorePage: React.FC<ExplorePageProps> = ({
           />
         </div>
       ) : (
-        <div className={`${viewMode === 'list' ? 'w-32 h-24' : 'h-48'} bg-gradient-to-br from-green-500 to-blue-600 flex items-center justify-center`}>
+        <div className={`${viewMode === 'list' ? 'w-32 h-24' : 'h-48'} bg-gray-300 flex items-center justify-center`}>
           <MapPin className="w-12 h-12 text-white" />
         </div>
       )}

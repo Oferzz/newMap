@@ -155,7 +155,7 @@ export const TripsPanel: React.FC<TripsPanelProps> = ({ isOpen, onClose }) => {
       {/* Panel Content */}
       <div className="absolute top-16 left-0 w-96 h-[calc(100vh-4rem)] bg-white shadow-2xl z-40 flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
+      <div className="p-4 border-b bg-indigo-600 text-white">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xl font-bold">My Trips</h2>
           <button

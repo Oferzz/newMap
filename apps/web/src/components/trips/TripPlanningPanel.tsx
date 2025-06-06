@@ -217,7 +217,7 @@ export const TripPlanningPanel: React.FC<TripPlanningPanelProps> = ({ isOpen, on
       {/* Panel Content */}
       <div className="absolute top-16 right-0 w-96 h-[calc(100vh-4rem)] bg-white shadow-2xl z-40 flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
+      <div className="p-4 border-b bg-indigo-600 text-white">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-xl font-bold">{trip.title}</h2>
           <div className="flex items-center gap-2">
