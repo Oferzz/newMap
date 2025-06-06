@@ -1,11 +1,12 @@
 import React from 'react';
 import { Search, Plus, User, Menu, MapPin, LogIn, LogOut, Compass } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { NaturalLanguageSearchBar } from '../search/NaturalLanguageSearchBar';
 import { MobileMenu } from './MobileMenu';
+import { ViewTypeButtons } from '../common';
 import { searchAllThunk } from '../../store/thunks/search.thunks';
-import { setActivePanel } from '../../store/slices/uiSlice';
+import { setActivePanel, setViewType } from '../../store/slices/uiSlice';
 import { SearchResult } from '../../types';
 import { logout } from '../../store/slices/authSlice';
 
@@ -23,12 +24,17 @@ export const Header: React.FC<HeaderProps> = ({
   onContentTypeChange 
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+  const viewType = useAppSelector((state) => state.ui.viewType);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [showProfileMenu, setShowProfileMenu] = React.useState(false);
   const profileMenuRef = React.useRef<HTMLDivElement>(null);
+  
+  // Show view type buttons on home page or explore page
+  const showViewTypeButtons = location.pathname === '/' || location.pathname === '/explore';
 
   // Close profile menu when clicking outside
   React.useEffect(() => {
@@ -203,6 +209,16 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
       </div>
+
+      {/* View Type Buttons - Below search bar */}
+      {showViewTypeButtons && (
+        <div className="hidden md:block absolute left-1/2 top-20 transform -translate-x-1/2 z-40">
+          <ViewTypeButtons
+            activeView={viewType}
+            onViewChange={(view) => dispatch(setViewType(view))}
+          />
+        </div>
+      )}
 
       {/* Content Type Toggles - Part of header for explore page */}
       {showContentTypeButtons && (

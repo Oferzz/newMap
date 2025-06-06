@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Trip } from './tripsSlice';
 import { Place } from '../../types';
 import { SearchResults } from '../../types';
+import { ViewType } from '../../components/common/ViewTypeButtons';
 
 interface MapViewState {
   center: [number, number];
@@ -47,6 +48,7 @@ interface UIState {
     message: string;
     timestamp: number;
   }>;
+  viewType: ViewType;
 }
 
 const initialState: UIState = {
@@ -80,6 +82,7 @@ const initialState: UIState = {
   isMobileMenuOpen: false,
   isLoading: false,
   notifications: [],
+  viewType: 'map',
 };
 
 const uiSlice = createSlice({
@@ -222,6 +225,9 @@ const uiSlice = createSlice({
         locationToAdd: null,
       };
     },
+    setViewType: (state, action: PayloadAction<ViewType>) => {
+      state.viewType = action.payload;
+    },
   },
 });
 
@@ -252,6 +258,7 @@ export const {
   finishRouteCreation,
   startAddToCollection,
   cancelAddToCollection,
+  setViewType,
 } = uiSlice.actions;
 
 export default uiSlice.reducer;
