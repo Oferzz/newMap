@@ -73,7 +73,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className={`fixed top-0 left-0 right-0 bg-white z-50 shadow-sm border-b border-gray-200`}>
+    <header className={`fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md z-50 shadow-sm border-b border-gray-200`}>
       <div className="h-16 px-4 flex items-center justify-between relative">
         {/* Logo */}
         <div className="flex items-center z-10">
@@ -144,7 +144,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
                 
                 {showProfileMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-300 py-1">
+                  <div className="absolute right-0 mt-2 w-48 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-gray-300 py-1">
                     <div className="px-4 py-2 border-b border-gray-300">
                       <p className="text-sm font-medium text-gray-800">{user?.displayName}</p>
                       <p className="text-xs text-gray-600">{user?.email}</p>
@@ -214,7 +214,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Content Type Toggles - Part of header for explore page */}
       {showContentTypeButtons && (
-        <div className="bg-white -mt-1">
+        <div className="bg-white/80 backdrop-blur-md -mt-1">
           <div className="flex justify-center py-0.5">
             <div className="flex items-center gap-6">
               {(['all', 'trips', 'places'] as ContentType[]).map((type) => (
