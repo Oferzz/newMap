@@ -1,12 +1,32 @@
 import { CloudinaryTransformation } from '../types/hero.types';
 
-// Cloudinary configuration
-const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'demo';
-const CLOUDINARY_API_KEY = import.meta.env.VITE_CLOUDINARY_API_KEY;
-const CLOUDINARY_BASE_URL = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}`;
-
-// For private images, we need to generate signed URLs via backend
+// API configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+// Cloudinary configuration - will be fetched from backend
+let CLOUDINARY_CLOUD_NAME = 'demo'; // fallback
+let CLOUDINARY_BASE_URL = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}`;
+
+// Fetch Cloudinary configuration from backend
+const fetchCloudinaryConfig = async (): Promise<string> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1/media/cloudinary/config`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch Cloudinary config');
+    }
+    const data = await response.json();
+    const cloudName = data.data.cloudName;
+    
+    // Update global configuration
+    CLOUDINARY_CLOUD_NAME = cloudName;
+    CLOUDINARY_BASE_URL = `https://res.cloudinary.com/${cloudName}`;
+    
+    return cloudName;
+  } catch (error) {
+    console.warn('Failed to fetch Cloudinary config, using fallback:', error);
+    return CLOUDINARY_CLOUD_NAME;
+  }
+};
 
 /**
  * Generate Cloudinary URL with transformations
@@ -103,6 +123,9 @@ export const getSignedImageUrl = async (
   transformations: CloudinaryTransformation = {}
 ): Promise<string> => {
   try {
+    // Ensure we have the latest Cloudinary configuration
+    await fetchCloudinaryConfig();
+    
     const response = await fetch(`${API_BASE_URL}/api/v1/media/cloudinary/sign`, {
       method: 'POST',
       headers: {

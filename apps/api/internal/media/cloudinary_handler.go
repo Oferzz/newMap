@@ -32,13 +32,18 @@ func SignCloudinaryURL(c *gin.Context) {
 		return
 	}
 
-	// Get Cloudinary credentials from environment
-	cloudName := os.Getenv("CLOUDINARY_CLOUD_NAME")
-	apiKey := os.Getenv("CLOUDINARY_API_KEY")
-	apiSecret := os.Getenv("CLOUDINARY_API_SECRET")
+	// Get Cloudinary credentials from CLOUDINARY_TOKEN environment variable
+	// Expected format: cloudinary://api_key:api_secret@cloud_name
+	cloudinaryToken := os.Getenv("CLOUDINARY_TOKEN")
+	if cloudinaryToken == "" {
+		response.Error(c, http.StatusInternalServerError, "CLOUDINARY_TOKEN environment variable not set", nil)
+		return
+	}
 
-	if cloudName == "" || apiKey == "" || apiSecret == "" {
-		response.Error(c, http.StatusInternalServerError, "Cloudinary configuration missing", nil)
+	// Parse the Cloudinary URL
+	cloudName, apiKey, apiSecret, err := parseCloudinaryToken(cloudinaryToken)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Invalid CLOUDINARY_TOKEN format", err)
 		return
 	}
 
@@ -139,4 +144,37 @@ func generateSignature(params map[string]string, apiSecret string) string {
 	signature := fmt.Sprintf("%x", hash.Sum(nil))
 
 	return signature
+}
+
+// parseCloudinaryToken parses the CLOUDINARY_TOKEN environment variable
+// Expected format: cloudinary://api_key:api_secret@cloud_name
+func parseCloudinaryToken(token string) (cloudName, apiKey, apiSecret string, err error) {
+	// Remove the cloudinary:// prefix if present
+	if strings.HasPrefix(token, "cloudinary://") {
+		token = strings.TrimPrefix(token, "cloudinary://")
+	}
+	
+	// Split by @ to separate credentials from cloud name
+	parts := strings.Split(token, "@")
+	if len(parts) != 2 {
+		return "", "", "", fmt.Errorf("invalid token format: expected format cloudinary://api_key:api_secret@cloud_name")
+	}
+	
+	cloudName = parts[1]
+	credentials := parts[0]
+	
+	// Split credentials by : to separate api_key from api_secret
+	credParts := strings.Split(credentials, ":")
+	if len(credParts) != 2 {
+		return "", "", "", fmt.Errorf("invalid credentials format: expected api_key:api_secret")
+	}
+	
+	apiKey = credParts[0]
+	apiSecret = credParts[1]
+	
+	if cloudName == "" || apiKey == "" || apiSecret == "" {
+		return "", "", "", fmt.Errorf("missing required credentials: cloud_name, api_key, and api_secret are all required")
+	}
+	
+	return cloudName, apiKey, apiSecret, nil
 }
