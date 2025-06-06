@@ -17,14 +17,14 @@ func GetCloudinaryConfig(c *gin.Context) {
 	// Get Cloudinary credentials from CLOUDINARY_URL environment variable
 	cloudinaryURL := os.Getenv("CLOUDINARY_URL")
 	if cloudinaryURL == "" {
-		response.Error(c, http.StatusInternalServerError, "CLOUDINARY_URL environment variable not set", nil)
+		response.InternalServerError(c, "CLOUDINARY_URL environment variable not set")
 		return
 	}
 
 	// Parse the Cloudinary URL to extract cloud name
 	cloudName, _, _, err := parseCloudinaryToken(cloudinaryURL)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, "Invalid CLOUDINARY_URL format", err)
+		response.InternalServerError(c, "Invalid CLOUDINARY_URL format: "+err.Error())
 		return
 	}
 

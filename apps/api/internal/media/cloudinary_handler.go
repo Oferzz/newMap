@@ -57,7 +57,7 @@ type CloudinaryListResponse struct {
 func SignCloudinaryURL(c *gin.Context) {
 	var req CloudinarySignRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, http.StatusBadRequest, "Invalid request format", err)
+		response.BadRequest(c, "Invalid request format: "+err.Error())
 		return
 	}
 
@@ -65,14 +65,14 @@ func SignCloudinaryURL(c *gin.Context) {
 	// Expected format: cloudinary://api_key:api_secret@cloud_name
 	cloudinaryURL := os.Getenv("CLOUDINARY_URL")
 	if cloudinaryURL == "" {
-		response.Error(c, http.StatusInternalServerError, "CLOUDINARY_URL environment variable not set", nil)
+		response.InternalServerError(c, "CLOUDINARY_URL environment variable not set")
 		return
 	}
 
 	// Parse the Cloudinary URL
 	cloudName, apiKey, apiSecret, err := parseCloudinaryToken(cloudinaryURL)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, "Invalid CLOUDINARY_URL format", err)
+		response.InternalServerError(c, "Invalid CLOUDINARY_URL format: "+err.Error())
 		return
 	}
 
@@ -212,21 +212,21 @@ func parseCloudinaryToken(token string) (cloudName, apiKey, apiSecret string, er
 func ListCloudinaryImages(c *gin.Context) {
 	var req CloudinaryListRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, http.StatusBadRequest, "Invalid request format", err)
+		response.BadRequest(c, "Invalid request format: "+err.Error())
 		return
 	}
 
 	// Get Cloudinary credentials from CLOUDINARY_URL environment variable
 	cloudinaryURL := os.Getenv("CLOUDINARY_URL")
 	if cloudinaryURL == "" {
-		response.Error(c, http.StatusInternalServerError, "CLOUDINARY_URL environment variable not set", nil)
+		response.InternalServerError(c, "CLOUDINARY_URL environment variable not set")
 		return
 	}
 
 	// Parse the Cloudinary URL
 	cloudName, apiKey, apiSecret, err := parseCloudinaryToken(cloudinaryURL)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, "Invalid CLOUDINARY_URL format", err)
+		response.InternalServerError(c, "Invalid CLOUDINARY_URL format: "+err.Error())
 		return
 	}
 
@@ -239,7 +239,7 @@ func ListCloudinaryImages(c *gin.Context) {
 	// Call Cloudinary Admin API to list resources
 	images, err := listFolderImages(cloudName, apiKey, apiSecret, req.Folder, maxImages)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, "Failed to fetch images from Cloudinary", err)
+		response.InternalServerError(c, "Failed to fetch images from Cloudinary: "+err.Error())
 		return
 	}
 
