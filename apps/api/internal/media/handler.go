@@ -33,6 +33,7 @@ func (h *Handler) RegisterRoutes(router *gin.RouterGroup) {
 		// Cloudinary endpoints (public - no auth required for hero images)
 		media.POST("/cloudinary/sign", SignCloudinaryURL)
 		media.GET("/cloudinary/config", GetCloudinaryConfig)
+		media.POST("/cloudinary/list", ListCloudinaryImages)
 	}
 }
 

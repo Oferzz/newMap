@@ -2,8 +2,11 @@ package media
 
 import (
 	"crypto/sha1"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"sort"
 	"strconv"
@@ -19,9 +22,35 @@ type CloudinarySignRequest struct {
 	Transformations map[string]interface{} `json:"transformations"`
 }
 
+type CloudinaryListRequest struct {
+	Folder    string `json:"folder" binding:"required"`
+	MaxImages int    `json:"maxImages"`
+}
+
 type CloudinarySignResponse struct {
 	SignedURL string `json:"signedUrl"`
 	PublicID  string `json:"publicId"`
+}
+
+type CloudinaryImage struct {
+	PublicID  string `json:"publicId"`
+	Format    string `json:"format"`
+	Width     int    `json:"width"`
+	Height    int    `json:"height"`
+	CreatedAt string `json:"createdAt"`
+	Tags      []string `json:"tags,omitempty"`
+}
+
+type CloudinaryListResponse struct {
+	Resources []struct {
+		PublicID  string   `json:"public_id"`
+		Format    string   `json:"format"`
+		Width     int      `json:"width"`
+		Height    int      `json:"height"`
+		CreatedAt string   `json:"created_at"`
+		Tags      []string `json:"tags"`
+	} `json:"resources"`
+	NextCursor string `json:"next_cursor,omitempty"`
 }
 
 // SignCloudinaryURL generates a signed URL for private Cloudinary images
@@ -177,4 +206,101 @@ func parseCloudinaryToken(token string) (cloudName, apiKey, apiSecret string, er
 	}
 	
 	return cloudName, apiKey, apiSecret, nil
+}
+
+// ListCloudinaryImages fetches images from a specific folder
+func ListCloudinaryImages(c *gin.Context) {
+	var req CloudinaryListRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, "Invalid request format", err)
+		return
+	}
+
+	// Get Cloudinary credentials from CLOUDINARY_URL environment variable
+	cloudinaryURL := os.Getenv("CLOUDINARY_URL")
+	if cloudinaryURL == "" {
+		response.Error(c, http.StatusInternalServerError, "CLOUDINARY_URL environment variable not set", nil)
+		return
+	}
+
+	// Parse the Cloudinary URL
+	cloudName, apiKey, apiSecret, err := parseCloudinaryToken(cloudinaryURL)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Invalid CLOUDINARY_URL format", err)
+		return
+	}
+
+	// Set default max images if not specified
+	maxImages := req.MaxImages
+	if maxImages <= 0 || maxImages > 500 {
+		maxImages = 100
+	}
+
+	// Call Cloudinary Admin API to list resources
+	images, err := listFolderImages(cloudName, apiKey, apiSecret, req.Folder, maxImages)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, "Failed to fetch images from Cloudinary", err)
+		return
+	}
+
+	response.Success(c, map[string]interface{}{
+		"images": images,
+		"folder": req.Folder,
+		"count":  len(images),
+	})
+}
+
+// listFolderImages calls Cloudinary Admin API to list images in a folder
+func listFolderImages(cloudName, apiKey, apiSecret, folder string, maxImages int) ([]CloudinaryImage, error) {
+	// Build the Admin API URL
+	apiURL := fmt.Sprintf("https://api.cloudinary.com/v1_1/%s/resources/image", cloudName)
+	
+	// Prepare query parameters
+	params := url.Values{}
+	params.Set("type", "upload")
+	params.Set("prefix", folder+"/") // folder prefix
+	params.Set("max_results", strconv.Itoa(maxImages))
+	
+	// Create HTTP request
+	req, err := http.NewRequest("GET", apiURL+"?"+params.Encode(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	
+	// Add basic auth
+	req.SetBasicAuth(apiKey, apiSecret)
+	
+	// Make the request
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+	
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("cloudinary API error (status %d): %s", resp.StatusCode, string(body))
+	}
+	
+	// Parse response
+	var listResp CloudinaryListResponse
+	if err := json.NewDecoder(resp.Body).Decode(&listResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+	
+	// Convert to our format
+	images := make([]CloudinaryImage, len(listResp.Resources))
+	for i, resource := range listResp.Resources {
+		images[i] = CloudinaryImage{
+			PublicID:  resource.PublicID,
+			Format:    resource.Format,
+			Width:     resource.Width,
+			Height:    resource.Height,
+			CreatedAt: resource.CreatedAt,
+			Tags:      resource.Tags,
+		}
+	}
+	
+	return images, nil
 }

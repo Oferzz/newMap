@@ -180,3 +180,41 @@ export const getSignedThumbnailUrl = async (publicId: string): Promise<string> =
     format: 'auto'
   });
 };
+
+/**
+ * Fetch images from a Cloudinary folder
+ */
+export const fetchFolderImages = async (folderName: string, maxImages: number = 100): Promise<CloudinaryImage[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1/media/cloudinary/list`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        folder: folderName,
+        maxImages: maxImages
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch folder images');
+    }
+
+    const data = await response.json();
+    return data.data.images || [];
+  } catch (error) {
+    console.error('Error fetching folder images:', error);
+    return [];
+  }
+};
+
+// Type for Cloudinary image from backend
+interface CloudinaryImage {
+  publicId: string;
+  format: string;
+  width: number;
+  height: number;
+  createdAt: string;
+  tags?: string[];
+}

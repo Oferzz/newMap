@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Camera } from 'lucide-react';
-import { getCurrentHeroPhoto, getNextHeroPhoto } from '../../data/heroPhotos';
+import { getCurrentHeroPhoto, getNextHeroPhoto } from '../../data/dynamicHeroPhotos';
 import { getSignedHeroImageUrl, getSignedThumbnailUrl } from '../../services/cloudinary.service';
 import { HeroPhoto } from '../../types/hero.types';
 
@@ -9,15 +9,31 @@ interface HeroLandingProps {
 }
 
 export const HeroLanding: React.FC<HeroLandingProps> = ({ className = '' }) => {
-  const [currentPhoto, setCurrentPhoto] = useState<HeroPhoto>(getCurrentHeroPhoto());
+  const [currentPhoto, setCurrentPhoto] = useState<HeroPhoto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [nextPhotoPreloaded, setNextPhotoPreloaded] = useState(false);
   const [imageUrl, setImageUrl] = useState<string>('');
   const [thumbnailUrl, setThumbnailUrl] = useState<string>('');
 
+  // Initial photo loading
+  useEffect(() => {
+    const loadInitialPhoto = async () => {
+      try {
+        const photo = await getCurrentHeroPhoto();
+        setCurrentPhoto(photo);
+      } catch (error) {
+        console.error('Failed to load initial photo:', error);
+      }
+    };
+
+    loadInitialPhoto();
+  }, []);
+
   // Load signed URLs when photo changes
   useEffect(() => {
+    if (!currentPhoto) return;
+
     const loadSignedUrls = async () => {
       setIsLoading(true);
       try {
@@ -33,33 +49,34 @@ export const HeroLanding: React.FC<HeroLandingProps> = ({ className = '' }) => {
     };
 
     loadSignedUrls();
-  }, [currentPhoto.cloudinaryId]);
+  }, [currentPhoto?.cloudinaryId]);
 
   // Update photo based on current hour
   useEffect(() => {
-    const updatePhoto = () => {
-      const newPhoto = getCurrentHeroPhoto();
-      if (newPhoto.id !== currentPhoto.id) {
-        setImageLoaded(false);
-        setCurrentPhoto(newPhoto);
+    const updatePhoto = async () => {
+      try {
+        const newPhoto = await getCurrentHeroPhoto();
+        if (!currentPhoto || newPhoto.id !== currentPhoto.id) {
+          setImageLoaded(false);
+          setCurrentPhoto(newPhoto);
+        }
+      } catch (error) {
+        console.error('Failed to update photo:', error);
       }
     };
 
     // Check for photo update every minute
     const interval = setInterval(updatePhoto, 60 * 1000);
     
-    // Also check on mount in case hour changed since initial load
-    updatePhoto();
-
     return () => clearInterval(interval);
-  }, [currentPhoto.id]);
+  }, [currentPhoto?.id]);
 
   // Preload next photo
   useEffect(() => {
     if (imageLoaded && !nextPhotoPreloaded) {
       const preloadNext = async () => {
         try {
-          const nextPhoto = getNextHeroPhoto();
+          const nextPhoto = await getNextHeroPhoto();
           const nextUrl = await getSignedHeroImageUrl(nextPhoto.cloudinaryId, 1920, 1080);
           const img = new Image();
           img.onload = () => setNextPhotoPreloaded(true);
@@ -79,7 +96,7 @@ export const HeroLanding: React.FC<HeroLandingProps> = ({ className = '' }) => {
 
   const handleImageError = () => {
     setIsLoading(false);
-    console.error('Failed to load hero image:', currentPhoto.cloudinaryId);
+    console.error('Failed to load hero image:', currentPhoto?.cloudinaryId);
   };
 
   return (
@@ -100,7 +117,7 @@ export const HeroLanding: React.FC<HeroLandingProps> = ({ className = '' }) => {
       {imageUrl && (
         <img
           src={imageUrl}
-          alt={currentPhoto.altText}
+          alt={currentPhoto?.altText || 'Adventure landscape'}
           className={`hero-image w-full h-full object-cover transition-opacity duration-1000 ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
@@ -114,31 +131,33 @@ export const HeroLanding: React.FC<HeroLandingProps> = ({ className = '' }) => {
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40" />
 
       {/* Photo credit */}
-      <div className="absolute bottom-4 right-4 z-20">
-        <div className="bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2 text-white text-sm">
-          <div className="flex items-center gap-2 mb-1">
-            <MapPin className="w-3 h-3" />
-            <span className="font-medium">{currentPhoto.location}</span>
-            <span className="text-white/70">•</span>
-            <span className="text-white/70">{currentPhoto.country}</span>
-          </div>
-          <div className="flex items-center gap-1 text-xs text-white/80">
-            <Camera className="w-3 h-3" />
-            {currentPhoto.photographerUrl ? (
-              <a 
-                href={currentPhoto.photographerUrl} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="hover:text-white transition-colors"
-              >
-                {currentPhoto.photographer}
-              </a>
-            ) : (
-              <span>{currentPhoto.photographer}</span>
-            )}
+      {currentPhoto && (
+        <div className="absolute bottom-4 right-4 z-20">
+          <div className="bg-black/50 backdrop-blur-sm rounded-lg px-3 py-2 text-white text-sm">
+            <div className="flex items-center gap-2 mb-1">
+              <MapPin className="w-3 h-3" />
+              <span className="font-medium">{currentPhoto.location}</span>
+              <span className="text-white/70">•</span>
+              <span className="text-white/70">{currentPhoto.country}</span>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-white/80">
+              <Camera className="w-3 h-3" />
+              {currentPhoto.photographerUrl ? (
+                <a 
+                  href={currentPhoto.photographerUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="hover:text-white transition-colors"
+                >
+                  {currentPhoto.photographer}
+                </a>
+              ) : (
+                <span>{currentPhoto.photographer}</span>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Subtle Ken Burns effect */}
       <style>{`
