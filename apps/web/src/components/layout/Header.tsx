@@ -73,7 +73,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className={`fixed top-0 left-0 right-0 bg-white/60 backdrop-blur-lg z-50 shadow-sm border-b border-gray-200/50`}>
+    <header className={`fixed top-0 left-0 right-0 bg-white/60 backdrop-blur-lg z-50 border-b border-gray-200/50`}>
       <div className="h-16 px-4 flex items-center justify-between relative">
         {/* Logo */}
         <div className="flex items-center z-10">
