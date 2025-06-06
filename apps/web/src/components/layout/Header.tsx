@@ -16,12 +16,18 @@ interface HeaderProps {
   showContentTypeButtons?: boolean;
   contentType?: ContentType;
   onContentTypeChange?: (type: ContentType) => void;
+  heroMode?: boolean; // New prop for hero landing page styling
+  onSearch?: (query: string, filters?: any) => void; // Optional search handler
+  onSearchResultSelect?: (result: SearchResult) => void; // Optional result selection handler
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
   showContentTypeButtons = false,
   contentType = 'all',
-  onContentTypeChange 
+  onContentTypeChange,
+  heroMode = false,
+  onSearch,
+  onSearchResultSelect
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,8 +39,8 @@ export const Header: React.FC<HeaderProps> = ({
   const [showProfileMenu, setShowProfileMenu] = React.useState(false);
   const profileMenuRef = React.useRef<HTMLDivElement>(null);
   
-  // Show view type buttons on home page or explore page
-  const showViewTypeButtons = location.pathname === '/' || location.pathname === '/explore';
+  // Show view type buttons on home page or explore page (but not in hero mode)
+  const showViewTypeButtons = (location.pathname === '/' || location.pathname === '/explore') && !heroMode;
 
   // Close profile menu when clicking outside
   React.useEffect(() => {
@@ -58,12 +64,20 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   const handleSearch = (query: string, filters?: any) => {
-    dispatch(searchAllThunk({ query, filters }));
+    if (onSearch) {
+      onSearch(query, filters);
+    } else {
+      dispatch(searchAllThunk({ query, filters }));
+    }
   };
 
   const handleSearchResultSelect = (result: SearchResult) => {
-    dispatch({ type: 'ui/selectItem', payload: result });
-    dispatch({ type: 'ui/setActivePanel', payload: 'details' });
+    if (onSearchResultSelect) {
+      onSearchResultSelect(result);
+    } else {
+      dispatch({ type: 'ui/selectItem', payload: result });
+      dispatch({ type: 'ui/setActivePanel', payload: 'details' });
+    }
   };
 
   const handleLogout = () => {
@@ -73,12 +87,20 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className={`fixed top-0 left-0 right-0 bg-white/60 backdrop-blur-lg z-50 border-b border-gray-200/50`}>
+    <header className={`fixed top-0 left-0 right-0 z-50 ${
+      heroMode 
+        ? 'bg-black/20 backdrop-blur-md' 
+        : 'bg-white/60 backdrop-blur-lg border-b border-gray-200/50'
+    }`}>
       <div className="h-16 px-4 flex items-center justify-between relative">
         {/* Logo */}
         <div className="flex items-center z-10">
           <button
-            className="md:hidden p-2 mr-2 text-gray-700 hover:text-gray-800"
+            className={`md:hidden p-2 mr-2 ${
+              heroMode 
+                ? 'text-white hover:text-gray-200' 
+                : 'text-gray-700 hover:text-gray-800'
+            }`}
             onClick={() => setIsMobileMenuOpen(true)}
           >
             <Menu className="w-5 h-5" />
@@ -102,7 +124,11 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Mobile Search Icon */}
-        <button className="md:hidden p-2 text-gray-700 hover:text-gray-800">
+        <button className={`md:hidden p-2 ${
+          heroMode 
+            ? 'text-white hover:text-gray-200' 
+            : 'text-gray-700 hover:text-gray-800'
+        }`}>
           <Search className="w-5 h-5" />
         </button>
 
@@ -112,7 +138,11 @@ export const Header: React.FC<HeaderProps> = ({
             <>
               <button
                 onClick={handleOpenTrips}
-                className="flex items-center px-3 py-2 text-gray-700 hover:text-gray-800 hover:bg-gray-200 rounded-lg transition-colors"
+                className={`flex items-center px-3 py-2 rounded-lg transition-colors ${
+                  heroMode 
+                    ? 'text-white hover:text-gray-200 hover:bg-white/20' 
+                    : 'text-gray-700 hover:text-gray-800 hover:bg-gray-200'
+                }`}
               >
                 <MapPin className="w-4 h-4 mr-2" />
                 My Trips
@@ -120,7 +150,11 @@ export const Header: React.FC<HeaderProps> = ({
               
               <button
                 onClick={handleCreateTrip}
-                className="flex items-center px-4 py-2 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors"
+                className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
+                  heroMode 
+                    ? 'text-white hover:text-gray-200 hover:bg-white/20' 
+                    : 'text-gray-800 hover:bg-gray-200'
+                }`}
               >
                 <Plus className="w-4 h-4 mr-2" />
                 New Trip
@@ -130,7 +164,11 @@ export const Header: React.FC<HeaderProps> = ({
               <div className="relative" ref={profileMenuRef}>
                 <button 
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                  className={`p-2 rounded-lg transition-colors ${
+                    heroMode 
+                      ? 'hover:bg-white/20' 
+                      : 'hover:bg-gray-200'
+                  }`}
                 >
                   {user?.avatarUrl ? (
                     <img 
@@ -139,7 +177,7 @@ export const Header: React.FC<HeaderProps> = ({
                       className="w-8 h-8 rounded-full"
                     />
                   ) : (
-                    <User className="w-6 h-6 text-gray-700" />
+                    <User className={`w-6 h-6 ${heroMode ? 'text-white' : 'text-gray-700'}`} />
                   )}
                 </button>
                 
@@ -173,7 +211,11 @@ export const Header: React.FC<HeaderProps> = ({
           ) : (
             <button
               onClick={() => navigate('/login')}
-              className="flex items-center px-4 py-2 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors"
+              className={`flex items-center px-4 py-2 rounded-lg transition-colors ${
+                heroMode 
+                  ? 'text-white hover:text-gray-200 hover:bg-white/20' 
+                  : 'text-gray-800 hover:bg-gray-200'
+              }`}
             >
               <LogIn className="w-4 h-4 mr-2" />
               Login
@@ -196,7 +238,7 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={() => navigate('/login')}
               className="p-2"
             >
-              <User className="w-5 h-5" />
+              <User className={`w-5 h-5 ${heroMode ? 'text-white' : 'text-gray-700'}`} />
             </button>
           )}
         </div>

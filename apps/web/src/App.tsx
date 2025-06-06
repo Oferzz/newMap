@@ -6,6 +6,7 @@ import { LoginModal } from './components/auth/LoginModal';
 import { TripCreationPage } from './pages/TripCreationPage';
 import { ExplorePageWrapper } from './pages/ExplorePageWrapper';
 import { ProfilePage } from './pages/ProfilePage';
+import { LandingPage } from './pages/LandingPage';
 import { PrivateRoute } from './components/auth/PrivateRoute';
 import { WebSocketProvider } from './providers/WebSocketProvider';
 import { Notifications } from './components/layout/Notifications';
@@ -62,8 +63,11 @@ function AppContent() {
       />
 
       <Routes>
-        {/* Main map view - shows on all routes as background */}
-        <Route path="/" element={
+        {/* Landing page with hero image */}
+        <Route path="/" element={<LandingPage />} />
+        
+        {/* Map view route */}
+        <Route path="/map" element={
           <>
             <Header />
             <MapView />
