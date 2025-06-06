@@ -67,12 +67,12 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className={`fixed top-0 left-0 right-0 bg-terrain-100 z-50 shadow-soft border-b border-terrain-300 ${showContentTypeButtons ? '' : 'h-16'}`}>
+    <header className={`fixed top-0 left-0 right-0 bg-white z-50 shadow-sm border-b border-gray-200 ${showContentTypeButtons ? '' : 'h-16'}`}>
       <div className="h-16 px-4 flex items-center justify-between relative">
         {/* Logo */}
         <div className="flex items-center z-10">
           <button
-            className="md:hidden p-2 mr-2 text-trail-700 hover:text-trail-800"
+            className="md:hidden p-2 mr-2 text-gray-700 hover:text-gray-800"
             onClick={() => setIsMobileMenuOpen(true)}
           >
             <Menu className="w-5 h-5" />
@@ -88,16 +88,15 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Search Bar - Absolutely centered */}
-        <div className="hidden md:block absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-xl px-4">
+        <div className="hidden md:block absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl px-8">
           <NaturalLanguageSearchBar 
             onSearch={handleSearch}
-            placeholder="Search places, trips, or users..."
             onResultSelect={handleSearchResultSelect}
           />
         </div>
 
         {/* Mobile Search Icon */}
-        <button className="md:hidden p-2 text-trail-700 hover:text-trail-800">
+        <button className="md:hidden p-2 text-gray-700 hover:text-gray-800">
           <Search className="w-5 h-5" />
         </button>
 
@@ -105,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="hidden md:flex items-center space-x-3 flex-shrink-0 z-10">
           <button
             onClick={() => navigate('/explore')}
-            className="flex items-center px-3 py-2 text-trail-700 hover:text-trail-800 hover:bg-terrain-200 rounded-lg transition-colors"
+            className="flex items-center px-3 py-2 text-gray-700 hover:text-gray-800 hover:bg-gray-200 rounded-lg transition-colors"
           >
             <Compass className="w-4 h-4 mr-2" />
             Explore
@@ -115,7 +114,7 @@ export const Header: React.FC<HeaderProps> = ({
             <>
               <button
                 onClick={handleOpenTrips}
-                className="flex items-center px-3 py-2 text-trail-700 hover:text-trail-800 hover:bg-terrain-200 rounded-lg transition-colors"
+                className="flex items-center px-3 py-2 text-gray-700 hover:text-gray-800 hover:bg-gray-200 rounded-lg transition-colors"
               >
                 <MapPin className="w-4 h-4 mr-2" />
                 My Trips
@@ -123,7 +122,7 @@ export const Header: React.FC<HeaderProps> = ({
               
               <button
                 onClick={handleCreateTrip}
-                className="flex items-center px-4 py-2 text-trail-800 rounded-lg hover:bg-terrain-200 transition-colors"
+                className="flex items-center px-4 py-2 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 New Trip
@@ -133,7 +132,7 @@ export const Header: React.FC<HeaderProps> = ({
               <div className="relative" ref={profileMenuRef}>
                 <button 
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="p-2 hover:bg-terrain-200 rounded-lg transition-colors"
+                  className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
                 >
                   {user?.avatarUrl ? (
                     <img 
@@ -142,29 +141,29 @@ export const Header: React.FC<HeaderProps> = ({
                       className="w-8 h-8 rounded-full"
                     />
                   ) : (
-                    <User className="w-6 h-6 text-trail-700" />
+                    <User className="w-6 h-6 text-gray-700" />
                   )}
                 </button>
                 
                 {showProfileMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-terrain-300 py-1">
-                    <div className="px-4 py-2 border-b border-terrain-300">
-                      <p className="text-sm font-medium text-trail-800">{user?.displayName}</p>
-                      <p className="text-xs text-trail-600">{user?.email}</p>
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-300 py-1">
+                    <div className="px-4 py-2 border-b border-gray-300">
+                      <p className="text-sm font-medium text-gray-800">{user?.displayName}</p>
+                      <p className="text-xs text-gray-600">{user?.email}</p>
                     </div>
                     <button
                       onClick={() => {
                         navigate('/profile');
                         setShowProfileMenu(false);
                       }}
-                      className="w-full text-left px-4 py-2 text-sm text-trail-700 hover:bg-terrain-200 transition-colors"
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-200 transition-colors"
                     >
                       <User className="w-4 h-4 inline mr-2" />
                       Profile
                     </button>
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-sm text-trail-700 hover:bg-terrain-200 transition-colors"
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-200 transition-colors"
                     >
                       <LogOut className="w-4 h-4 inline mr-2" />
                       Logout
@@ -176,7 +175,7 @@ export const Header: React.FC<HeaderProps> = ({
           ) : (
             <button
               onClick={() => navigate('/login')}
-              className="flex items-center px-4 py-2 text-trail-800 rounded-lg hover:bg-terrain-200 transition-colors"
+              className="flex items-center px-4 py-2 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors"
             >
               <LogIn className="w-4 h-4 mr-2" />
               Login
@@ -207,7 +206,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Content Type Toggles - Part of header for explore page */}
       {showContentTypeButtons && (
-        <div className="bg-terrain-100 -mt-1">
+        <div className="bg-white -mt-1">
           <div className="flex justify-center py-0.5">
             <div className="flex items-center gap-6">
               {(['all', 'trips', 'places'] as ContentType[]).map((type) => (
@@ -216,8 +215,8 @@ export const Header: React.FC<HeaderProps> = ({
                   onClick={() => onContentTypeChange?.(type)}
                   className={`px-2 py-1 font-medium rounded-md transition-colors capitalize ${
                     contentType === type
-                      ? 'text-trail-800 bg-terrain-200'
-                      : 'text-trail-700 hover:text-trail-800 hover:bg-terrain-200'
+                      ? 'text-gray-800 bg-gray-100'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
                   }`}
                 >
                   {type}

@@ -17,7 +17,7 @@ interface NaturalLanguageSearchBarProps {
 
 export const NaturalLanguageSearchBar: React.FC<NaturalLanguageSearchBarProps> = ({ 
   onSearch, 
-  placeholder = "Ask me anything... \"Find hiking trails near San Francisco\" or \"Easy day hikes with waterfalls\"",
+  placeholder = "Search places, trips, or activities...",
   onResultSelect
 }) => {
   const dispatch = useAppDispatch();
@@ -208,9 +208,9 @@ export const NaturalLanguageSearchBar: React.FC<NaturalLanguageSearchBarProps> =
         {/* Search Icon */}
         <div className="absolute left-3 pointer-events-none">
           {isSearching ? (
-            <Loader2 className="w-5 h-5 text-trail-500 animate-spin" />
+            <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
           ) : (
-            <Sparkles className="w-5 h-5 text-forest-500" />
+            <Search className="w-5 h-5 text-gray-400" />
           )}
         </div>
 
@@ -224,7 +224,7 @@ export const NaturalLanguageSearchBar: React.FC<NaturalLanguageSearchBarProps> =
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
           placeholder={placeholder}
-          className="w-full pl-10 pr-16 py-3 bg-terrain-50 border-2 border-forest-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-forest-500 focus:border-forest-500 placeholder-trail-400 text-trail-800 transition-all duration-200"
+          className="w-full pl-10 pr-16 py-2.5 bg-white border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-400 text-gray-800 transition-all duration-200 shadow-sm hover:shadow-md"
         />
 
         {/* Action Buttons */}
@@ -232,36 +232,36 @@ export const NaturalLanguageSearchBar: React.FC<NaturalLanguageSearchBarProps> =
           {query && (
             <button
               onClick={handleClear}
-              className="p-1 hover:bg-terrain-200 rounded-full transition-colors"
+              className="p-1 hover:bg-gray-100 rounded-full transition-colors"
               title="Clear search"
             >
-              <X className="w-4 h-4 text-trail-600" />
+              <X className="w-4 h-4 text-gray-500" />
             </button>
           )}
           
           <button
             onClick={() => setShowHelp(!showHelp)}
-            className={`p-1 hover:bg-terrain-200 rounded-full transition-colors ${
-              showHelp ? 'bg-terrain-200' : ''
+            className={`p-1 hover:bg-gray-100 rounded-full transition-colors ${
+              showHelp ? 'bg-gray-100' : ''
             }`}
             title="Search help"
           >
-            <HelpCircle className="w-4 h-4 text-trail-600" />
+            <HelpCircle className="w-4 h-4 text-gray-500" />
           </button>
         </div>
       </div>
 
       {/* Query Understanding Display */}
       {queryUnderstanding && query.trim() && (
-        <div className="absolute top-full mt-1 w-full bg-forest-50 border border-forest-200 rounded-lg p-3 z-40 shadow-sm">
+        <div className="absolute top-full mt-1 w-full bg-blue-50 border border-blue-200 rounded-lg p-3 z-40 shadow-sm">
           <div className="flex items-start space-x-2">
-            <Sparkles className="w-4 h-4 text-forest-600 mt-0.5 flex-shrink-0" />
+            <Sparkles className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
             <div className="flex-1 text-sm">
-              <div className="text-forest-800 font-medium">
+              <div className="text-blue-800 font-medium">
                 I understand: {queryUnderstanding.intent}
               </div>
               {queryUnderstanding.explanation && (
-                <div className="text-forest-600 mt-1">
+                <div className="text-blue-600 mt-1">
                   {queryUnderstanding.explanation}
                 </div>
               )}
@@ -270,7 +270,7 @@ export const NaturalLanguageSearchBar: React.FC<NaturalLanguageSearchBarProps> =
                   {Object.entries(queryUnderstanding.filters).map(([key, value]) => (
                     <span 
                       key={key}
-                      className="inline-flex items-center px-2 py-1 bg-forest-100 text-forest-700 text-xs rounded-full"
+                      className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full"
                     >
                       {key}: {String(value)}
                     </span>
@@ -284,15 +284,15 @@ export const NaturalLanguageSearchBar: React.FC<NaturalLanguageSearchBarProps> =
 
       {/* Search Suggestions */}
       {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute top-full mt-1 w-full bg-white border border-terrain-300 rounded-lg shadow-xl z-50 max-h-60 overflow-y-auto">
+        <div className="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
           {suggestions.map((suggestion, index) => (
             <button
               key={index}
               onClick={() => handleSuggestionSelect(suggestion)}
-              className="w-full px-4 py-3 text-left hover:bg-terrain-50 flex items-center space-x-3 transition-colors"
+              className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center space-x-3 transition-colors"
             >
-              <Search className="w-4 h-4 text-trail-500 flex-shrink-0" />
-              <span className="text-trail-800">{suggestion}</span>
+              <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <span className="text-gray-700">{suggestion}</span>
             </button>
           ))}
         </div>
@@ -300,9 +300,9 @@ export const NaturalLanguageSearchBar: React.FC<NaturalLanguageSearchBarProps> =
 
       {/* Help Overlay */}
       {showHelp && (
-        <div className="absolute top-full mt-2 w-full bg-white border border-terrain-300 rounded-lg shadow-xl p-4 z-50">
-          <h3 className="font-semibold text-trail-800 mb-3">Natural Language Search Help</h3>
-          <div className="space-y-2 text-sm text-trail-600">
+        <div className="absolute top-full mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50">
+          <h3 className="font-semibold text-gray-800 mb-3">Natural Language Search Help</h3>
+          <div className="space-y-2 text-sm text-gray-600">
             <div>
               <strong>Examples:</strong>
             </div>
@@ -313,8 +313,8 @@ export const NaturalLanguageSearchBar: React.FC<NaturalLanguageSearchBarProps> =
               <li>• "Difficult mountain climbs in Colorado"</li>
               <li>• "Beach activities in Southern California"</li>
             </ul>
-            <div className="mt-3 pt-3 border-t border-terrain-200">
-              <div className="text-xs text-trail-500">
+            <div className="mt-3 pt-3 border-t border-gray-200">
+              <div className="text-xs text-gray-500">
                 Powered by natural language processing - just describe what you're looking for!
               </div>
             </div>
