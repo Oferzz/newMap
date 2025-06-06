@@ -10,7 +10,7 @@ let CLOUDINARY_BASE_URL = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}`;
 // Fetch Cloudinary configuration from backend
 const fetchCloudinaryConfig = async (): Promise<string> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/v1/media/cloudinary/config`);
+    const response = await fetch(`${API_BASE_URL}/media/cloudinary/config`);
     if (!response.ok) {
       throw new Error('Failed to fetch Cloudinary config');
     }
@@ -126,7 +126,7 @@ export const getSignedImageUrl = async (
     // Ensure we have the latest Cloudinary configuration
     await fetchCloudinaryConfig();
     
-    const response = await fetch(`${API_BASE_URL}/api/v1/media/cloudinary/sign`, {
+    const response = await fetch(`${API_BASE_URL}/media/cloudinary/sign`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -186,7 +186,7 @@ export const getSignedThumbnailUrl = async (publicId: string): Promise<string> =
  */
 export const fetchFolderImages = async (folderName: string, maxImages: number = 100): Promise<CloudinaryImage[]> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/api/v1/media/cloudinary/list`, {
+    const response = await fetch(`${API_BASE_URL}/media/cloudinary/list`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -214,9 +214,9 @@ export const fetchFolderImages = async (folderName: string, maxImages: number = 
  */
 export const fetchCollectionImages = async (collectionId: string, maxImages: number = 100): Promise<CloudinaryImage[]> => {
   try {
-    console.log('Fetching collection images:', { collectionId, maxImages, apiUrl: `${API_BASE_URL}/api/v1/media/cloudinary/list` });
+    console.log('Fetching collection images:', { collectionId, maxImages, apiUrl: `${API_BASE_URL}/media/cloudinary/list` });
     
-    const response = await fetch(`${API_BASE_URL}/api/v1/media/cloudinary/list`, {
+    const response = await fetch(`${API_BASE_URL}/media/cloudinary/list`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
