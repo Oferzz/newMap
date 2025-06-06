@@ -212,7 +212,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* View Type Buttons - Below search bar */}
       {showViewTypeButtons && (
-        <div className="hidden md:flex justify-center pb-1">
+        <div className="hidden md:flex justify-center gap-4 pb-1">
           <ViewTypeButtons
             activeView={viewType}
             onViewChange={(view) => dispatch(setViewType(view))}

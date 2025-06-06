@@ -16,7 +16,7 @@ export const ViewTypeButtons: React.FC<ViewTypeButtonsProps> = ({ activeView, on
   ];
 
   return (
-    <div className="flex items-center justify-center gap-4">
+    <>
       {viewTypes.map(({ type, icon, label }) => (
         <button
           key={type}
@@ -34,6 +34,6 @@ export const ViewTypeButtons: React.FC<ViewTypeButtonsProps> = ({ activeView, on
           <span className="hidden sm:inline">{label}</span>
         </button>
       ))}
-    </div>
+    </>
   );
 };
