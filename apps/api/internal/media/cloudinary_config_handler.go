@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"newMap/pkg/response"
+	"github.com/Oferzz/newMap/apps/api/pkg/response"
 )
 
 type CloudinaryConfigResponse struct {
