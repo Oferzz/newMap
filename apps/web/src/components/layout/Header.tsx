@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Plus, User, Menu, MapPin, LogIn, LogOut, Compass } from 'lucide-react';
+import { Search, Plus, User, Menu, MapPin, LogIn, LogOut } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../hooks/redux';
 import { NaturalLanguageSearchBar } from '../search/NaturalLanguageSearchBar';
@@ -108,14 +108,6 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center space-x-3 flex-shrink-0 z-10">
-          <button
-            onClick={() => navigate('/explore')}
-            className="flex items-center px-3 py-2 text-gray-700 hover:text-gray-800 hover:bg-gray-200 rounded-lg transition-colors"
-          >
-            <Compass className="w-4 h-4 mr-2" />
-            Explore
-          </button>
-          
           {isAuthenticated ? (
             <>
               <button
