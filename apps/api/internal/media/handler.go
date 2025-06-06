@@ -29,6 +29,9 @@ func (h *Handler) RegisterRoutes(router *gin.RouterGroup) {
 		media.DELETE("/:id", h.DeleteMedia)
 		media.GET("/user/:userID", h.GetUserMedia)
 		media.POST("/:id/attach", h.AttachMedia)
+		
+		// Cloudinary signing endpoint (public - no auth required for hero images)
+		media.POST("/cloudinary/sign", SignCloudinaryURL)
 	}
 }
 

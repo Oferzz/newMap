@@ -2,7 +2,11 @@ import { CloudinaryTransformation } from '../types/hero.types';
 
 // Cloudinary configuration
 const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'demo';
+const CLOUDINARY_API_KEY = import.meta.env.VITE_CLOUDINARY_API_KEY;
 const CLOUDINARY_BASE_URL = `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}`;
+
+// For private images, we need to generate signed URLs via backend
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 /**
  * Generate Cloudinary URL with transformations
@@ -83,6 +87,69 @@ export const getHeroImageUrl = (
  */
 export const getThumbnailUrl = (publicId: string): string => {
   return generateCloudinaryUrl(publicId, {
+    width: 50,
+    height: 30,
+    crop: 'fill',
+    quality: 30,
+    format: 'auto'
+  });
+};
+
+/**
+ * Generate signed URL for private images via backend
+ */
+export const getSignedImageUrl = async (
+  publicId: string,
+  transformations: CloudinaryTransformation = {}
+): Promise<string> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1/media/cloudinary/sign`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        publicId,
+        transformations
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to get signed URL');
+    }
+
+    const data = await response.json();
+    return data.data.signedUrl;
+  } catch (error) {
+    console.error('Error getting signed URL:', error);
+    // Fallback to unsigned URL for development
+    return generateCloudinaryUrl(publicId, transformations);
+  }
+};
+
+/**
+ * Get signed hero image URL for private images
+ */
+export const getSignedHeroImageUrl = async (
+  publicId: string,
+  screenWidth: number = 1920,
+  screenHeight: number = 1080
+): Promise<string> => {
+  return getSignedImageUrl(publicId, {
+    width: screenWidth,
+    height: screenHeight,
+    crop: 'fill',
+    quality: 'auto',
+    format: 'auto',
+    gravity: 'center'
+  });
+};
+
+/**
+ * Get signed thumbnail URL for private images
+ */
+export const getSignedThumbnailUrl = async (publicId: string): Promise<string> => {
+  return getSignedImageUrl(publicId, {
     width: 50,
     height: 30,
     crop: 'fill',

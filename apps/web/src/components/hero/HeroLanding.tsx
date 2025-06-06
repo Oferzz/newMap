@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Camera } from 'lucide-react';
 import { getCurrentHeroPhoto, getNextHeroPhoto } from '../../data/heroPhotos';
-import { getHeroImageUrl, generateResponsiveSrcSet, getThumbnailUrl } from '../../services/cloudinary.service';
+import { getSignedHeroImageUrl, getSignedThumbnailUrl } from '../../services/cloudinary.service';
 import { HeroPhoto } from '../../types/hero.types';
 
 interface HeroLandingProps {
@@ -13,6 +13,27 @@ export const HeroLanding: React.FC<HeroLandingProps> = ({ className = '' }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [nextPhotoPreloaded, setNextPhotoPreloaded] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string>('');
+  const [thumbnailUrl, setThumbnailUrl] = useState<string>('');
+
+  // Load signed URLs when photo changes
+  useEffect(() => {
+    const loadSignedUrls = async () => {
+      setIsLoading(true);
+      try {
+        const [mainUrl, thumbUrl] = await Promise.all([
+          getSignedHeroImageUrl(currentPhoto.cloudinaryId, 1920, 1080),
+          getSignedThumbnailUrl(currentPhoto.cloudinaryId)
+        ]);
+        setImageUrl(mainUrl);
+        setThumbnailUrl(thumbUrl);
+      } catch (error) {
+        console.error('Failed to load signed URLs:', error);
+      }
+    };
+
+    loadSignedUrls();
+  }, [currentPhoto.cloudinaryId]);
 
   // Update photo based on current hour
   useEffect(() => {
@@ -36,10 +57,18 @@ export const HeroLanding: React.FC<HeroLandingProps> = ({ className = '' }) => {
   // Preload next photo
   useEffect(() => {
     if (imageLoaded && !nextPhotoPreloaded) {
-      const nextPhoto = getNextHeroPhoto();
-      const img = new Image();
-      img.onload = () => setNextPhotoPreloaded(true);
-      img.src = getHeroImageUrl(nextPhoto.cloudinaryId, 1920, 1080);
+      const preloadNext = async () => {
+        try {
+          const nextPhoto = getNextHeroPhoto();
+          const nextUrl = await getSignedHeroImageUrl(nextPhoto.cloudinaryId, 1920, 1080);
+          const img = new Image();
+          img.onload = () => setNextPhotoPreloaded(true);
+          img.src = nextUrl;
+        } catch (error) {
+          console.error('Failed to preload next photo:', error);
+        }
+      };
+      preloadNext();
     }
   }, [imageLoaded, nextPhotoPreloaded]);
 
@@ -56,10 +85,10 @@ export const HeroLanding: React.FC<HeroLandingProps> = ({ className = '' }) => {
   return (
     <div className={`relative w-full h-screen overflow-hidden ${className}`}>
       {/* Loading placeholder with blurred thumbnail */}
-      {isLoading && (
+      {isLoading && thumbnailUrl && (
         <div className="absolute inset-0 z-10">
           <img
-            src={getThumbnailUrl(currentPhoto.cloudinaryId)}
+            src={thumbnailUrl}
             alt=""
             className="w-full h-full object-cover blur-md scale-110"
           />
@@ -68,18 +97,18 @@ export const HeroLanding: React.FC<HeroLandingProps> = ({ className = '' }) => {
       )}
 
       {/* Main hero image */}
-      <img
-        src={getHeroImageUrl(currentPhoto.cloudinaryId, 1920, 1080)}
-        srcSet={generateResponsiveSrcSet(currentPhoto.cloudinaryId)}
-        sizes="100vw"
-        alt={currentPhoto.altText}
-        className={`w-full h-full object-cover transition-opacity duration-1000 ${
-          imageLoaded ? 'opacity-100' : 'opacity-0'
-        }`}
-        onLoad={handleImageLoad}
-        onError={handleImageError}
-        loading="eager"
-      />
+      {imageUrl && (
+        <img
+          src={imageUrl}
+          alt={currentPhoto.altText}
+          className={`w-full h-full object-cover transition-opacity duration-1000 ${
+            imageLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+          loading="eager"
+        />
+      )}
 
       {/* Dark overlay for better text readability */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/40" />
