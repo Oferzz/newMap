@@ -73,7 +73,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className={`fixed top-0 left-0 right-0 bg-white z-50 shadow-sm border-b border-gray-200 ${showContentTypeButtons ? '' : 'h-16'}`}>
+    <header className={`fixed top-0 left-0 right-0 bg-white z-50 shadow-sm border-b border-gray-200`}>
       <div className="h-16 px-4 flex items-center justify-between relative">
         {/* Logo */}
         <div className="flex items-center z-10">
@@ -212,7 +212,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* View Type Buttons - Below search bar */}
       {showViewTypeButtons && (
-        <div className="hidden md:block absolute left-1/2 top-20 transform -translate-x-1/2 z-40">
+        <div className="hidden md:flex justify-center pb-3">
           <ViewTypeButtons
             activeView={viewType}
             onViewChange={(view) => dispatch(setViewType(view))}
