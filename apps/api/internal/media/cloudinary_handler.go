@@ -245,7 +245,6 @@ func ListCloudinaryImages(c *gin.Context) {
 
 	// Call Cloudinary Admin API to list resources
 	var images []CloudinaryImage
-	var err error
 	var sourceType, sourceName string
 
 	if req.Collection != "" {
