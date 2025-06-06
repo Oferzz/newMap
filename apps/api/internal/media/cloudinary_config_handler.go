@@ -11,7 +11,7 @@ type CloudinaryConfigResponse struct {
 	CloudName string `json:"cloudName"`
 }
 
-// GetCloudinaryConfig returns the Cloudinary cloud name for frontend use
+// GetCloudinaryConfig returns the Cloudinary cloud name for frontend use.
 func GetCloudinaryConfig(c *gin.Context) {
 	// Get Cloudinary credentials from CLOUDINARY_URL environment variable
 	cloudinaryURL := os.Getenv("CLOUDINARY_URL")
