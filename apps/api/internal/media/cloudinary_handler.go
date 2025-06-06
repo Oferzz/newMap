@@ -32,18 +32,18 @@ func SignCloudinaryURL(c *gin.Context) {
 		return
 	}
 
-	// Get Cloudinary credentials from CLOUDINARY_TOKEN environment variable
+	// Get Cloudinary credentials from CLOUDINARY_URL environment variable
 	// Expected format: cloudinary://api_key:api_secret@cloud_name
-	cloudinaryToken := os.Getenv("CLOUDINARY_TOKEN")
-	if cloudinaryToken == "" {
-		response.Error(c, http.StatusInternalServerError, "CLOUDINARY_TOKEN environment variable not set", nil)
+	cloudinaryURL := os.Getenv("CLOUDINARY_URL")
+	if cloudinaryURL == "" {
+		response.Error(c, http.StatusInternalServerError, "CLOUDINARY_URL environment variable not set", nil)
 		return
 	}
 
 	// Parse the Cloudinary URL
-	cloudName, apiKey, apiSecret, err := parseCloudinaryToken(cloudinaryToken)
+	cloudName, apiKey, apiSecret, err := parseCloudinaryToken(cloudinaryURL)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, "Invalid CLOUDINARY_TOKEN format", err)
+		response.Error(c, http.StatusInternalServerError, "Invalid CLOUDINARY_URL format", err)
 		return
 	}
 

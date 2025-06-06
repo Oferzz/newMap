@@ -14,17 +14,17 @@ type CloudinaryConfigResponse struct {
 
 // GetCloudinaryConfig returns the Cloudinary cloud name for frontend use
 func GetCloudinaryConfig(c *gin.Context) {
-	// Get Cloudinary credentials from CLOUDINARY_TOKEN environment variable
-	cloudinaryToken := os.Getenv("CLOUDINARY_TOKEN")
-	if cloudinaryToken == "" {
-		response.Error(c, http.StatusInternalServerError, "CLOUDINARY_TOKEN environment variable not set", nil)
+	// Get Cloudinary credentials from CLOUDINARY_URL environment variable
+	cloudinaryURL := os.Getenv("CLOUDINARY_URL")
+	if cloudinaryURL == "" {
+		response.Error(c, http.StatusInternalServerError, "CLOUDINARY_URL environment variable not set", nil)
 		return
 	}
 
 	// Parse the Cloudinary URL to extract cloud name
-	cloudName, _, _, err := parseCloudinaryToken(cloudinaryToken)
+	cloudName, _, _, err := parseCloudinaryToken(cloudinaryURL)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, "Invalid CLOUDINARY_TOKEN format", err)
+		response.Error(c, http.StatusInternalServerError, "Invalid CLOUDINARY_URL format", err)
 		return
 	}
 
