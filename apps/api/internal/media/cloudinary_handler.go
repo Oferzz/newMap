@@ -327,12 +327,18 @@ func listFolderImages(cloudName, apiKey, apiSecret, folder string, maxImages int
 
 // listCollectionImages calls Cloudinary Admin API to list images in a collection
 func listCollectionImages(cloudName, apiKey, apiSecret, collectionName string, maxImages int) ([]CloudinaryImage, error) {
-	// Build the Admin API URL for collections
-	apiURL := fmt.Sprintf("https://api.cloudinary.com/v1_1/%s/resources/image/by_collection/%s", cloudName, collectionName)
+	// Build the Admin API URL for searching resources
+	// Use the search API which supports collections
+	apiURL := fmt.Sprintf("https://api.cloudinary.com/v1_1/%s/resources/search", cloudName)
+	
+	// Prepare search expression for collection
+	searchExpression := fmt.Sprintf("collection=%s", collectionName)
 	
 	// Prepare query parameters
 	params := url.Values{}
+	params.Set("expression", searchExpression)
 	params.Set("max_results", strconv.Itoa(maxImages))
+	params.Set("with_field", "tags")
 	
 	fullURL := apiURL + "?" + params.Encode()
 	fmt.Printf("Making request to Cloudinary collection API: %s\n", fullURL)
