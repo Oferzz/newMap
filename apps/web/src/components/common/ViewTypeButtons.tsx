@@ -12,7 +12,7 @@ export const ViewTypeButtons: React.FC<ViewTypeButtonsProps> = ({ activeView, on
   const viewTypes: { type: ViewType; icon: React.ReactNode; label: string }[] = [
     { type: 'map', icon: <MapIcon className="w-4 h-4" />, label: 'Map' },
     { type: 'list', icon: <List className="w-4 h-4" />, label: 'List' },
-    { type: 'grid', icon: <Grid3x3 className="w-4 h-4" />, label: 'Grid' },
+    { type: 'grid', icon: <Grid3x3 className="w-4 h-4" />, label: 'Tiles' },
   ];
 
   return (
