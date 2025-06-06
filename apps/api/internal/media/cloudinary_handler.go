@@ -70,7 +70,7 @@ func SignCloudinaryURL(c *gin.Context) {
 	}
 
 	// Parse the Cloudinary URL
-	cloudName, apiKey, apiSecret, err := parseCloudinaryToken(cloudinaryURL)
+	cloudName, _, apiSecret, err := parseCloudinaryToken(cloudinaryURL)
 	if err != nil {
 		response.InternalServerError(c, "Invalid CLOUDINARY_URL format: "+err.Error())
 		return
