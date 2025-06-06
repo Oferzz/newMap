@@ -209,6 +209,34 @@ export const fetchFolderImages = async (folderName: string, maxImages: number = 
   }
 };
 
+/**
+ * Fetch images from a Cloudinary collection
+ */
+export const fetchCollectionImages = async (collectionId: string, maxImages: number = 100): Promise<CloudinaryImage[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1/media/cloudinary/list`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        collection: collectionId,
+        maxImages: maxImages
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch collection images');
+    }
+
+    const data = await response.json();
+    return data.data.images || [];
+  } catch (error) {
+    console.error('Error fetching collection images:', error);
+    return [];
+  }
+};
+
 // Type for Cloudinary image from backend
 interface CloudinaryImage {
   publicId: string;

@@ -23,8 +23,9 @@ type CloudinarySignRequest struct {
 }
 
 type CloudinaryListRequest struct {
-	Folder    string `json:"folder" binding:"required"`
-	MaxImages int    `json:"maxImages"`
+	Folder     string `json:"folder"`
+	Collection string `json:"collection"`
+	MaxImages  int    `json:"maxImages"`
 }
 
 type CloudinarySignResponse struct {
@@ -208,11 +209,17 @@ func parseCloudinaryToken(token string) (cloudName, apiKey, apiSecret string, er
 	return cloudName, apiKey, apiSecret, nil
 }
 
-// ListCloudinaryImages fetches images from a specific folder
+// ListCloudinaryImages fetches images from a specific folder or collection
 func ListCloudinaryImages(c *gin.Context) {
 	var req CloudinaryListRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		response.BadRequest(c, "Invalid request format: "+err.Error())
+		return
+	}
+
+	// Validate that either folder or collection is provided
+	if req.Folder == "" && req.Collection == "" {
+		response.BadRequest(c, "Either 'folder' or 'collection' must be specified")
 		return
 	}
 
@@ -237,16 +244,30 @@ func ListCloudinaryImages(c *gin.Context) {
 	}
 
 	// Call Cloudinary Admin API to list resources
-	images, err := listFolderImages(cloudName, apiKey, apiSecret, req.Folder, maxImages)
+	var images []CloudinaryImage
+	var err error
+	var sourceType, sourceName string
+
+	if req.Collection != "" {
+		images, err = listCollectionImages(cloudName, apiKey, apiSecret, req.Collection, maxImages)
+		sourceType = "collection"
+		sourceName = req.Collection
+	} else {
+		images, err = listFolderImages(cloudName, apiKey, apiSecret, req.Folder, maxImages)
+		sourceType = "folder"
+		sourceName = req.Folder
+	}
+
 	if err != nil {
 		response.InternalServerError(c, "Failed to fetch images from Cloudinary: "+err.Error())
 		return
 	}
 
 	response.Success(c, map[string]interface{}{
-		"images": images,
-		"folder": req.Folder,
-		"count":  len(images),
+		"images":     images,
+		"sourceType": sourceType,
+		"sourceName": sourceName,
+		"count":      len(images),
 	})
 }
 
@@ -259,6 +280,59 @@ func listFolderImages(cloudName, apiKey, apiSecret, folder string, maxImages int
 	params := url.Values{}
 	params.Set("type", "upload")
 	params.Set("prefix", folder+"/") // folder prefix
+	params.Set("max_results", strconv.Itoa(maxImages))
+	
+	// Create HTTP request
+	req, err := http.NewRequest("GET", apiURL+"?"+params.Encode(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	
+	// Add basic auth
+	req.SetBasicAuth(apiKey, apiSecret)
+	
+	// Make the request
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+	defer resp.Body.Close()
+	
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("cloudinary API error (status %d): %s", resp.StatusCode, string(body))
+	}
+	
+	// Parse response
+	var listResp CloudinaryListResponse
+	if err := json.NewDecoder(resp.Body).Decode(&listResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+	
+	// Convert to our format
+	images := make([]CloudinaryImage, len(listResp.Resources))
+	for i, resource := range listResp.Resources {
+		images[i] = CloudinaryImage{
+			PublicID:  resource.PublicID,
+			Format:    resource.Format,
+			Width:     resource.Width,
+			Height:    resource.Height,
+			CreatedAt: resource.CreatedAt,
+			Tags:      resource.Tags,
+		}
+	}
+	
+	return images, nil
+}
+
+// listCollectionImages calls Cloudinary Admin API to list images in a collection
+func listCollectionImages(cloudName, apiKey, apiSecret, collectionName string, maxImages int) ([]CloudinaryImage, error) {
+	// Build the Admin API URL for collections
+	apiURL := fmt.Sprintf("https://api.cloudinary.com/v1_1/%s/resources/image/by_collection/%s", cloudName, collectionName)
+	
+	// Prepare query parameters
+	params := url.Values{}
 	params.Set("max_results", strconv.Itoa(maxImages))
 	
 	// Create HTTP request

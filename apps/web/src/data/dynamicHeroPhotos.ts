@@ -1,8 +1,8 @@
 import { HeroPhoto } from '../types/hero.types';
-import { fetchFolderImages } from '../services/cloudinary.service';
+import { fetchCollectionImages } from '../services/cloudinary.service';
 
-// Configuration for the hero photos folder
-const HERO_PHOTOS_FOLDER = 'hero-photos'; // Change this to your Cloudinary folder name
+// Configuration for the hero photos collection
+const HERO_PHOTOS_COLLECTION = '0adfb2492c4ee8e9dbd1f35986d7f80f'; // Your Cloudinary collection ID
 const MAX_HERO_IMAGES = 50; // Maximum number of images to fetch
 
 // Cache for hero photos
@@ -22,8 +22,8 @@ export const fetchHeroPhotos = async (): Promise<HeroPhoto[]> => {
   }
 
   try {
-    // Fetch images from the folder
-    const images = await fetchFolderImages(HERO_PHOTOS_FOLDER, MAX_HERO_IMAGES);
+    // Fetch images from the collection
+    const images = await fetchCollectionImages(HERO_PHOTOS_COLLECTION, MAX_HERO_IMAGES);
     
     // Convert Cloudinary images to HeroPhoto format
     const heroPhotos: HeroPhoto[] = images.map((image, index) => ({
@@ -42,7 +42,7 @@ export const fetchHeroPhotos = async (): Promise<HeroPhoto[]> => {
     
     return heroPhotos;
   } catch (error) {
-    console.error('Failed to fetch hero photos from folder:', error);
+    console.error('Failed to fetch hero photos from collection:', error);
     
     // Return fallback photos if fetch fails
     return getFallbackHeroPhotos();
@@ -153,10 +153,10 @@ function getFallbackHeroPhotos(): HeroPhoto[] {
 }
 
 /**
- * Get folder configuration (useful for setup instructions)
+ * Get collection configuration (useful for setup instructions)
  */
 export const getHeroPhotosConfig = () => ({
-  folderName: HERO_PHOTOS_FOLDER,
+  collectionId: HERO_PHOTOS_COLLECTION,
   maxImages: MAX_HERO_IMAGES,
   tagFormat: {
     location: 'location:Location Name',
