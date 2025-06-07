@@ -55,11 +55,11 @@ func convertSupabaseURLToPostgresURL(projectURL, serviceKey string) string {
 	
 	log.Printf("Using project reference: %s", projectRef)
 	
-	// Try connection pooler first (should work better on Render)
+	// Use direct connection with service key - format: postgresql://postgres:[PASSWORD]@db.[PROJECT_REF].supabase.co:5432/postgres
 	return fmt.Sprintf(
-		"postgresql://postgres.%s:%s@aws-0-us-east-1.pooler.supabase.com:5432/postgres?sslmode=require",
-		projectRef,
+		"postgresql://postgres:%s@db.%s.supabase.co:5432/postgres?sslmode=require",
 		serviceKey,
+		projectRef,
 	)
 }
 

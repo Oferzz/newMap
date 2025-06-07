@@ -84,6 +84,11 @@ services:
       # External Services
       MAPBOX_API_KEY: ${MAPBOX_API_KEY}
       
+      # Supabase Configuration (optional - fallback to local DB if not set)
+      SUPABASE_PROJECT_URL: ${SUPABASE_PROJECT_URL:-}
+      SUPABASE_PROJECT_KEY: ${SUPABASE_PROJECT_KEY:-}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
+      
       # CORS
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost}
     volumes:
@@ -106,6 +111,8 @@ services:
         VITE_API_URL: ${VITE_API_URL:-http://localhost/api/v1}
         VITE_WS_URL: ${VITE_WS_URL:-ws://localhost}
         VITE_MAPBOX_TOKEN: ${MAPBOX_API_KEY}
+        VITE_SUPABASE_PROJECT_URL: ${SUPABASE_PROJECT_URL:-}
+        VITE_SUPABASE_PROJECT_KEY: ${SUPABASE_ANON_KEY:-}
     container_name: newMap-web
     restart: unless-stopped
     ports:

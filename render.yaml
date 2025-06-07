@@ -46,6 +46,12 @@ services:
           name: newMap-elasticsearch
           type: web
           property: hostURL
+      - key: SUPABASE_PROJECT_URL
+        sync: false # Set manually in Render dashboard
+      - key: SUPABASE_PROJECT_KEY
+        sync: false # Set manually in Render dashboard (service role key)
+      - key: SUPABASE_ANON_KEY
+        sync: false # Set manually in Render dashboard
     disk:
       name: media-storage
       mountPath: /data
@@ -86,6 +92,10 @@ services:
         value: https://newmap-qojk.onrender.com/api/v1
       - key: VITE_MAPBOX_TOKEN
         sync: false # Set manually in Render dashboard
+      - key: VITE_SUPABASE_PROJECT_URL
+        sync: false # Set manually in Render dashboard
+      - key: VITE_SUPABASE_PROJECT_KEY
+        sync: false # Set manually in Render dashboard (anon key)
 
   # Elasticsearch Service  
   - type: web

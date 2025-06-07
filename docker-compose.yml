@@ -77,6 +77,11 @@ services:
       
       # External Services (add your own keys)
       MAPBOX_API_KEY: ${MAPBOX_API_KEY:-pk.your-mapbox-api-key}
+      
+      # Supabase Configuration (optional - fallback to local DB if not set)
+      SUPABASE_PROJECT_URL: ${SUPABASE_PROJECT_URL:-}
+      SUPABASE_PROJECT_KEY: ${SUPABASE_PROJECT_KEY:-}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
     volumes:
       - ./apps/api:/app
       - api_media:/data/media
@@ -110,6 +115,10 @@ services:
       
       # External Services
       VITE_MAPBOX_TOKEN: ${MAPBOX_API_KEY:-pk.your-mapbox-api-key}
+      
+      # Supabase Configuration
+      VITE_SUPABASE_PROJECT_URL: ${SUPABASE_PROJECT_URL:-}
+      VITE_SUPABASE_PROJECT_KEY: ${SUPABASE_ANON_KEY:-}
     volumes:
       - ./apps/web:/app
       - /app/node_modules
