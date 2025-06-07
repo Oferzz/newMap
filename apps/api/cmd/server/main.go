@@ -41,6 +41,13 @@ func main() {
 
 	// Connect to database (Supabase or PostgreSQL)
 	var db *database.PostgresDB
+	
+	// Debug environment variables
+	log.Printf("Supabase URL: '%s'", cfg.Supabase.URL)
+	log.Printf("Supabase ServiceKey length: %d", len(cfg.Supabase.ServiceKey))
+	log.Printf("Environment check - URL empty: %v, ServiceKey empty: %v", 
+		cfg.Supabase.URL == "", cfg.Supabase.ServiceKey == "")
+	
 	if cfg.Supabase.URL != "" && cfg.Supabase.ServiceKey != "" {
 		log.Println("Connecting to Supabase...")
 		supabaseDB, err := database.NewSupabaseDB(cfg.Supabase.URL, cfg.Supabase.ServiceKey)
