@@ -45,26 +45,21 @@ func NewSupabaseDB(url, serviceKey string) (*SupabaseDB, error) {
 
 // convertSupabaseURLToPostgresURL converts a Supabase project URL to a PostgreSQL connection string
 func convertSupabaseURLToPostgresURL(projectURL, serviceKey string) string {
-	// Extract project ID from URL (e.g., https://xrzjkhivkbcjdfirunyz.supabase.co)
-	// Supabase PostgreSQL connection format:
-	// postgresql://postgres.[project-ref]:[service-key]@aws-0-[region].pooler.supabase.com:6543/postgres
-	
-	// For direct connection (not pooler), use port 5432
-	// postgresql://postgres.[project-ref]:[service-key]@db.[project-ref].supabase.co:5432/postgres
-	
-	// Extract project reference from URL
+	// Extract project reference from URL (e.g., https://xrzjkhivkbcjdfirunyz.supabase.co)
 	var projectRef string
 	if _, err := fmt.Sscanf(projectURL, "https://%s.supabase.co", &projectRef); err != nil {
 		log.Printf("Failed to parse Supabase URL: %v", err)
-		// Fallback to using the URL as-is
-		projectRef = "xrzjkhivkbcjdfirunyz" // Your project reference
+		// Fallback to using the known project reference
+		projectRef = "xrzjkhivkbcjdfirunyz"
 	}
 	
-	// Use connection pooler for better performance
+	log.Printf("Using project reference: %s", projectRef)
+	
+	// Use direct connection instead of pooler to avoid SASL auth issues
 	return fmt.Sprintf(
-		"postgresql://postgres.%s:%s@aws-0-us-east-1.pooler.supabase.com:6543/postgres?sslmode=require",
-		projectRef,
+		"postgresql://postgres:%s@db.%s.supabase.co:5432/postgres?sslmode=require",
 		serviceKey,
+		projectRef,
 	)
 }
 
