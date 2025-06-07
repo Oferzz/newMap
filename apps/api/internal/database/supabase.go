@@ -2,17 +2,10 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
-	"time"
 
 	"github.com/Oferzz/newMap/apps/api/internal/config"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jackc/pgx/v5/stdlib"
-	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/jmoiron/sqlx"
 )
 
 type SupabaseDB struct {
@@ -88,7 +81,7 @@ func (db *SupabaseDB) GetProjectURL() string {
 // EnableRLS enables Row Level Security on a table
 func (db *SupabaseDB) EnableRLS(ctx context.Context, tableName string) error {
 	query := fmt.Sprintf("ALTER TABLE %s ENABLE ROW LEVEL SECURITY", tableName)
-	_, err := db.Pool.Exec(ctx, query)
+	_, err := db.pool.Exec(ctx, query)
 	return err
 }
 
@@ -101,7 +94,7 @@ func (db *SupabaseDB) CreatePolicy(ctx context.Context, policyName, tableName, o
 		operation,
 		expression,
 	)
-	_, err := db.Pool.Exec(ctx, query)
+	_, err := db.pool.Exec(ctx, query)
 	return err
 }
 
