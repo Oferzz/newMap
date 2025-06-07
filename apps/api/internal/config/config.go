@@ -17,6 +17,7 @@ type Config struct {
 	JWT      JWTConfig
 	App      AppConfig
 	Media    MediaConfig
+	Supabase SupabaseConfig
 }
 
 type ServerConfig struct {
@@ -67,6 +68,12 @@ type MediaConfig struct {
 	MaxFileSize      int64
 	AllowedMimeTypes []string
 	ThumbnailQuality int
+}
+
+type SupabaseConfig struct {
+	URL        string
+	ServiceKey string
+	AnonKey    string
 }
 
 // loadRenderSecrets loads secrets from Render's secret file if it exists
@@ -129,6 +136,11 @@ func Load() (*Config, error) {
 			MaxFileSize:      getInt64Env("MAX_FILE_SIZE", 50*1024*1024), // 50MB
 			AllowedMimeTypes: []string{"image/jpeg", "image/png", "image/webp", "video/mp4"},
 			ThumbnailQuality: getIntEnv("THUMBNAIL_QUALITY", 85),
+		},
+		Supabase: SupabaseConfig{
+			URL:        getEnv("SUPABASE_PROJECT_URL", ""),
+			ServiceKey: getEnv("SUPABASE_PROJECT_KEY", ""),
+			AnonKey:    getEnv("SUPABASE_ANON_KEY", ""),
 		},
 	}
 

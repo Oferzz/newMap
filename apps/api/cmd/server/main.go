@@ -39,14 +39,26 @@ func main() {
 	
 	log.Printf("Configuration loaded. Port: %s, Environment: %s", cfg.Server.Port, cfg.Server.Environment)
 
-	// Connect to PostgreSQL
-	log.Println("Connecting to PostgreSQL...")
-	db, err := database.NewPostgresDB(&cfg.Database)
-	if err != nil {
-		log.Fatal("Failed to connect to PostgreSQL:", err)
+	// Connect to database (Supabase or PostgreSQL)
+	var db *database.PostgresDB
+	if cfg.Supabase.URL != "" && cfg.Supabase.ServiceKey != "" {
+		log.Println("Connecting to Supabase...")
+		supabaseDB, err := database.NewSupabaseDB(cfg.Supabase.URL, cfg.Supabase.ServiceKey)
+		if err != nil {
+			log.Fatal("Failed to connect to Supabase:", err)
+		}
+		db = supabaseDB.PostgresDB
+		defer db.Close()
+		log.Println("Supabase connected successfully")
+	} else {
+		log.Println("Connecting to PostgreSQL...")
+		db, err = database.NewPostgresDB(&cfg.Database)
+		if err != nil {
+			log.Fatal("Failed to connect to PostgreSQL:", err)
+		}
+		defer db.Close()
+		log.Println("PostgreSQL connected successfully")
 	}
-	defer db.Close()
-	log.Println("PostgreSQL connected successfully")
 
 	// Run migrations
 	log.Println("Running database migrations...")
